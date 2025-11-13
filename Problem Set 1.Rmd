@@ -1,0 +1,43 @@
+---
+title: "Problem Set 1 Code"
+output: pdf_document
+date: "2025-11-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = TRUE,
+  message = FALSE,  # Meldungen ausblenden
+  warning = FALSE   # Warnungen ausblenden
+)
+```
+
+## Introduction to R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+
+```{r}
+## Load packages and dataset
+library(readr)
+library(dplyr)
+library(ggplot2)
+
+daily <- read_tsv("data/daily_fish_market_data.txt", show_col_types = FALSE)
+detailed <- read_tsv("data/detailed_fish_market_data.txt", show_col_types = FALSE)
+```
+
+
+## Some exemplary plots
+
+```{r, echo=TRUE}
+
+ggplot(daily, aes(x = price)) +
+  geom_histogram(bins = 30, fill = "steelblue") +
+  labs(title = "Verteilung der Tagespreise")
+
+ggplot(detailed, aes(x = pric)) +
+  geom_histogram(bins = 30, fill = "darkgreen") +
+  labs(title = "Verteilung der Einzelhandelspreise")
+```
