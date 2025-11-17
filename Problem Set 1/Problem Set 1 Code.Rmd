@@ -23,8 +23,9 @@ library(readr)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
+library(lmtest)
 
-detailed <- read_tsv("../data/detailed_fish_market_data.txt")
+detailed_data <- read_tsv("../data/detailed_fish_market_data.txt")
 ```
 
 ## Data preparation
@@ -35,7 +36,7 @@ Bla Bla Datensatz ec.
 # delete those rows that have NA for 
 # "price","quan", "totr", "tots" and 
 # filter for whiting (no king)
-detailed_whiting <- detailed %>%
+detailed_whiting <- detailed_data %>%
   filter(!is.na(pric),
          !is.na(quan),
          !is.na(totr),
