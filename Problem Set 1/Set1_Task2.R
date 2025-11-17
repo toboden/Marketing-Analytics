@@ -1,6 +1,9 @@
 # Read data
 library(readr)
+library(dplyr)
 daily_data <- read_tsv("data/daily_fish_market_data.txt")
+daily_data <- daily_data %>%
+  rename(price_log=price, qty_log=qty)
 # Plot data to get understanding of it
 plot(daily_data$price, daily_data$qty, xlab="log(Price)", ylab="log(Quantity)")
 # price and qty are the log of the original price/ qty
@@ -106,19 +109,94 @@ D_slide[top_10_D_slide]
 # Vergleiche Maximum / Differenzen
 head(D_slide)
 
-# Werte sind komplett anders. Also stimmt hier irgendwas nicht.
 # --> Interpretation: should we delete outliers?
 
 
 # 2. Compare linear, polynomial and logarithmic functional forms
 # 2.1 Define hypothesized functional form (linear, polynomial and logarithmic)
+# Hypothesized functional form of the logarithmic transformation:
+# Quantity = alpha*Price^beta, beta < 0 --> ln(Quantity) = ln(alpha) + beta*ln(price)
+
+# Hypothesized functional form of the polynomial regression:
 # 2.2 Look at scatterplot of data
 plot(daily_data$price_original, daily_data$qty_original, xlab="Price", ylab="Quantity")
 # 2.3 Linear regression
 # 2.4 Polynomial regression
 # 2.4.1 Mean centering
+daily_data$price_original_MC = daily_data$price_original-mean(daily_data$price_original, na.rm=TRUE)
+summary(daily_data$price_original_MC)
 # 2.4.2 Compute polynomials
+daily_data$price_original_MC_squared = daily_data$price_original_MC * daily_data$price_original_MC
+daily_data$price_original_MC_cubic = daily_data$price_original_MC_squared * daily_data$price_original_MC
+# running the linear model
+summary(linear_reg)
 # 2.4.3 Analyze and test hypothesized model
+polynomial_regression_squared = lm(daily_data$qty_original~ daily_data$price_original_MC+daily_data$price_original_MC_squared)
+summary(polynomial_regression_squared)
+c(AIC(polynomial_regression_squared), BIC(polynomial_regression_squared))
+plot(daily_data$price_original, daily_data$qty_original, xlab="Price", ylab="Quantity", main="polynomial model on untransformed data") 
+b0 <- coef(polynomial_regression_squared)[1]   # intercept
+b1 <- coef(polynomial_regression_squared)[2]
+b2 <- coef(polynomial_regression_squared)[3]
+curve(
+  b0[1] + x*b1[1] + b2[1]*(x^2),
+  from = min(daily_data$price_original, na.rm = TRUE),
+  to   = max(daily_data$price_original, na.rm = TRUE),
+  add  = TRUE,
+  col  = "red",
+  lwd  = 2
+)
 # 2.4.4 if tests are successful: Analyze extended model
-# 2.5 logarithmic transformation
-# be careful of 0s 
+polynomial_regression_cubic = lm(daily_data$qty_original~ daily_data$price_original_MC+daily_data$price_original_MC_squared+daily_data$price_original_MC_cubic)
+summary(polynomial_regression_cubic)
+c(AIC(polynomial_regression_cubic), BIC(polynomial_regression_cubic))
+
+
+# 2.5 logarithmic transformation (log-log model)
+plot(daily_data$price, daily_data$qty, xlab="log(Price)", ylab="log(Quantity)")
+# the column price and qty or the daily dataset are already log values
+min(daily_data$qty_original) # min > 0
+min(daily_data$price_original) # min > 0
+log_log_model = lm(cleaned_daily_data$qty~ cleaned_daily_data$price)
+summary(log_log_model)
+c(AIC(log_log_model), BIC(log_log_model))
+# visualize
+plot(daily_data$price, daily_data$qty, xlab="log(Price)", ylab="log(Quantity)")
+abline(log_log_model, col = "red", lwd = 2)
+# Koeffizienten aus dem lm holen
+b0 <- coef(log_log_model)[1]   # intercept
+b1 <- coef(log_log_model)[2]   # first_coeff
+plot(daily_data$price_original, daily_data$qty_original, xlab="Price", ylab="Quantity", main="log-log model on untransformed data") 
+
+curve(
+  exp(b0[1]) * x^b1[1],
+  from = min(daily_data$price_original, na.rm = TRUE),
+  to   = max(daily_data$price_original, na.rm = TRUE),
+  add  = TRUE,
+  col  = "red",
+  lwd  = 2
+)
+
+
+# 2.5 logarithmic transformation (linear-log model)
+plot(daily_data$price, daily_data$qty_original, xlab="log(Price)", ylab="Quantity")
+# the column price and qty or the daily dataset are already log values
+lin_log_model = lm(cleaned_daily_data$qty_original~ cleaned_daily_data$price)
+summary(lin_log_model)
+c(AIC(lin_log_model), BIC(lin_log_model))
+# visualize
+plot(daily_data$price, daily_data$qty_original, xlab="log(Price)", ylab="Quantity", main="lin-log model")
+abline(lin_log_model, col = "red", lwd = 2)
+# Koeffizienten aus dem lm holen
+b0_lin_log <- coef(lin_log_model)[1]   # intercept
+b1_lin_log <- coef(lin_log_model)[2]   # first_coeff
+plot(daily_data$price_original, daily_data$qty_original, xlab="Price", ylab="Quantity", main="lin-log model on untransformed data") 
+
+curve(
+  b0_lin_log[1] + b1_lin_log[1] * log(x),
+  from = min(daily_data$price_original, na.rm = TRUE),
+  to   = max(daily_data$price_original, na.rm = TRUE),
+  add  = TRUE,
+  col  = "red",
+  lwd  = 2
+)
