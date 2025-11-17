@@ -14,6 +14,7 @@ knitr::opts_chunk$set(
 ```
 
 # Task 1
+
 In the following a descriptive analysis of the "detailed_fish_market_data", regarding Whiting is conducted. At first the required packages are loaded.
 
 ```{r}
@@ -27,6 +28,7 @@ detailed <- read_tsv("../data/detailed_fish_market_data.txt")
 ```
 
 ## Data preparation
+
 Bla Bla Datensatz ec.
 
 ```{r, echo = TRUE}
@@ -42,7 +44,6 @@ detailed_whiting <- detailed %>%
 ```
 
 The next code snippet is not shown in the pdf as those are only technical changes. As the dataset has some observations, that are "NA" or relatively obvious outliers, those are removed first. Especially the two obersvations, that seem to stem from another dealer are removed.
-
 
 ```{r, echo=FALSE}
 
@@ -145,7 +146,6 @@ detailed_whiting_daily %>%
   summary()
 ```
 
-
 As the summary indicates, total sales and therefore the total received amount of Whiting in lbs inherit a large amount of variation. The amount of transaction per day also shows a broad variety of values, with the minimum of four and a maximum of 57.
 
 To gain a first insight in the properties of the total sales of Whiting in the period of April to May 1992 a bar-chart and a time-series plot are used.
@@ -206,16 +206,12 @@ plot_daily_sales_over_time <- ggplot(tots_plot_df, aes(x=date_fac, y = tots, gro
 
 ```
 
-
-
 ```{r ,fig.show = "hold", out.width = "50%"}
 plot_average_sales_by_weekday
 plot_daily_sales_over_time
 ```
 
-
 Plot Beschreibung.
-
 
 ```{r, echo = FALSE}
 ####
@@ -259,13 +255,11 @@ plot_daily_str_over_time <- ggplot(str_plot_df, aes(x=date_fac, y = strate, grou
   theme_fontsize
 ```
 
-
 ```{r, fig.show = "hold", fig.height= 2.5, out.width = "100%"}
 plot_daily_str_over_time
 ```
 
 Plot Beschreibung.
-
 
 ```{r}
 ####
@@ -275,7 +269,6 @@ cor(detailed_whiting_daily$avg_pric,detailed_whiting_daily$tots)
 ```
 
 Korrelation Beschreibung.
-
 
 ```{r, echo = FALSE}
 ####
@@ -325,15 +318,12 @@ plot_price_distr_by_quality <- detailed_whiting %>%
   theme_fontsize_large
 ```
 
-
 ```{r, fig.show = "hold", out.width = "50%"}
 plot_price_distr_by_weekday
 plot_price_distr_by_quality
 ```
 
 Plot Beschreibung.
-
-
 
 ```{r, echo = FALSE}
 hourly_detailed_whiting <- detailed_whiting %>%
@@ -381,11 +371,130 @@ plot_average_price_per_hour <- hourly_detailed_whiting %>%
   theme_fontsize_large
 ```
 
-
-
 ```{r, fig.show = "hold", out.width = "50%"}
 plot_transactions_per_hour
 plot_average_price_per_hour
 ```
 
 Plot Beschreibung.
+
+# Task 3: Moderated Regression
+
+### 3.1 Hypotheses
+
+In this task, we investigate whether the price sensitivity of individual customers depends on specific contextual characteristics of the transaction. Based on plausibility considerations, the following three hypotheses were developed:
+
+------------------------------------------------------------------------
+
+**Hypothesis 1 (H1): Moderation by Product Quality (`qual`)**
+
+-   **Hypothesis:** The quality of the fish has an influence on the price sensitivity of customers.
+-   **Rationale:** We expect that higher quality (`qual`) leads to *lower* price sensitivity. A high-quality product, which might be sold to expensive restaurants with higher margins, justifies a higher price and makes customers less susceptible to price fluctuations.
+
+**Hypothesis 2 (H2): Moderation by Payment Method (`cash`)**
+
+-   **Hypothesis:** The use of cash versus charge (invoice) influences price sensitivity.
+-   **Rationale:** Paying with cash may have a higher "emotional value" (or "pain of paying") as the amount paid is immediately visible, rather than just appearing on a bill later. We, therefore, expect that cash transactions lead to *higher* price sensitivity.
+
+**Hypothesis 3 (H3): Moderation by Establishment Type (`estb`)**
+
+-   **Hypothesis:** Price sensitivity depends on the customer's type of establishment.
+-   **Rationale:** "Fry shops" (`f`) likely operate on lower margins for their final products and thus have a stronger incentive to watch purchase prices than "Stores" (`s`). We, therefore, expect that "fry shops" will exhibit *higher* price sensitivity.
+
+```{r}
+#1 data preperation
+detailed_data_prep <- detailed_data %>%
+  filter(!is.na(pric),
+         !is.na(quan),
+         type == "w") %>%
+  arrange(date) %>%
+  
+  # 1.1 standardization
+  group_by(cusn) %>%
+  mutate(Qty_Dev = quan - mean(quan, na.rm = TRUE)) %>% #target variable
+  ungroup() %>%
+  
+  # 1.2 mean centering and dummy creation
+  mutate(
+    price_c = as.numeric(scale(pric, center = TRUE, scale = FALSE)), #main regressor
+    quality_c = as.numeric(scale(qual, center = TRUE, scale = FALSE)), # Moderator 1
+    cash_dummy = if_else(cash == 'c', 1, 0), # Moderator 2
+    estb = as.factor(estb), # Moderator 3
+  ) 
+```
+
+-   **`filter(...)`**: This is the first cleaning step.
+
+    -   **`!is.na(pric), !is.na(quan)`**: We remove any rows where either price (`pric`) or quantity (`quan`) are missing. We cannot model a price-demand relationship without a price or a quantity, so these rows are unusable for our model.
+    -   **`type == "w"`**: We filter the dataset to only include "Whiting". This ensures our analysis is focused on a single product, as combining different fish types would introduce confounding variables.
+
+-   **`arrange(date)`**: This step sorts the resulting data by date. While not strictly required for this regression, it's good practice to organize time-series data chronologically, which can help in identifying patterns or debugging later.
+
+-   **`group_by(cusn)`**: This crucial step groups the data by customer number (`cusn`). It doesn't change the data itself but tells the following `mutate` function to perform its calculations *within* each customer's group.
+
+-   **`mutate(Qty_Dev = ...)`**: This creates our new target (dependent) variable, `Qty_Dev`.
+
+    -   **Justification**: The problem set notes that customers are different sizes. Simply modeling `quan` (quantity) would be misleading, as a large restaurant will always buy more than a small shop, regardless of price.
+    -   **Action**: By calculating `quan - mean(quan, na.rm = TRUE)`, we create a **within-customer standardized variable**. `Qty_Dev` now represents how much *more* or *less* a customer bought on a specific day compared to their *own* average. This isolates their behavioral deviation and is a much more accurate variable for modeling price sensitivity.
+
+-   **`ungroup()`**: This step removes the grouping. It's essential "housekeeping" to ensure that the next `mutate` call performs its calculations (like mean-centering) on the *entire* dataset, not on a per-customer basis.
+
+-   **`mutate(...)`**: This final step creates all the predictor variables (regressors) we need for our models.
+
+    -   **`price_c = ...`**: This **mean-centers** the `pric` variable, as recommended in the lecture. Mean-centering (`center = TRUE`, `scale = FALSE`) subtracts the overall average price from each transaction's price. This makes the coefficients in our moderated regression models much easier to interpret. Specifically, the main effect of price will now represent the price sensitivity at the *average* level of the moderator.
+    -   **`quality_c = ...`**: This likewise mean-centers our first moderator, `qual` (quality).
+    -   **`cash_dummy = ...`**: This converts the categorical `cash` variable into a numeric **dummy variable** for our second hypothesis. The model can interpret "1" (for cash) and "0" (for non-cash), but it cannot interpret the original 'c' and 'h' letters.
+    -   **`estb = as.factor(estb)`**: This converts the establishment type (`estb`) variable into a **factor**. This tells R that `estb` is a categorical variable. When we include it in the `lm()` function, R will automatically create the necessary dummy variables for each establishment type, allowing us to test our third hypothesis.
+
+```{r}
+# additional steps for establishment
+detailed_data_prep %>% group_by(estb) %>% count()
+
+detailed_data_perep_estb = detailed_data_prep %>%
+  filter(estb %in% c("s", "f", "sf"))
+```
+
+This code block performs a crucial diagnostic check and a subsequent filtering action specifically to prepare for testing Hypothesis 3 (moderation by establishment type).
+
+-   **`detailed_data_prep %>% group_by(estb) %>% count()`**
+
+    -   **What it does**: This line is a **diagnostic check**. It groups the prepared data by the establishment type (`estb`) and counts the number of observations (transactions) for each type.
+    -   **Why it's done**: Before using a categorical variable as a moderator, we must check its distribution. The output of this count (seen in the previous step) reveals that while some categories like 's' (store) and 'f' (fry shop) have many observations, other categories have very few (e.g., only 1, 2, or 3).
+
+-   **`detailed_data_perep_estb = ... filter(estb %in% c("s", "f", "sf"))`**
+
+    -   **What it does**: This line **creates a new, filtered dataset** named `detailed_data_perep_estb`. It includes only the rows where the establishment type is one of the three most common: "s", "f", or "sf".
+    -   **Why it's done**: This is a **critical step for statistical stability**. Attempting to run a regression or moderation analysis on a categorical level with only 1 or 2 observations is statistically unreliable; the model cannot produce a stable estimate for such a small group. It can lead to model errors or highly misleading results. By filtering down to the well-represented groups, we ensure that our analysis for Hypothesis 3 is robust and that the results are meaningful. This new dataset will be used *only* for the H3 analysis.
+
+    ```{r}
+    #2.1 Moderated Model 1
+    quality_model = lm(Qty_Dev ~ price_c + quality_c, data = detailed_data_prep)
+    quality_model_moderation = lm(Qty_Dev ~ price_c*quality_c, data = detailed_data_prep)
+    summary(quality_model)
+    summary(quality_model_moderation)
+
+    anova(quality_model, quality_model_moderation)
+    lrtest(quality_model, quality_model_moderation)
+    ```
+
+```{r}
+#2.2 Moderated Model 2
+cash_model = lm(Qty_Dev ~ price_c+cash_dummy, data=detailed_data_prep)
+cash_model_moderation = lm(Qty_Dev ~ price_c*cash_dummy, data=detailed_data_prep)
+summary(cash_model)
+summary(cash_model_moderation)
+
+anova(cash_model, cash_model_moderation)
+lrtest(cash_model, cash_model_moderation)
+```
+
+```{r}
+#2.3 Moderated Model 3
+estb_model = lm(Qty_Dev ~ price_c + estb, data = detailed_data_perep_estb)
+estb_model_moderation = lm(Qty_Dev ~ price_c * estb, data = detailed_data_perep_estb)
+summary(estb_model)
+summary(estb_model_moderation)
+
+anova(estb_model, estb_model_moderation)
+lrtest(estb_model, estb_model_moderation)
+```
