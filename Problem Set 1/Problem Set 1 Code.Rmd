@@ -426,6 +426,9 @@ In this task, we investigate whether the price sensitivity of individual custome
 -   **Rationale:** "Fry shops" (`f`) likely operate on lower margins for their final products and thus have a stronger incentive to watch purchase prices than "Stores" (`s`). We, therefore, expect that "fry shops" will exhibit *higher* price sensitivity.
 
 ```{r}
+#data loading
+detailed_data = read_tsv("../data/detailed_fish_market_data.txt")
+
 #1 data preperation
 detailed_data_prep <- detailed_data %>%
   filter(!is.na(pric),
@@ -447,28 +450,17 @@ detailed_data_prep <- detailed_data %>%
   ) 
 ```
 
--   **`filter(...)`**: This is the first cleaning step.
+This is the first cleaning step.
 
-    -   **`!is.na(pric), !is.na(quan)`**: We remove any rows where either price (`pric`) or quantity (`quan`) are missing. We cannot model a price-demand relationship without a price or a quantity, so these rows are unusable for our model.
-    -   **`type == "w"`**: We filter the dataset to only include "Whiting". This ensures our analysis is focused on a single product, as combining different fish types would introduce confounding variables.
-
--   **`arrange(date)`**: This step sorts the resulting data by date. While not strictly required for this regression, it's good practice to organize time-series data chronologically, which can help in identifying patterns or debugging later.
-
--   **`group_by(cusn)`**: This crucial step groups the data by customer number (`cusn`). It doesn't change the data itself but tells the following `mutate` function to perform its calculations *within* each customer's group.
-
--   **`mutate(Qty_Dev = ...)`**: This creates our new target (dependent) variable, `Qty_Dev`.
-
-    -   **Justification**: The problem set notes that customers are different sizes. Simply modeling `quan` (quantity) would be misleading, as a large restaurant will always buy more than a small shop, regardless of price.
-    -   **Action**: By calculating `quan - mean(quan, na.rm = TRUE)`, we create a **within-customer standardized variable**. `Qty_Dev` now represents how much *more* or *less* a customer bought on a specific day compared to their *own* average. This isolates their behavioral deviation and is a much more accurate variable for modeling price sensitivity.
-
--   **`ungroup()`**: This step removes the grouping. It's essential "housekeeping" to ensure that the next `mutate` call performs its calculations (like mean-centering) on the *entire* dataset, not on a per-customer basis.
-
--   **`mutate(...)`**: This final step creates all the predictor variables (regressors) we need for our models.
-
-    -   **`price_c = ...`**: This **mean-centers** the `pric` variable, as recommended in the lecture. Mean-centering (`center = TRUE`, `scale = FALSE`) subtracts the overall average price from each transaction's price. This makes the coefficients in our moderated regression models much easier to interpret. Specifically, the main effect of price will now represent the price sensitivity at the *average* level of the moderator.
-    -   **`quality_c = ...`**: This likewise mean-centers our first moderator, `qual` (quality).
-    -   **`cash_dummy = ...`**: This converts the categorical `cash` variable into a numeric **dummy variable** for our second hypothesis. The model can interpret "1" (for cash) and "0" (for non-cash), but it cannot interpret the original 'c' and 'h' letters.
-    -   **`estb = as.factor(estb)`**: This converts the establishment type (`estb`) variable into a **factor**. This tells R that `estb` is a categorical variable. When we include it in the `lm()` function, R will automatically create the necessary dummy variables for each establishment type, allowing us to test our third hypothesis.
+-   We remove any rows where either price (`pric`) or quantity (`quan`) are missing. We cannot model a price-demand relationship without a price or a quantity, so these rows are unusable for our model.
+-   We filter the dataset to only include "Whiting". This ensures our analysis is focused on a single product, as combining different fish types would introduce confounding variables.
+-   We sort the data ascending by date. While not strictly required for this regression, it's good practice to organize time-series data chronologically, which can help in identifying patterns or debugging later.
+-   Next we standardize the consume by customer. This is a crucial step as each customer usually buys different amounts of fish. Therefore we take the mean for every customer and model the amount consumed by the difference to the mean for this customer.
+-   Finally we create the main Regressor and the 3 Regressors for the hypothesis.
+    -   We mean center `pric` (price) . This makes the coefficients in our moderated regression models much easier to interpret. Specifically, the main effect of price will now represent the price sensitivity at the *average* level of the moderator.
+    -   We likewise mean-center our first moderator, `qual` (quality).
+    -   We convert the categorical `cash` variable into a numeric **dummy variable** for our second hypothesis. The model can interpret "1" (for cash) and "0" (for non-cash), but it cannot interpret the original 'c' and '0' letters.
+    -   We convert the establishment type (`estb`) variable into a **factor**. This tells R that `estb` is a categorical variable. When we include it in the `lm()` function, R will automatically create the necessary dummy variables for each establishment type, allowing us to test our third hypothesis.
 
 ```{r}
 # additional steps for establishment
@@ -480,26 +472,27 @@ detailed_data_perep_estb = detailed_data_prep %>%
 
 This code block performs a crucial diagnostic check and a subsequent filtering action specifically to prepare for testing Hypothesis 3 (moderation by establishment type).
 
--   **`detailed_data_prep %>% group_by(estb) %>% count()`**
+-   Before using a categorical variable as a moderator, we must check its distribution. The output of this count reveals that while some categories like 's' (store) and 'f' (fry shop) have many observations, other categories have very few (e.g., only 1, 2, or 3).
+-    Attempting to run a regression or moderation analysis on a categorical level with only 1 or 2 observations is statistically unreliable; the model cannot produce a stable estimate for such a small group. It can lead to model errors or highly misleading results. By filtering down to the well-represented groups, we ensure that our analysis for Hypothesis 3 is robust and that the results are meaningful. This new dataset will be used *only* for the H3 analysis.
 
-    -   **What it does**: This line is a **diagnostic check**. It groups the prepared data by the establishment type (`estb`) and counts the number of observations (transactions) for each type.
-    -   **Why it's done**: Before using a categorical variable as a moderator, we must check its distribution. The output of this count (seen in the previous step) reveals that while some categories like 's' (store) and 'f' (fry shop) have many observations, other categories have very few (e.g., only 1, 2, or 3).
+```{r}
+#2.1 Moderated Model 1
+quality_model = lm(Qty_Dev ~ price_c + quality_c, data = detailed_data_prep)
+quality_model_moderation = lm(Qty_Dev ~ price_c*quality_c, data = detailed_data_prep)
 
--   **`detailed_data_perep_estb = ... filter(estb %in% c("s", "f", "sf"))`**
+summary(quality_model)
+summary(quality_model_moderation)
+```
 
-    -   **What it does**: This line **creates a new, filtered dataset** named `detailed_data_perep_estb`. It includes only the rows where the establishment type is one of the three most common: "s", "f", or "sf".
-    -   **Why it's done**: This is a **critical step for statistical stability**. Attempting to run a regression or moderation analysis on a categorical level with only 1 or 2 observations is statistically unreliable; the model cannot produce a stable estimate for such a small group. It can lead to model errors or highly misleading results. By filtering down to the well-represented groups, we ensure that our analysis for Hypothesis 3 is robust and that the results are meaningful. This new dataset will be used *only* for the H3 analysis.
+The results indicate that in both the basic and the moderated models, the estimated parameters are not statistically significant. The model's explanatory power is extremely low, with an $R^2$ below 1%. Consequently, we fail to reject the null hypothesis; there is no statistical evidence in this dataset that price, quality, or their interaction influences the quantity consumed.
 
-    ```{r}
-    #2.1 Moderated Model 1
-    quality_model = lm(Qty_Dev ~ price_c + quality_c, data = detailed_data_prep)
-    quality_model_moderation = lm(Qty_Dev ~ price_c*quality_c, data = detailed_data_prep)
-    summary(quality_model)
-    summary(quality_model_moderation)
+```{r}
+#Testing if Moderator 1 is significant
+anova(quality_model, quality_model_moderation)
+lrtest(quality_model, quality_model_moderation)
+```
 
-    anova(quality_model, quality_model_moderation)
-    lrtest(quality_model, quality_model_moderation)
-    ```
+Neither the ANOVA (F-test for nested models) nor the Likelihood Ratio Test (LRT) indicates a significant difference between the models ($p > 0.05$). This confirms that adding the interaction term does not improve model fit, meaning we find no support for the hypothesis that quality moderates price sensitivity (H1).
 
 ```{r}
 #2.2 Moderated Model 2
@@ -507,10 +500,17 @@ cash_model = lm(Qty_Dev ~ price_c+cash_dummy, data=detailed_data_prep)
 cash_model_moderation = lm(Qty_Dev ~ price_c*cash_dummy, data=detailed_data_prep)
 summary(cash_model)
 summary(cash_model_moderation)
+```
 
+Similar to the previous analysis, the parameters in both the main effects and interaction models are statistically insignificant. The adjusted $R^2$ remains negligible (\< 1%). We cannot reject the null hypothesis that the payment method (cash vs. credit) has no impact on consumption behavior or price sensitivity.
+
+```{r}
+#Testing if Moderator 2 is significant
 anova(cash_model, cash_model_moderation)
 lrtest(cash_model, cash_model_moderation)
 ```
+
+Both the ANOVA and LRT yield non-significant p-values. This suggests that the inclusion of the payment method interaction does not provide a better fit than the simple additive model. Thus, H2 is not supported.
 
 ```{r}
 #2.3 Moderated Model 3
@@ -518,7 +518,14 @@ estb_model = lm(Qty_Dev ~ price_c + estb, data = detailed_data_perep_estb)
 estb_model_moderation = lm(Qty_Dev ~ price_c * estb, data = detailed_data_perep_estb)
 summary(estb_model)
 summary(estb_model_moderation)
+```
 
+The analysis of establishment types yields comparable results. None of the coefficients for price, establishment type, or their interaction terms achieve statistical significance. The low $R^2$ values suggest that these variables do not effectively predict deviations in purchase quantity.
+
+```{r}
+#Testing if Moderator 3 is significant
 anova(estb_model, estb_model_moderation)
 lrtest(estb_model, estb_model_moderation)
 ```
+
+The model comparison tests (ANOVA and LRT) evaluate the collective contribution of the interaction terms associated with the `estb` factor. The results are non-significant, indicating that the relationship between price and demand does not vary significantly across the different establishment types. Therefore, H3 is not supported.
