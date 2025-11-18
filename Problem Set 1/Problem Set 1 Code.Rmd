@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 
 # Task 1
 
-In the following a descriptive analysis of the "detailed_fish_market_data", regarding Whiting is conducted. At first the required packages are loaded.
+In the following a descriptive analysis of the *detailed_fish_market_data*, regarding Whiting is conducted. At first the required packages and the dataset are loaded.
 
 ```{r}
 ## Load packages and dataset
@@ -30,7 +30,7 @@ detailed_data <- read_tsv("../data/detailed_fish_market_data.txt")
 
 ## Data preparation
 
-Bla Bla Datensatz ec.
+The focus of the descriptive analysis will be on price and the quantities received and sold throughout the days in April and May 1992. Therefore observations that are *'NA'* for those variables are removed via the package 'dplyr'. Additionally the dataset is filtered for Whiting, as required for Task 1 and arranged by date.
 
 ```{r, echo = TRUE}
 # delete those rows that have NA for 
@@ -38,18 +38,29 @@ Bla Bla Datensatz ec.
 # filter for whiting (no king)
 detailed_whiting <- detailed_data %>%
   filter(!is.na(pric),
-         !is.na(quan),
          !is.na(totr),
+         !is.na(tots),
          type == "w") %>%
   arrange(date)
+
+print(paste("Obs:", nrow(detailed_whiting),
+            "- Vars:", ncol(detailed_whiting)))
 ```
 
-The next code snippet is not shown in the pdf as those are only technical changes. As the dataset has some observations, that are "NA" or relatively obvious outliers, those are removed first. Especially the two obersvations, that seem to stem from another dealer are removed.
+The cleaned whiting dataset now has 478 observations for 17 variables. 
 
-```{r, echo=FALSE}
+If one inspects the dataset via *'View(detailed_whiting)'* it gets clear, that there are multiple observations for each observed day in the period of April to Mai 1992. Each of them depicts a transaction between a customer and the fish-dealer. That is particularly important for understanding the next step.
+
+Out of the 478 observations there are two that do not fit in. The total quantity that the dealers sold (variable *tots*) is equal for all rows (i.e. transactions) of the same dealer at a given day. 
+
+What immediately stands out is that only one dealer is observed on almost all days. For this dealer, multiple transactions are always recorded. Only on two days are two dealers observed, as indicated by multiple distinct observations for 'tots'. However, these additional dealers are unrepresentative, as there is only one observation for each of them. The remaining observations all appear to come from a single, larger dealer. These two observations are therefore deleted using 'dplyr'.
+
+
+```{r, echo=TRUE}
 
 ## There seem to be two entries in the dataset, where there are two dealer per day.
-# Since this is the case only for two out of all days in April and May: drop those two observations 
+# Since this is the case only for two out of all days in April and May: 
+# drop those two observations 
 detailed_whiting <- detailed_whiting %>%
   # frequency of the same tots value for different days
   group_by(date, dayw, tots) %>%
@@ -68,7 +79,6 @@ detailed_whiting <- detailed_whiting %>%
   # delete rows that are not longer needed
   select(-n_same_tots, -n_tots_values)
 
-
 ## two cases, where > 1 dealer is present
 tots_inconsistent <- detailed_whiting |>
   group_by(date, dayw) |>
@@ -77,8 +87,38 @@ tots_inconsistent <- detailed_whiting |>
   ) |>
   filter(n_tots > 1) |>
   arrange(date, dayw, tots, totr)
+```
+
+With this step the data cleaning process is finished. 
+
+One part of the descriptive analysis of the Whiting data is the analysis aggregated on the daily level. For this purpose a new dataset "detailed_whiting_daily" is constructed. 
+
+```{r, echo = TRUE}
+
+# dataset for the daily-level
+detailed_whiting_daily <- detailed_whiting %>%
+  group_by(date) %>%
+  summarise(
+    avg_pric = mean(pric),
+    totr = first(totr),
+    tots = first(tots),
+    dayw = first(dayw),
+    n_trsact = n(),
+    strate = first(tots)/first(totr)
+  )
 
 
+```
+
+For each date present in the original dataset the average price (*avg_pric*), *totr*, *tots*, number of transactions (*n_trsact*) and sell-through rate (*strate*) are computed. For each computation that involves "totr" or "tots" the first value of the day can be used. This is possible due to the previous data cleaning step, as described above. The sell-through rate is the share of available stock that was actually sold. It measures how much of the Whiting that was offered for sale at a given day has been sold. More on that later.
+
+## Descriptive analysis
+
+The analysis is split in three parts: At first a analysis of the sales on the daily level, second the distribution of price and at last a analysis based on the hours of the day.
+
+In a code chunk that is not printed in this pdf (*'echo=FALSE'*) the different font sizes and some design variables for the plots are defined.
+
+```{r, echo=FALSE}
 
 
 ## define variables for the plots
@@ -117,26 +157,7 @@ break_vec_x_axis <- c(seq(406,430, by = 7),seq(504,515, by=7))
 all_days_x_axis <- c(seq(406,430, by = 1),seq(501,515, by=1))
 ```
 
-Dataset for the analysis on daily level is created.
-
-```{r, echo = TRUE}
-
-# dataset for the daily-level
-detailed_whiting_daily <- detailed_whiting %>%
-  group_by(date) %>%
-  summarise(
-    avg_pric = mean(pric),
-    totr = first(totr),
-    tots = first(tots),
-    dayw = first(dayw),
-    n_trsact = n(),
-    strate = first(tots)/first(totr)
-  )
-
-
-```
-
-## Descriptive analysis
+As a starting point, summary statistics for *totr*, *tots* and *n_trsact* are reported.
 
 ```{r}
 ####
@@ -145,11 +166,13 @@ detailed_whiting_daily <- detailed_whiting %>%
 detailed_whiting_daily %>%
   select(totr, tots, n_trsact) %>%
   summary()
+
+detailed_whiting_daily %>%
+  select(totr, tots) %>%
+  summarise(across(everything(), sd, na.rm = TRUE))
 ```
 
-As the summary indicates, total sales and therefore the total received amount of Whiting in lbs inherit a large amount of variation. The amount of transaction per day also shows a broad variety of values, with the minimum of four and a maximum of 57.
-
-To gain a first insight in the properties of the total sales of Whiting in the period of April to May 1992 a bar-chart and a time-series plot are used.
+Total sales as well as the total received amount of whiting (in lbs) show a substantial degree of variation (standard deviations of 4,381 and 3,691, respectively). the number of transactions ranges from very quiet days to very busy ones (minimum of four and a maximum of 57). This indicates substantial day-to-day volatility in the whiting business.
 
 ```{r, echo = FALSE}
 ####
