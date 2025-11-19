@@ -1,7 +1,12 @@
 ---
-title: "Problem Set 1 Code"
+title: "Problem Set I Solution"
+author: 
+  - "Tobias Bodentien"
+  - "Philipp Grunenberg"
+  - "Alexander Haas"
+  - "Osama Warshaga"
+date: "`r format(Sys.Date(), '%d-%m-%Y')`"
 output: pdf_document
-date: "2025-11-13"
 ---
 
 ```{r setup, include=FALSE}
@@ -171,7 +176,7 @@ detailed_whiting_daily %>%
   summarise(across(everything(), sd, na.rm = TRUE))
 ```
 
-The summary statistics for *totr*, *tots* and *n_trsact* at a daily level show that the central tendencies of *tots* and *totr* are quite similar, as expected.  Furthermore, both exhibit a significant degree of variation, with standard deviations of 4,381 and 3,691, respectively.  The number of daily transactions also varies considerably, ranging from very quiet to very busy days (minimum of four and a maximum of 57). Overall, these findings suggest substantial day-to-day volatility in the Whiting business. 
+**Insight 1:** The summary statistics for *totr*, *tots* and *n_trsact* at a daily level show that the central tendencies of *tots* and *totr* are quite similar, as expected.  Furthermore, both exhibit a significant degree of variation, with standard deviations of 4,381 and 3,691, respectively.  The number of daily transactions also varies considerably, ranging from very quiet to very busy days (minimum of four and a maximum of 57). Overall, these findings suggest substantial day-to-day volatility in the Whiting business. 
 
 \newpage
 
@@ -238,7 +243,7 @@ plot_average_sales_by_weekday
 plot_daily_sales_over_time
 ```
 
-The plot on the left shows the average weekly total sales of whiting by day of the week. Sales are lowest on Wednesdays, increasing towards the end of the week with notably higher average volumes on Thursdays and Fridays. This suggests that demand for whiting is strongest just before the weekend.
+**Insight 2:** The plot on the left shows the average weekly total sales of whiting by day of the week. Sales are lowest on Wednesdays, increasing towards the end of the week with notably higher average volumes on Thursdays and Fridays. This suggests that demand for whiting is strongest just before the weekend.
 
 The right-hand plot shows the total daily sales over the period April–May 1992. It is immediately clear from this plot that only 19 distinct days are observed throughout this period. As this results in a relatively small number of observations at the level of individual days, a boxplot is not used for the analysis. There is considerable fluctuation in sales from day to day, with several pronounced spikes and some much quieter days. This confirms a high level of volatility in daily whiting sales over the observed period. Another interesting observation is that the market was closed on Monday 20 April 1992. This resulted in unusually high sales the next day compared to other Tuesdays in the sample.
 
@@ -290,7 +295,7 @@ plot_daily_str_over_time <- ggplot(str_plot_df, aes(x=date_fac, y = strate, grou
 plot_daily_str_over_time
 ```
 
-This line chart shows the daily sell-through rate per day over time. It is calculated as the ratio of *tots* to *totr* (i.e. *tots* divided by *totr*). The dashed line at one indicates full sell-through of the day’s deliveries in Whiting. 
+**Insight 3:** This line chart shows the daily sell-through rate per day over time. It is calculated as the ratio of *tots* to *totr* (i.e. *tots* divided by *totr*). The dashed line at one indicates full sell-through of the day’s deliveries in Whiting. 
 
 On most trading days, the sell-through rate fluctuates around this value, suggesting that sales and incoming supply are roughly balanced. However, there are a few extreme spikes, especially in mid-April and early May, where the sell-through rate is far above one. These indicate days on which much more was sold than was delivered, meaning existing inventory must have been used up,  as can be seen in the previous days spikes (below one). Overall, the figure indicates highly volatile, yet fairly efficient, inventory usage. This is possible because the Whiting can be frozen and sold over the next few days.
 
@@ -358,11 +363,11 @@ plot_price_distr_by_weekday
 plot_price_distr_by_quality
 ```
 
-The boxplots of the price per pound of whiting for different weekdays (left-hand side) and different qualities of whiting (right-hand side) are both calculated at transaction level (i.e. using *detailed_whiting*). 
+**Insight 4:** The boxplots of the price per pound of whiting for different weekdays (left-hand side) and different qualities of whiting (right-hand side) are both calculated at transaction level (i.e. using *detailed_whiting*). 
 
 Prices tend to be lower and less dispersed at the beginning of the week (Monday–Tuesday), becoming higher and more dispersed on Wednesday and especially Thursday. Friday's prices are usually similar to those in the middle of the week, but there are a few very high outliers. This could indicate occasional 'premium' pricing at the end of the week.
 
-The figure on the right shows an unexpected quality effect: higher-quality grades of whiting achieve higher prices, at least in terms of the median. However, the price of grade three is similar to that of grade one and shows substantially higher variability. The maximum price for grade three is also very high compared to grade one. As expected, grades four and five fetch clearly lower prices. This could indicate that customers do not expect whiting to be a 'premium' product, and that good quality is sufficient.
+The figure on the right shows an unexpected quality effect: higher-quality grades of whiting achieve higher prices, at least in terms of the median. However, the price of grade three is similar to that of grade one and shows substantially higher variability. The maximum price for grade three is also very high compared to grade one. As expected, grades four and five fetch clearly lower prices. This could indicate that customers do not expect Whiting to be a 'premium' product, and that good quality is sufficient.
 
 
 ### Analysis by time of day
@@ -418,10 +423,10 @@ plot_transactions_per_hour
 plot_average_price_per_hour
 ```
 
-The figures on the number of transactions and average price per hour confirm the typical dynamics of a fish market. The market opens at night and peak activity is observed around 6 a.m., after which the transaction volume declines rapidly. According to the bar plot on the right, prices remain relatively stable during the early morning, but then drop sharply at around 8 a.m., in line with the decline in trading activity.
+**Insight 5:** The figures on the number of transactions and average price per hour confirm the typical dynamics of a fish market. The market opens at night and peak activity is observed around 6 a.m., after which the transaction volume declines rapidly. According to the bar plot on the right, prices remain relatively stable during the early morning, but then drop sharply at around 8 a.m., in line with the decline in trading activity.
 
 ## Conclusion
-Overall, the analyses provide a fairly consistent picture of the Whiting market. Nothing stands out as being different from what would be expected of a non-premium fish market.
+Overall, the analyses provide a fairly consistent picture of the Whiting market. Nothing stands out as being different from what would be expected in a non-premium fish market.
 
 # Task 3: Moderated Regression
 
