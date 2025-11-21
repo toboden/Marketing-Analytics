@@ -172,8 +172,11 @@ detailed_whiting_daily %>%
   summary()
 
 detailed_whiting_daily %>%
-  select(totr, tots) %>%
-  summarise(across(everything(), sd, na.rm = TRUE))
+  select(totr, tots, n_trsact) %>%
+  summarise(
+    across(everything(), \(x) sd(x, na.rm = TRUE))
+  )
+
 ```
 
 **Insight 1:** The summary statistics for *totr*, *tots* and *n_trsact* at a daily level show that the central tendencies of *tots* and *totr* are quite similar, as expected.  Furthermore, both exhibit a significant degree of variation, with standard deviations of 4,381 and 3,691, respectively.  The number of daily transactions also varies considerably, ranging from very quiet to very busy days (minimum of four and a maximum of 57). Overall, these findings suggest substantial day-to-day volatility in the Whiting business. 
@@ -426,11 +429,14 @@ plot_average_price_per_hour
 **Insight 5:** The figures on the number of transactions and average price per hour confirm the typical dynamics of a fish market. The market opens at night and peak activity is observed around 6 a.m., after which the transaction volume declines rapidly. According to the bar plot on the right, prices remain relatively stable during the early morning, but then drop sharply at around 8 a.m., in line with the decline in trading activity.
 
 ## Conclusion
+
 Overall, the analyses provide a fairly consistent picture of the Whiting market. Nothing stands out as being different from what would be expected in a non-premium fish market.
 
 # Task 2: Nonlinear Regression
+
 In Exercise 2, we examine the relationship between the quantity of sold fish and its price. First, a linear regression is conducted, and outliers are identified using three different methods: leverage, studentized residuals, and Cook’s distance. 
 In the second part of the exercise, nonlinear regressions are performed, using polynomial regression and logarithmic transformation. The results of the different regression models are then compared based on relevant criteria.
+
 ```{r}
 # For easier understanding of the code name the log values of price and quantity respectively:
 library(readr)
@@ -444,26 +450,42 @@ daily_data$qty <- exp(daily_data$qty_log)
 # The values of price and qty are almost identical to pricelevel and tots in most cases. Nevertheless, the calculated price and qty will be used in the following as there are sometimes bigger differences between qty and tots, e.g. in datapoint 24:
 daily_data$qty[24] - daily_data$tots[24]
 ```
+
 ## Task 2.1: Outliers
+
 Before identifying the outliers we need to calculate the linear regression of quantity and price:
+
 ```{r}
 linear_reg = lm(daily_data$qty~ daily_data$price)
 ```
-Looking at the plot we see, that some datapoints might influence the regression strongly or have a high residual. Outliers can lead to skewed statistical results or in the case of regression to overfitting. 
-```{r, echo=FALSE}
-plot(daily_data$price, daily_data$qty, xlab="Price", ylab="Quantity")
-abline(linear_reg, col = "red", lwd = 2)
+
+Looking at the plot we see, that some datapoints might influence the regression strongly or have a high residual. Outliers can lead to skewed statistical results or in the case of regression to overfitting.
+
+\vspace{-14mm}
+
+```{r, echo=FALSE, fig.align='center',fig.height=2.5, fig.width=4, out.width='50%'}
+par(cex = 0.7)
+plot(daily_data$price, daily_data$qty, xlab="Price", ylab="Quantity",
+     cex  = 0.7)
+abline(linear_reg, col = "red", lwd = 1)
 ```
 
+\vspace{-9mm}
+
 To identify outliers three methods are used.
+
 ### Leverage
+
 To measure the influence of an individual observation on the final result the weight w_i of each obersvation i and mean are used. Observations with an higher influence on x have a higher wheigt.
 The resulting measure is called leverage and calculates the hatvalues h for each observation.
+
 ```{r}
 # Compute leverage h_i=1/n+w_i
 h = hatvalues(linear_reg)
 ```
+
 We now compare the highest h values with 2/n, with n being the number of observations. When all observation's hat values are h_i = 2/n, this means that they all influence the regression in the same amount.
+
 ```{r, echo=FALSE}
 # Get highest h values and compare them to 2/n
 top10_h_values <- order(h, decreasing = TRUE)[1:10]
@@ -472,42 +494,65 @@ equal_influence = 2 / n
 paste("2/n =", equal_influence)
 h[top10_h_values]
 ```
+
 Observations 5, 111 and 25 deviate from 2/n substantially. This shows that those values have a much higher influence on the regression than other datapoints. Looking at the plot we see that those datapoints are the ones with the highest price and lowest quantity.
-```{r, echo=FALSE}
-plot(daily_data$price, daily_data$qty, xlab="Price", ylab="Quantity", main="linear regression with leverage highlighted")
-abline(linear_reg, col = "red", lwd = 2)
+
+\vspace{-5mm}
+
+```{r, echo=FALSE, fig.align='center',fig.height=2.5, fig.width=4, out.width='50%'}
+par(cex = 0.7)
+plot(daily_data$price, daily_data$qty, xlab="Price", ylab="Quantity", main="linear regression with leverage highlighted",
+     cex  = 0.7)
+abline(linear_reg, col = "red", lwd = 1)
 text(daily_data$price[top10_h_values],
      daily_data$qty[top10_h_values],
      labels = top10_h_values,
      pos = 3)
 ```
 
-###Studentized residuals
+\vspace{-9mm}
+
+### Studentized residuals
+
 The idea of this method is that an outlier lies far away from the regression line and therefore has a high residual.
 To identify those outliers the studentized residuals are calulated:
+
 ```{r}
 r_student <- rstudent(linear_reg)
 ```
+
 Lets look at the highest and lowest values:
+
 ```{r, echo=FALSE}
 top10_idx = order(r_student, decreasing = TRUE)[1:10]
 low5_idx = order(r_student, decreasing = FALSE)[1:5]
 r_student[top10_idx]
 r_student[low5_idx]
 ```
+
 We see that 6 values are above 1.96, which makes them stand out statistically.
-```{r, echo=FALSE}
+
+\vspace{-5mm}
+
+```{r, echo=FALSE, fig.align='center',fig.height=2.5, fig.width=4, out.width='50%'}
+par(cex = 0.7)
 top6_idx = order(r_student, decreasing = TRUE)[1:6]
-plot(daily_data$price, daily_data$qty, xlab="Price", ylab="Quantity", main="linear regression with studentized residuals highlighted")
-abline(linear_reg, col = "red", lwd = 2)
+plot(daily_data$price, daily_data$qty, xlab="Price", ylab="Quantity", main="linear regression with studentized residuals highlighted",
+     cex  = 0.7)
+abline(linear_reg, col = "red", lwd = 1)
 text(daily_data$price[top6_idx],
      daily_data$qty[top6_idx],
      labels = top6_idx,
      pos = 2)
 
 ```
+
+\vspace{-9mm}
+
 ### Cook's distance
+
 The previous two methods either investigated the dependent variable (quantity) in the case of leverage or the independent variable (price) in the case of studentized residuals. Cook's distance combines both methods and considers the dependent and independent variable simultaneously. 
+
 ```{r}
 # standard deviation of residuals:
 sd_res = sd(resid(linear_reg))
@@ -521,18 +566,28 @@ D <- cooks.distance(linear_reg, res = r_student, sd= sd_res, hat=h)
 top10_D_idx <- order(D, decreasing = TRUE)[1:10]
 D[top10_D_idx]
 ```
+
 Very large D_i values indicate a substantial impact of observation i. In this case the values are low. The highest values are from observations 68 and 54, which also have significantly high studentized residuals. Observation 24 is among the highest values of studentized residuals, hat values and therefore also D values.
-```{r, echo=FALSE}
+
+\vspace{-14mm}
+
+```{r, echo=FALSE, fig.align='center',fig.height=2.5, fig.width=4, out.width='50%'}
+par(cex = 0.7)
 plot(daily_data$price, daily_data$qty,
      xlab = "Price", ylab = "Quantity",
-     main="linear regression with Cooks distance highlighted")
-abline(linear_reg, col = "red", lwd = 2)
+     main="linear regression with Cooks distance highlighted",
+     cex  = 0.7)
+abline(linear_reg, col = "red", lwd = 1)
 text(daily_data$price[top10_D_idx],
      daily_data$qty[top10_D_idx],
      labels = top10_D_idx,
      pos = 2, cex = 0.8, col = "blue")
 ```
+
+\vspace{-9mm}
+
 ### Interpretation:
+
 As observed previously, the values with the highest h values are those that achieve the lowest quantity at the highest price. This aligns with the intuition that sales numbers decline as prices rise for general goods. For this reason, we do not assume that these values are outliers. Rather, we assume that they are influential values that occur infrequently yet represent the underlying distribution.
 
 There are six values with statistically significant high studentized residuals. Since the studentized residuals diagnose the dependent variable, the quantity of fish sold stands out as unusually high compared to other observations. A closer look at the highest observations, 68 and 54, shows that not only the quantity sold but also the amount of fish received on those days was particularly high. Accordingly, this is also consistent with the intuition that when larger quantities are available, more is sold. Furthermore, these observations also have a  comparatively low price.
@@ -541,13 +596,16 @@ Cook’s distance is a combination of leverage and studentized residuals. Here a
 Observation 24 stands out across all three methods. This observation corresponds to a stormy Monday with a high amount of fish received. What is notable is the high price despite a large quantity of fish sold. However, this may be justified by the weather and the fact that it is a Monday. Since sales are generally higher on Mondays and restaurants could not purchase fish the day before, they may be more willing to pay a higher price, especially considering that the weather is expected to remain stormy for the following two days, which would likely result in a lower fish supply.
 
 Therefore we do not identify any datapoints as outliers and will not delete any from the dataset.
-## Task 2.2: 
+
+## Task 2.2: Models for the price-demand relationship
+
 Until now we worked with the linear regression of quantity and price, which assumes a linear relationship between price and quantity. But often, the price-demand function is assumed to be quasi-linear. Therefore, in this task we will use variable transformation and polynomial regression to investigate whether non-linear regression fits better to the data.
 We decided to use a log-log model, lin-log model and squared polynomial model. 
 The log-log model transforms the dependent and independent variable and therefore assumes the following underlying function:
 Quantity = alpha * Price ^ beta, beta < 0. 
 The linear-log model only transforms the independent variable.
 Both functions can assume a quasi-linear shape and are therefore suitable for this analysis.
+
 Regarding the polynomial regrassion, the following economical hypothesis can be made:
 Whiting is a fish that is very cheap compared to other fish. For low prices the demand can be assumed to be high and fall to a zone of indifference for mid-range prices, as the customer still wants fish. When the price is high and similar to other fish the demand falls, as people more likely consume fish of higher quality. 
 Therefore, a s-shaped function with a zone of indifference can also be assumed with the following underlying function:
@@ -555,16 +613,25 @@ quantity = alpha + beta_1 * x + beta_2 * x^2 + beta_3 * x^3, beta_3 < 0
 
 Looking at the data a log-log and linear-log model can easily be assumed. An s-shaped curve can hardly be seen.
 
-```{r, echo=FALSE}
-plot(daily_data$price, daily_data$qty, xlab="Price", ylab="Quantity")
+\vspace{-14mm}
+
+```{r, echo=FALSE, fig.align='center',fig.height=2.5, fig.width=4, out.width='50%'}
+par(cex = 0.7)
+plot(daily_data$price, daily_data$qty, xlab="Price", ylab="Quantity",
+     cex  = 0.7)
 
 ```
+
+\vspace{-9mm}
+
 Although we do not see a polynomial function, the task requires to perform a polynomial regression.
 Therefore, firstly mean centering is conducted:
+
 ```{r}
 daily_data$price_MC = daily_data$price-mean(daily_data$price, na.rm=TRUE)
 ```
-Then we compute the polynomials
+
+Then we compute the polynomials.
 
 ```{r}
 # 2.4.2 Compute polynomials
@@ -573,18 +640,22 @@ daily_data$price_MC_cubic = daily_data$price_MC_squared * daily_data$price_MC
 daily_data$price_MC_power4 = daily_data$price_MC_cubic * daily_data$price_MC
 ```
 
-The linear model already explains about 9% of the variance (R-squared = 9,5% and Adjusted R-squared = 8,6%)
+The linear model already explains about 9% of the variance (R-squared = 9,5% and Adjusted R-squared = 8,6%).
+
 ```{r}
 # running the linear model
 summary(linear_reg)
 
 ```
+
 The AIC and BIC of the linear regression are:
+
 ```{r}
 c(AIC(linear_reg), BIC(linear_reg))
 ```
 
 Lets look at the polynomial regression:
+
 ```{r}
 # 2.4.3 Analyze and test hypothesized model
 polynomial_regression_cubic = lm(daily_data$qty~ daily_data$price_MC+daily_data$price_MC_squared+daily_data$price_MC_cubic)
@@ -592,10 +663,15 @@ summary(polynomial_regression_cubic)
 c(AIC(polynomial_regression_cubic), BIC(polynomial_regression_cubic))
 
 ```
+
 As we now have more independent variables in the polynomial regression the R-squared is slightly higher than in the linear regression. Therefore, we use the adjusted R-squared to evaluate the polynomial regression, which is worse than that of the linear regression. Also AIC and BIC are worse. By visualizing the regression we see, that the assumed s-shape did not take form. The p-values also do not support the hypothesis.
 
-```{r, echo=FALSE}
-plot(daily_data$price, daily_data$qty, xlab="Price", ylab="Quantity", main="polynomial model on untransformed data") 
+\vspace{-5mm}
+
+```{r, echo=FALSE, fig.align='center',fig.height=2.5, fig.width=4, out.width='50%'}
+par(cex = 0.7)
+plot(daily_data$price, daily_data$qty, xlab="Price", ylab="Quantity", main="polynomial model on untransformed data",
+     cex  = 0.7) 
 a <- coef(polynomial_regression_cubic)[1]   # intercept
 b1 <- coef(polynomial_regression_cubic)[2]
 b2 <- coef(polynomial_regression_cubic)[3]
@@ -606,15 +682,19 @@ curve(
   to   = max(daily_data$price, na.rm = TRUE),
   add  = TRUE,
   col  = "red",
-  lwd  = 2
+  lwd  = 1
 )
 
 ```
+
+\vspace{-9mm}
+
 There is no support for the above mentioned hypothesis. 
 Therefore we do not analyze the extended model.
 
 Now we investigate the log-log model:
 We do not need to transform the data manually, as we already have the log values of price and quantity. We do not have any complications as the minimum of price and quantity is above 0:
+
 ```{r}
 # the column price and qty or the daily dataset are already log values
 min(daily_data$qty) # min > 0
@@ -623,21 +703,23 @@ log_log_model = lm(daily_data$qty_log~ daily_data$price_log)
 ```
 
 The results show, that 7,8% of the variance can be explained, although we cannot compare this value to the linear model as we now work with a transformed dependent variable. The p-value is lower that 5%. AIC and BIC have low values aswell. Indicating, that the log-log explains the data well.
+
 ```{r}
 summary(log_log_model)
 c(AIC(log_log_model), BIC(log_log_model))
 ```
-Looking at the plots of the log-log model on transformed data and untransformed data this analysis is supported:
-```{r, echo=FALSE}
-# visualize
-plot(daily_data$price_log, daily_data$qty_log, xlab="log(Price)", ylab="log(Quantity)")
-abline(log_log_model, col = "red", lwd = 2)
-```
-```{r}
+
+Looking at the plot of the log-log model on the untransformed data this analysis is supported:
+
+\vspace{-5mm}
+
+```{r, echo=FALSE, fig.align='center',fig.height=2.5, fig.width=4, out.width='50%'}
+par(cex = 0.7)
 # Koeffizienten aus dem lm holen
 b0 <- coef(log_log_model)[1]   # intercept
 b1 <- coef(log_log_model)[2]   # first_coeff
-plot(daily_data$price, daily_data$qty, xlab="Price", ylab="Quantity", main="log-log model on untransformed data") 
+plot(daily_data$price, daily_data$qty, xlab="Price", ylab="Quantity", main="log-log model on untransformed data",
+     cex  = 0.7) 
 
 curve(
   exp(b0[1]) * x^b1[1],
@@ -645,11 +727,14 @@ curve(
   to   = max(daily_data$price, na.rm = TRUE),
   add  = TRUE,
   col  = "red",
-  lwd  = 2
+  lwd  = 1
 )
 ```
 
+\vspace{-9mm}
+
 Additionally, we calculate the linear-log model, which compared to the linear regression has better results, as both the R-squared and adjusted R-squared values are higher.
+
 ```{r}
 # the column price and qty or the daily dataset are already log values
 lin_log_model = lm(daily_data$qty~ daily_data$price_log)
@@ -657,17 +742,15 @@ summary(lin_log_model)
 c(AIC(lin_log_model), BIC(lin_log_model))
 ```
 
-```{r, echo=FALSE}
-# visualize
-plot(daily_data$price_log, daily_data$qty, xlab="log(Price)", ylab="Quantity", main="lin-log model")
-abline(lin_log_model, col = "red", lwd = 2)
-```
+\vspace{-14mm}
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.align='center',fig.height=2.5, fig.width=4, out.width='50%'}
 # Koeffizienten aus dem lm holen
 b0_lin_log <- coef(lin_log_model)[1]   # intercept
 b1_lin_log <- coef(lin_log_model)[2]   # first_coeff
-plot(daily_data$price, daily_data$qty, xlab="Price", ylab="Quantity", main="lin-log model on untransformed data") 
+par(cex = 0.7)
+plot(daily_data$price, daily_data$qty, xlab="Price", ylab="Quantity", main="lin-log model on untransformed data",
+     cex  = 0.7) 
 
 curve(
   b0_lin_log[1] + b1_lin_log[1] * log(x),
@@ -675,10 +758,13 @@ curve(
   to   = max(daily_data$price, na.rm = TRUE),
   add  = TRUE,
   col  = "red",
-  lwd  = 2
+  lwd  = 1
 )
 ```
-### Conclusion:
+
+\vspace{-9mm}
+
+### Conclusion
 The polynomial regression did not support the hypothesis of a polynomial function.
 We have seen that the linear regression already explains 8.6% of the variance in the model (adjusted R-squared).
 When we compare the linear model with the quasi-linear models, we find that the linear-log (Lin-log) model explains 9.1% of the variance. The AIC and BIC values of the two models differ only minimally.
