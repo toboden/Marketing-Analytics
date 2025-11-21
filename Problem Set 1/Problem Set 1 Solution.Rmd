@@ -791,7 +791,7 @@ In this task, we investigate whether the price sensitivity of individual custome
 **Hypothesis 3 (H3): Moderation by Establishment Type (`estb`)**
 
 -   **Hypothesis:** Price sensitivity depends on the customer's type of establishment.
--   **Rationale:** "Fry shops" (`f`) likely operate on lower margins for their final products and thus have a stronger incentive to watch purchase prices than "Stores" (`s`). We, therefore, expect that "fry shops" will exhibit *higher* price sensitivity.
+-   **Rationale:** Due to presumably lower margins, "fry shops" (`f`) have a greater incentive to minimize input costs than "Stores" (`s`). We therefore hypothesize that "fry shops" will display the highest price sensitivity. The mixed category (`sf`) is expected to occupy a middle ground between the two. 
 
 ```{r}
 #data loading
