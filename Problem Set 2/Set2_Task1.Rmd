@@ -1,0 +1,85 @@
+---
+title: "Set2_Task1"
+output: html_document
+---
+
+```{r, echo=FALSE}
+# Read data
+library(readr)
+library(dplyr)
+daily_data <- read_tsv("../data/daily_fish_market_data.txt")
+daily_data <- daily_data %>%
+  rename(price_log=price, qty_log=qty)
+# price and qty are the log of the original price/ qty
+daily_data$price <- exp(daily_data$price_log)
+daily_data$qty <- exp(daily_data$qty_log)
+```
+
+# Task 1
+
+
+###How could the relationship between price and demand be affected by endogeneity?
+
+Endogeneity describes the problem, that a regressor x may predict the dependent variable very well, but has no causal relationship with it. There are two mechanisms creating endogeneity: Omitted variables and reverse causality.
+
+Reverse causality:
+In an ideal economic model the demand is a function of the price. The higher the price, the lower the demand and vice versa. 
+But in reality, the price can also be determined by the demand i.e. when a buyer knows that he is the only one interested in the product. 
+Then, we have a reverse causality. 
+
+As the lecture focuses more on omitted variables, we will also do so in the following.
+
+The relationship between price and demand (quantity of sold fish) in the fish market may be affected by endogeneity, when the price correlates well with the demand, but is not the causality. Instead, a omitted variable is the common cause for price and demand.
+
+This omitted variable could be the amount of received fish.
+In this case the quantity and price are determined by the amount of fish received at the day. When there is not much fish available, the seller just cannot sell more fish resulting in a lower quantiy with higher prices. On the other hand, when there is a lot of fish available the seller can sell more, resulting in a higher quantity with lower prices. This plausability argument is supported by the following data:
+```{r}
+price_demand = lm(daily_data$qty~ daily_data$price)
+price_demand_totr = lm(daily_data$qty~ daily_data$price + daily_data$totr)
+round(summary(price_demand)$coefficients, 5)
+round(summary(price_demand_totr)$coefficients, 5)
+```
+If we include the number of received fish (totr) in the model, the effect of the price is reduced from an initial -3709 (without totr) to -1403 (with totr). Also the p-value of price in the model including totr is above 5%, indicating that it is not significant.
+The effect of the received fish on the other hand is very significant (very small p-value for totr).
+
+Implications:
+The quantity of sold fish is not determined by the price. Instead it is determined by the supply of fish. 
+The buyers of fish are not sensitive to the price (meaning the price elasticity is low) but to the availability of fish.
+
+### Is weather data a suitable instrument in this context?
+In her dataset Graddy classified the weather as stormy when a certain wave height and wind speed are exceeded. The wave height and wind speed are the moving averages of the last three days' wind speed and wave height before the trading day.
+Her argument is, that the weather is an important determinant of the supply as strong winds and high waves make it difficult to catch fish. 
+If supply is high, quantities rise and prices falls and vice versa.
+This is supported by the following data:
+```{r}
+# Fit linear models holding day-of-week constant
+# Day1..Day4 are dummies for weekdays
+lm_qty <- lm(qty ~ stormy + day1 + day2 + day3 + day4, data = daily_data)
+lm_price <- lm(price ~ stormy + day1 + day2 + day3 + day4, data = daily_data)
+# Calculate predicted differences between clear (stormy=0) and stormy 
+# (stormy=1) days
+# For quantity:
+coef_qty <- coef(lm_qty)
+diff_qty <- coef_qty["stormy"]
+
+# For price:
+coef_price <- coef(lm_price)
+diff_price <- coef_price["stormy"]
+
+# Overall averages
+mean_qty <- mean(daily_data$qty)
+mean_price <- mean(daily_data$price)
+
+# Print results
+diff_qty
+diff_price
+mean_qty
+mean_price
+```
+On a stormy day the average quantity of sold fish shrinks by 2370.7 pounds and the price rises by 32.22 cents. The average price on all days was 88.45 cents and average quantity was 6334.67 pounds.
+
+Although the data and the plausibility support Graddy's argument, it makes more sense to use the supply directly in the form of total amount of received fish (totr), as we did above.
+
+### Re-run lin-log model with instrumental variables
+
+
