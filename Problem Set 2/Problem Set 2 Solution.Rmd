@@ -1,0 +1,103 @@
+---
+title: "Problem Set II Solution"
+author: 
+  - "Tobias Bodentien"
+  - "Philipp Grunenberg"
+  - "Alexander Haas"
+  - "Osama Warshaga"
+date: "`r format(Sys.Date(), '%d-%m-%Y')`"
+output: pdf_document
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.height = 4     # Höhe in Inches
+)
+```
+#Task 1
+
+
+
+#Task 2
+
+
+```{r, echo=TRUE}
+library(lme4)
+library(lmerTest)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(performance)
+
+#data loading
+detailed_data = read_tsv("../data/detailed_fish_market_data.txt")
+
+
+#1 data preperation
+detailed_data_prep <- detailed_data %>%
+  filter(!is.na(pric),
+         !is.na(quan),
+         type == "w") %>%
+  arrange(date) %>%
+  mutate(
+    price_c = as.numeric(scale(pric, center = TRUE, scale = FALSE)), #main regressor
+    quality_c = as.numeric(scale(qual, center = TRUE, scale = FALSE)), # Moderator 1
+    cash_dummy = if_else(cash == 'c', 1, 0), # Moderator 2
+    estb = as.factor(estb), # Moderator 3
+  ) 
+
+# additional steps for establishment
+detailed_data_perep_estb = detailed_data_prep %>%
+  filter(estb %in% c("s", "f", "sf"))
+```
+The data preprocessing remians the same as in PS1 Task 3, however this time we do not group by the customer id and will leve this column unmodified as dependend variable.
+
+```{r}
+
+baseline_model = lmer(quan ~ price_c + (1|cusn), data = detailed_data_prep)
+summary(baseline_model)
+
+icc(baseline_model)
+```
+We fit a baseline model with just the price as explanatory variable. After that we use this model to look at the inter-class correlation to check weather we have a nested/clustered dataset. The ICC strongly indicates that the data is heaviliy clustered and by that justifies the employment of multi-level regression. The ICC indicates that about 56% of the variation in bought amount can be explained by the differences in the clusters.
+
+The baseline model could not find a signifcant effect of price, however the p-value is just slightly above the 5% mark, meaning the effect of price can still be arguable.
+The model found a negative effect of price. An increase of the price of 1 unit decreases the bought quantity by 46. That is a very strong slope meaning that costomers are very price sensitive
+
+```{r}
+#2.2 Moderated Model 2
+cash_model = lmer(quan ~ price_c+cash_dummy + (1|cusn), data=detailed_data_prep)
+cash_model_moderation = lmer(quan ~ price_c*cash_dummy + (1|cusn), data=detailed_data_prep)
+summary(cash_model)
+summary(cash_model_moderation)
+```
+When we control for cash the effect of price becomes with a p-value of about 3.5% significant. The effect size is even estimated to be bigger, as the model found a 52 unit decrease for a one unit increase of price. The effect of cash itself is not significant. 
+
+The moderated model could not find any significant effect. This could stem from multicolinearity that sabotages the model. We can see a strong correlation between price and price*cash of -0.86, which leads to serious estimation problems, as the real effect cannot be assigned to any of these variables. Also supported by the increased standard error of estimation for both.
+```{r}
+r2(cash_model)
+r2(cash_model_moderation)
+
+anova(cash_model, cash_model_moderation)
+```
+
+```{r}
+estb_model = lmer(quan ~ price_c + estb + (1|cusn), data = detailed_data_perep_estb)
+estb_model_moderation = lmer(quan ~ price_c * estb + (1|cusn), data = detailed_data_perep_estb)
+summary(estb_model)
+summary(estb_model_moderation)
+```
+
+```{r}
+r2(estb_model)
+r2(estb_model_moderation)
+
+anova(estb_model, estb_model_moderation)
+```
+

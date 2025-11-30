@@ -7,6 +7,9 @@ author:
   - "Osama Warshaga"
 date: "`r format(Sys.Date(), '%d-%m-%Y')`"
 output: pdf_document
+editor_options: 
+  markdown: 
+    wrap: sentence
 ---
 
 ```{r setup, include=FALSE}
@@ -20,7 +23,8 @@ knitr::opts_chunk$set(
 
 # Task 1
 
-The subsequent descriptive analysis is conducted on the detailed fish market data regarding whiting. First, the required packages and dataset are loaded.
+The subsequent descriptive analysis is conducted on the detailed fish market data regarding whiting.
+First, the required packages and dataset are loaded.
 
 ```{r}
 ## Load packages and dataset
@@ -35,7 +39,9 @@ detailed_data <- read_tsv("../data/detailed_fish_market_data.txt")
 
 ## Data preparation
 
-The descriptive analysis will focus on price per pound (*pric*), the total quantity received (*totr*) and sold (*tots*) by a dealer in pounds per day in April and May 1992. Therefore, observations for which these variables are *'NA'* are removed via the 'dplyr' package. The dataset has also been filtered for Whiting, as required for Task 1, and arranged by date.
+The descriptive analysis will focus on price per pound (*pric*), the total quantity received (*totr*) and sold (*tots*) by a dealer in pounds per day in April and May 1992.
+Therefore, observations for which these variables are *'NA'* are removed via the 'dplyr' package.
+The dataset has also been filtered for Whiting, as required for Task 1, and arranged by date.
 
 ```{r, echo = TRUE}
 # delete those rows that have NA for 
@@ -52,14 +58,21 @@ print(paste("Obs:", nrow(detailed_whiting),
             "- Vars:", ncol(detailed_whiting)))
 ```
 
-The cleaned whiting dataset now comprises 478 observations across 17 variables. 
+The cleaned whiting dataset now comprises 478 observations across 17 variables.
 
-Inspecting the dataset via *'View(detailed_whiting)'* reveals that there are multiple observations for each day in the period from April to May 1992. Each observation depicts a transaction between a customer and the fish dealer. This is particularly important for understanding the next step.
+Inspecting the dataset via *'View(detailed_whiting)'* reveals that there are multiple observations for each day in the period from April to May 1992.
+Each observation depicts a transaction between a customer and the fish dealer.
+This is particularly important for understanding the next step.
 
-Of the 478 observations, two do not fit. The total quantity that the dealers sold (*tots*) is equal for all rows (i.e. transactions) of the same dealer at a given day. 
+Of the 478 observations, two do not fit.
+The total quantity that the dealers sold (*tots*) is equal for all rows (i.e. transactions) of the same dealer at a given day.
 
-What immediately stands out is that only one dealer is observed on almost all days. For this dealer, multiple transactions are always recorded. Only on two days are two dealers observed, as indicated by multiple distinct observations for *tots*. However, these additional dealers are unrepresentative, as there is only one observation for each of them. The remaining observations all appear to come from a single, larger dealer. These two observations are therefore deleted using 'dplyr'.
-
+What immediately stands out is that only one dealer is observed on almost all days.
+For this dealer, multiple transactions are always recorded.
+Only on two days are two dealers observed, as indicated by multiple distinct observations for *tots*.
+However, these additional dealers are unrepresentative, as there is only one observation for each of them.
+The remaining observations all appear to come from a single, larger dealer.
+These two observations are therefore deleted using 'dplyr'.
 
 ```{r, echo=TRUE}
 
@@ -94,9 +107,10 @@ tots_inconsistent <- detailed_whiting |>
   arrange(date, dayw, tots, totr)
 ```
 
-With this step the data cleaning process is finished. 
+With this step the data cleaning process is finished.
 
-One part of the descriptive analysis of the Whiting data involves analysing data aggregated at a daily level. For this purpose, a new dataset, *detailed_whiting_daily*, is constructed. 
+One part of the descriptive analysis of the Whiting data involves analysing data aggregated at a daily level.
+For this purpose, a new dataset, *detailed_whiting_daily*, is constructed.
 
 ```{r, echo = TRUE}
 
@@ -115,13 +129,18 @@ detailed_whiting_daily <- detailed_whiting %>%
 
 ```
 
-For each date (*date*) present in the original dataset, the average price (*avg_pric*), *totr*, *tots*, number of transactions (*n_trsact*) and sell-through rate (*strate*) are computed. For any computation involving *totr* or *tots* the first value of the day can be used. This is possible due to the previous data cleaning step, as described above. The sell-through rate measures the proportion of Whiting offered for sale on a given day that is actually sold. More on that later.
+For each date (*date*) present in the original dataset, the average price (*avg_pric*), *totr*, *tots*, number of transactions (*n_trsact*) and sell-through rate (*strate*) are computed.
+For any computation involving *totr* or *tots* the first value of the day can be used.
+This is possible due to the previous data cleaning step, as described above.
+The sell-through rate measures the proportion of Whiting offered for sale on a given day that is actually sold.
+More on that later.
 
 ## Descriptive analysis
 
 The analysis is split into three sections: Firstly, an analysis of daily sales; secondly, an analysis of prices; and finally, an analysis based on the hours of the day.
 
-In a code chunk that is not printed in this PDF (*'echo=FALSE'*) the different font sizes and some technical variables for the plots are defined. All plots were created using the 'ggplot2' package.
+In a code chunk that is not printed in this PDF (*'echo=FALSE'*) the different font sizes and some technical variables for the plots are defined.
+All plots were created using the 'ggplot2' package.
 
 ```{r, echo=FALSE}
 
@@ -162,7 +181,6 @@ break_vec_x_axis <- c(seq(406,430, by = 7),seq(504,515, by=7))
 all_days_x_axis <- c(seq(406,430, by = 1),seq(501,515, by=1))
 ```
 
-
 ```{r}
 ####
 # summary of the daily datset
@@ -179,7 +197,10 @@ detailed_whiting_daily %>%
 
 ```
 
-**Insight 1:** The summary statistics for *totr*, *tots* and *n_trsact* at a daily level show that the central tendencies of *tots* and *totr* are quite similar, as expected.  Furthermore, both exhibit a significant degree of variation, with standard deviations of 4,381 and 3,691, respectively.  The number of daily transactions also varies considerably, ranging from very quiet to very busy days (minimum of four and a maximum of 57). Overall, these findings suggest substantial day-to-day volatility in the Whiting business. 
+**Insight 1:** The summary statistics for *totr*, *tots* and *n_trsact* at a daily level show that the central tendencies of *tots* and *totr* are quite similar, as expected.
+Furthermore, both exhibit a significant degree of variation, with standard deviations of 4,381 and 3,691, respectively.
+The number of daily transactions also varies considerably, ranging from very quiet to very busy days (minimum of four and a maximum of 57).
+Overall, these findings suggest substantial day-to-day volatility in the Whiting business.
 
 \newpage
 
@@ -246,9 +267,17 @@ plot_average_sales_by_weekday
 plot_daily_sales_over_time
 ```
 
-**Insight 2:** The plot on the left shows the average weekly total sales of whiting by day of the week. Sales are lowest on Wednesdays, increasing towards the end of the week with notably higher average volumes on Thursdays and Fridays. This suggests that demand for whiting is strongest just before the weekend.
+**Insight 2:** The plot on the left shows the average weekly total sales of whiting by day of the week.
+Sales are lowest on Wednesdays, increasing towards the end of the week with notably higher average volumes on Thursdays and Fridays.
+This suggests that demand for whiting is strongest just before the weekend.
 
-The right-hand plot shows the total daily sales over the period April–May 1992. It is immediately clear from this plot that only 19 distinct days are observed throughout this period. As this results in a relatively small number of observations at the level of individual days, a boxplot is not used for the analysis. There is considerable fluctuation in sales from day to day, with several pronounced spikes and some much quieter days. This confirms a high level of volatility in daily whiting sales over the observed period. Another interesting observation is that the market was closed on Monday 20 April 1992. This resulted in unusually high sales the next day compared to other Tuesdays in the sample.
+The right-hand plot shows the total daily sales over the period April--May 1992.
+It is immediately clear from this plot that only 19 distinct days are observed throughout this period.
+As this results in a relatively small number of observations at the level of individual days, a boxplot is not used for the analysis.
+There is considerable fluctuation in sales from day to day, with several pronounced spikes and some much quieter days.
+This confirms a high level of volatility in daily whiting sales over the observed period.
+Another interesting observation is that the market was closed on Monday 20 April 1992.
+This resulted in unusually high sales the next day compared to other Tuesdays in the sample.
 
 Please note, that the code for all plots of Task 1 can be accessed in the '*.Rmd*' file of our Problem Set 1 solution.
 
@@ -298,9 +327,15 @@ plot_daily_str_over_time <- ggplot(str_plot_df, aes(x=date_fac, y = strate, grou
 plot_daily_str_over_time
 ```
 
-**Insight 3:** This line chart shows the daily sell-through rate per day over time. It is calculated as the ratio of *tots* to *totr* (i.e. *tots* divided by *totr*). The dashed line at one indicates full sell-through of the day’s deliveries in Whiting. 
+**Insight 3:** This line chart shows the daily sell-through rate per day over time.
+It is calculated as the ratio of *tots* to *totr* (i.e. *tots* divided by *totr*).
+The dashed line at one indicates full sell-through of the day's deliveries in Whiting.
 
-On most trading days, the sell-through rate fluctuates around this value, suggesting that sales and incoming supply are roughly balanced. However, there are a few extreme spikes, especially in mid-April and early May, where the sell-through rate is far above one. These indicate days on which much more was sold than was delivered, meaning existing inventory must have been used up,  as can be seen in the previous days spikes (below one). Overall, the figure indicates highly volatile, yet fairly efficient, inventory usage. This is possible because the Whiting can be frozen and sold over the next few days.
+On most trading days, the sell-through rate fluctuates around this value, suggesting that sales and incoming supply are roughly balanced.
+However, there are a few extreme spikes, especially in mid-April and early May, where the sell-through rate is far above one.
+These indicate days on which much more was sold than was delivered, meaning existing inventory must have been used up, as can be seen in the previous days spikes (below one).
+Overall, the figure indicates highly volatile, yet fairly efficient, inventory usage.
+This is possible because the Whiting can be frozen and sold over the next few days.
 
 ### Price analysis
 
@@ -311,7 +346,8 @@ On most trading days, the sell-through rate fluctuates around this value, sugges
 cor(detailed_whiting_daily$avg_pric,detailed_whiting_daily$tots)
 ```
 
-With a correlation of around –0.42, there is a moderate negative linear relationship between average daily prices (*avg_pric*) and total daily sales (*tots*). On days with higher prices, total whiting sales tend to be lower.
+With a correlation of around --0.42, there is a moderate negative linear relationship between average daily prices (*avg_pric*) and total daily sales (*tots*).
+On days with higher prices, total whiting sales tend to be lower.
 
 ```{r, echo = FALSE}
 ####
@@ -366,12 +402,17 @@ plot_price_distr_by_weekday
 plot_price_distr_by_quality
 ```
 
-**Insight 4:** The boxplots of the price per pound of whiting for different weekdays (left-hand side) and different qualities of whiting (right-hand side) are both calculated at transaction level (i.e. using *detailed_whiting*). 
+**Insight 4:** The boxplots of the price per pound of whiting for different weekdays (left-hand side) and different qualities of whiting (right-hand side) are both calculated at transaction level (i.e. using *detailed_whiting*).
 
-Prices tend to be lower and less dispersed at the beginning of the week (Monday–Tuesday), becoming higher and more dispersed on Wednesday and especially Thursday. Friday's prices are usually similar to those in the middle of the week, but there are a few very high outliers. This could indicate occasional 'premium' pricing at the end of the week.
+Prices tend to be lower and less dispersed at the beginning of the week (Monday--Tuesday), becoming higher and more dispersed on Wednesday and especially Thursday.
+Friday's prices are usually similar to those in the middle of the week, but there are a few very high outliers.
+This could indicate occasional 'premium' pricing at the end of the week.
 
-The figure on the right shows an unexpected quality effect: higher-quality grades of whiting achieve higher prices, at least in terms of the median. However, the price of grade three is similar to that of grade one and shows substantially higher variability. The maximum price for grade three is also very high compared to grade one. As expected, grades four and five fetch clearly lower prices. This could indicate that customers do not expect Whiting to be a 'premium' product, and that good quality is sufficient.
-
+The figure on the right shows an unexpected quality effect: higher-quality grades of whiting achieve higher prices, at least in terms of the median.
+However, the price of grade three is similar to that of grade one and shows substantially higher variability.
+The maximum price for grade three is also very high compared to grade one.
+As expected, grades four and five fetch clearly lower prices.
+This could indicate that customers do not expect Whiting to be a 'premium' product, and that good quality is sufficient.
 
 ### Analysis by time of day
 
@@ -426,16 +467,21 @@ plot_transactions_per_hour
 plot_average_price_per_hour
 ```
 
-**Insight 5:** The figures on the number of transactions and average price per hour confirm the typical dynamics of a fish market. The market opens at night and peak activity is observed around 6 a.m., after which the transaction volume declines rapidly. According to the bar plot on the right, prices remain relatively stable during the early morning, but then drop sharply at around 8 a.m., in line with the decline in trading activity.
+**Insight 5:** The figures on the number of transactions and average price per hour confirm the typical dynamics of a fish market.
+The market opens at night and peak activity is observed around 6 a.m., after which the transaction volume declines rapidly.
+According to the bar plot on the right, prices remain relatively stable during the early morning, but then drop sharply at around 8 a.m., in line with the decline in trading activity.
 
 ## Conclusion
 
-Overall, the analyses provide a fairly consistent picture of the Whiting market. Nothing stands out as being different from what would be expected in a non-premium fish market.
+Overall, the analyses provide a fairly consistent picture of the Whiting market.
+Nothing stands out as being different from what would be expected in a non-premium fish market.
 
 # Task 2: Nonlinear Regression
 
-In Exercise 2, we examine the relationship between the quantity of sold fish and its price. First, a linear regression is conducted, and outliers are identified using three different methods: leverage, studentized residuals, and Cook’s distance. 
-In the second part of the exercise, nonlinear regressions are performed, using polynomial regression and logarithmic transformation. The results of the different regression models are then compared based on relevant criteria.
+In Exercise 2, we examine the relationship between the quantity of sold fish and its price.
+First, a linear regression is conducted, and outliers are identified using three different methods: leverage, studentized residuals, and Cook's distance.
+In the second part of the exercise, nonlinear regressions are performed, using polynomial regression and logarithmic transformation.
+The results of the different regression models are then compared based on relevant criteria.
 
 ```{r}
 # For easier understanding of the code name the log values of price and quantity respectively:
@@ -459,7 +505,8 @@ Before identifying the outliers we need to calculate the linear regression of qu
 linear_reg = lm(daily_data$qty~ daily_data$price)
 ```
 
-Looking at the plot we see, that some datapoints might influence the regression strongly or have a high residual. Outliers can lead to skewed statistical results or in the case of regression to overfitting.
+Looking at the plot we see, that some datapoints might influence the regression strongly or have a high residual.
+Outliers can lead to skewed statistical results or in the case of regression to overfitting.
 
 \vspace{-14mm}
 
@@ -476,7 +523,8 @@ To identify outliers three methods are used.
 
 ### Leverage
 
-To measure the influence of an individual observation on the final result the weight w_i of each obersvation i and mean are used. Observations with an higher influence on x have a higher wheigt.
+To measure the influence of an individual observation on the final result the weight w_i of each obersvation i and mean are used.
+Observations with an higher influence on x have a higher wheigt.
 The resulting measure is called leverage and calculates the hatvalues h for each observation.
 
 ```{r}
@@ -484,7 +532,8 @@ The resulting measure is called leverage and calculates the hatvalues h for each
 h = hatvalues(linear_reg)
 ```
 
-We now compare the highest h values with 2/n, with n being the number of observations. When all observation's hat values are h_i = 2/n, this means that they all influence the regression in the same amount.
+We now compare the highest h values with 2/n, with n being the number of observations.
+When all observation's hat values are h_i = 2/n, this means that they all influence the regression in the same amount.
 
 ```{r, echo=FALSE}
 # Get highest h values and compare them to 2/n
@@ -495,7 +544,9 @@ paste("2/n =", equal_influence)
 h[top10_h_values]
 ```
 
-Observations 5, 111 and 25 deviate from 2/n substantially. This shows that those values have a much higher influence on the regression than other datapoints. Looking at the plot we see that those datapoints are the ones with the highest price and lowest quantity.
+Observations 5, 111 and 25 deviate from 2/n substantially.
+This shows that those values have a much higher influence on the regression than other datapoints.
+Looking at the plot we see that those datapoints are the ones with the highest price and lowest quantity.
 
 \vspace{-5mm}
 
@@ -551,7 +602,8 @@ text(daily_data$price[top6_idx],
 
 ### Cook's distance
 
-The previous two methods either investigated the dependent variable (quantity) in the case of leverage or the independent variable (price) in the case of studentized residuals. Cook's distance combines both methods and considers the dependent and independent variable simultaneously. 
+The previous two methods either investigated the dependent variable (quantity) in the case of leverage or the independent variable (price) in the case of studentized residuals.
+Cook's distance combines both methods and considers the dependent and independent variable simultaneously.
 
 ```{r}
 # standard deviation of residuals:
@@ -567,7 +619,10 @@ top10_D_idx <- order(D, decreasing = TRUE)[1:10]
 D[top10_D_idx]
 ```
 
-Very large D_i values indicate a substantial impact of observation i. In this case the values are low. The highest values are from observations 68 and 54, which also have significantly high studentized residuals. Observation 24 is among the highest values of studentized residuals, hat values and therefore also D values.
+Very large D_i values indicate a substantial impact of observation i.
+In this case the values are low.
+The highest values are from observations 68 and 54, which also have significantly high studentized residuals.
+Observation 24 is among the highest values of studentized residuals, hat values and therefore also D values.
 
 \vspace{-14mm}
 
@@ -588,30 +643,45 @@ text(daily_data$price[top10_D_idx],
 
 ### Interpretation:
 
-As observed previously, the values with the highest h values are those that achieve the lowest quantity at the highest price. This aligns with the intuition that sales numbers decline as prices rise for general goods. For this reason, we do not assume that these values are outliers. Rather, we assume that they are influential values that occur infrequently yet represent the underlying distribution.
+As observed previously, the values with the highest h values are those that achieve the lowest quantity at the highest price.
+This aligns with the intuition that sales numbers decline as prices rise for general goods.
+For this reason, we do not assume that these values are outliers.
+Rather, we assume that they are influential values that occur infrequently yet represent the underlying distribution.
 
-There are six values with statistically significant high studentized residuals. Since the studentized residuals diagnose the dependent variable, the quantity of fish sold stands out as unusually high compared to other observations. A closer look at the highest observations, 68 and 54, shows that not only the quantity sold but also the amount of fish received on those days was particularly high. Accordingly, this is also consistent with the intuition that when larger quantities are available, more is sold. Furthermore, these observations also have a  comparatively low price.
+There are six values with statistically significant high studentized residuals.
+Since the studentized residuals diagnose the dependent variable, the quantity of fish sold stands out as unusually high compared to other observations.
+A closer look at the highest observations, 68 and 54, shows that not only the quantity sold but also the amount of fish received on those days was particularly high.
+Accordingly, this is also consistent with the intuition that when larger quantities are available, more is sold.
+Furthermore, these observations also have a comparatively low price.
 
-Cook’s distance is a combination of leverage and studentized residuals. Here as well, observations 68 and 54 show the highest values. For the reasons described above, these observations are not considered outliers and remain in the dataset.
-Observation 24 stands out across all three methods. This observation corresponds to a stormy Monday with a high amount of fish received. What is notable is the high price despite a large quantity of fish sold. However, this may be justified by the weather and the fact that it is a Monday. Since sales are generally higher on Mondays and restaurants could not purchase fish the day before, they may be more willing to pay a higher price, especially considering that the weather is expected to remain stormy for the following two days, which would likely result in a lower fish supply.
+Cook's distance is a combination of leverage and studentized residuals.
+Here as well, observations 68 and 54 show the highest values.
+For the reasons described above, these observations are not considered outliers and remain in the dataset.
+Observation 24 stands out across all three methods.
+This observation corresponds to a stormy Monday with a high amount of fish received.
+What is notable is the high price despite a large quantity of fish sold.
+However, this may be justified by the weather and the fact that it is a Monday.
+Since sales are generally higher on Mondays and restaurants could not purchase fish the day before, they may be more willing to pay a higher price, especially considering that the weather is expected to remain stormy for the following two days, which would likely result in a lower fish supply.
 
 Therefore we do not identify any datapoints as outliers and will not delete any from the dataset.
 
 ## Task 2.2: Models for the price-demand relationship
 
-Until now we worked with the linear regression of quantity and price, which assumes a linear relationship between price and quantity. But often, the price-demand function is assumed to be quasi-linear. Therefore, in this task we will use variable transformation and polynomial regression to investigate whether non-linear regression fits better to the data.
-We decided to use a log-log model, lin-log model and squared polynomial model. 
-The log-log model transforms the dependent and independent variable and therefore assumes the following underlying function:
-Quantity = alpha * Price ^ beta, beta < 0. 
+Until now we worked with the linear regression of quantity and price, which assumes a linear relationship between price and quantity.
+But often, the price-demand function is assumed to be quasi-linear.
+Therefore, in this task we will use variable transformation and polynomial regression to investigate whether non-linear regression fits better to the data.
+We decided to use a log-log model, lin-log model and squared polynomial model.
+The log-log model transforms the dependent and independent variable and therefore assumes the following underlying function: Quantity = alpha \* Price \^ beta, beta \< 0.
 The linear-log model only transforms the independent variable.
 Both functions can assume a quasi-linear shape and are therefore suitable for this analysis.
 
-Regarding the polynomial regrassion, the following economical hypothesis can be made:
-Whiting is a fish that is very cheap compared to other fish. For low prices the demand can be assumed to be high and fall to a zone of indifference for mid-range prices, as the customer still wants fish. When the price is high and similar to other fish the demand falls, as people more likely consume fish of higher quality. 
-Therefore, a s-shaped function with a zone of indifference can also be assumed with the following underlying function:
-quantity = alpha + beta_1 * x + beta_2 * x^2 + beta_3 * x^3, beta_3 < 0
+Regarding the polynomial regrassion, the following economical hypothesis can be made: Whiting is a fish that is very cheap compared to other fish.
+For low prices the demand can be assumed to be high and fall to a zone of indifference for mid-range prices, as the customer still wants fish.
+When the price is high and similar to other fish the demand falls, as people more likely consume fish of higher quality.
+Therefore, a s-shaped function with a zone of indifference can also be assumed with the following underlying function: quantity = alpha + beta_1 \* x + beta_2 \* x\^2 + beta_3 \* x\^3, beta_3 \< 0
 
-Looking at the data a log-log and linear-log model can easily be assumed. An s-shaped curve can hardly be seen.
+Looking at the data a log-log and linear-log model can easily be assumed.
+An s-shaped curve can hardly be seen.
 
 \vspace{-14mm}
 
@@ -664,7 +734,11 @@ c(AIC(polynomial_regression_cubic), BIC(polynomial_regression_cubic))
 
 ```
 
-As we now have more independent variables in the polynomial regression the R-squared is slightly higher than in the linear regression. Therefore, we use the adjusted R-squared to evaluate the polynomial regression, which is worse than that of the linear regression. Also AIC and BIC are worse. By visualizing the regression we see, that the assumed s-shape did not take form. The p-values also do not support the hypothesis.
+As we now have more independent variables in the polynomial regression the R-squared is slightly higher than in the linear regression.
+Therefore, we use the adjusted R-squared to evaluate the polynomial regression, which is worse than that of the linear regression.
+Also AIC and BIC are worse.
+By visualizing the regression we see, that the assumed s-shape did not take form.
+The p-values also do not support the hypothesis.
 
 \vspace{-5mm}
 
@@ -689,11 +763,11 @@ curve(
 
 \vspace{-9mm}
 
-There is no support for the above mentioned hypothesis. 
+There is no support for the above mentioned hypothesis.
 Therefore we do not analyze the extended model.
 
-Now we investigate the log-log model:
-We do not need to transform the data manually, as we already have the log values of price and quantity. We do not have any complications as the minimum of price and quantity is above 0:
+Now we investigate the log-log model: We do not need to transform the data manually, as we already have the log values of price and quantity.
+We do not have any complications as the minimum of price and quantity is above 0:
 
 ```{r}
 # the column price and qty or the daily dataset are already log values
@@ -702,7 +776,10 @@ min(daily_data$price) # min > 0
 log_log_model = lm(daily_data$qty_log~ daily_data$price_log)
 ```
 
-The results show, that 7,8% of the variance can be explained, although we cannot compare this value to the linear model as we now work with a transformed dependent variable. The p-value is lower that 5%. AIC and BIC have low values aswell. Indicating, that the log-log explains the data well.
+The results show, that 7,8% of the variance can be explained, although we cannot compare this value to the linear model as we now work with a transformed dependent variable.
+The p-value is lower that 5%.
+AIC and BIC have low values aswell.
+Indicating, that the log-log explains the data well.
 
 ```{r}
 summary(log_log_model)
@@ -765,16 +842,21 @@ curve(
 \vspace{-9mm}
 
 ### Conclusion
+
 The polynomial regression did not support the hypothesis of a polynomial function.
 We have seen that the linear regression already explains 8.6% of the variance in the model (adjusted R-squared).
-When we compare the linear model with the quasi-linear models, we find that the linear-log (Lin-log) model explains 9.1% of the variance. The AIC and BIC values of the two models differ only minimally.
-Comparing the log-log model to the Lin-log model, it can be observed that the Lin-log model indicates a higher demand at a lower price than the log-log model. As the price increases, the quantity of fish sold in the Lin-log model decreases more than in the log-log model, eventually converging to a very similar demand level at higher prices. Since the Lin-log model allows better comparability with the linear regression and indicates higher demand at lower prices, we consider the Lin-log model to best describe the data.
+When we compare the linear model with the quasi-linear models, we find that the linear-log (Lin-log) model explains 9.1% of the variance.
+The AIC and BIC values of the two models differ only minimally.
+Comparing the log-log model to the Lin-log model, it can be observed that the Lin-log model indicates a higher demand at a lower price than the log-log model.
+As the price increases, the quantity of fish sold in the Lin-log model decreases more than in the log-log model, eventually converging to a very similar demand level at higher prices.
+Since the Lin-log model allows better comparability with the linear regression and indicates higher demand at lower prices, we consider the Lin-log model to best describe the data.
 
 # Task 3: Moderated Regression
 
 ### 3.1 Hypotheses
 
-In this task, we investigate whether the price sensitivity of individual customers depends on specific contextual characteristics of the transaction. Based on plausibility considerations, the following three hypotheses were developed:
+In this task, we investigate whether the price sensitivity of individual customers depends on specific contextual characteristics of the transaction.
+Based on plausibility considerations, the following three hypotheses were developed:
 
 ------------------------------------------------------------------------
 
@@ -791,7 +873,7 @@ In this task, we investigate whether the price sensitivity of individual custome
 **Hypothesis 3 (H3): Moderation by Establishment Type (`estb`)**
 
 -   **Hypothesis:** Price sensitivity depends on the customer's type of establishment.
--   **Rationale:** Due to presumably lower margins, "fry shops" (`f`) have a greater incentive to minimize input costs than "Stores" (`s`). We therefore hypothesize that "fry shops" will display the highest price sensitivity. The mixed category (`sf`) is expected to occupy a middle ground between the two. 
+-   **Rationale:** Due to presumably lower margins, "fry shops" (`f`) have a greater incentive to minimize input costs than "Stores" (`s`). We therefore hypothesize that "fry shops" will display the highest price sensitivity. The mixed category (`sf`) is expected to occupy a middle ground between the two.
 
 ```{r}
 #data loading
@@ -825,7 +907,7 @@ This is the first cleaning step.
 -   We sort the data ascending by date. While not strictly required for this regression, it's good practice to organize time-series data chronologically, which can help in identifying patterns or debugging later.
 -   Next we standardize the consume by customer. This is a crucial step as each customer usually buys different amounts of fish. Therefore we take the mean for every customer and model the amount consumed by the difference to the mean for this customer.
 -   Finally we create the main Regressor and the 3 Regressors for the hypothesis.
-    -   We mean center `pric` (price). By mean-centering the moderator, the coefficient of price_c in the interaction model Qty_Dev ~ price_c * moderator_c represents price sensitivity at the average level of the moderator. Centering price_c itself mainly affects the interpretation of the intercept and can improve numerical stability, but it is not required for this marginal-effect interpretation.
+    -   We mean center `pric` (price). By mean-centering the moderator, the coefficient of price_c in the interaction model Qty_Dev \~ price_c \* moderator_c represents price sensitivity at the average level of the moderator. Centering price_c itself mainly affects the interpretation of the intercept and can improve numerical stability, but it is not required for this marginal-effect interpretation.
     -   We likewise mean-center our first moderator, `qual` (quality).
     -   We convert the categorical `cash` variable into a numeric **dummy variable** for our second hypothesis. The model can interpret "1" (for cash) and "0" (for non-cash), but it cannot interpret the original 'c' and '0' letters.
     -   We convert the establishment type (`estb`) variable into a **factor**. This tells R that `estb` is a categorical variable. When we include it in the `lm()` function, R will automatically create the necessary dummy variables for each establishment type, allowing us to test our third hypothesis.
@@ -841,7 +923,7 @@ detailed_data_perep_estb = detailed_data_prep %>%
 This code block performs a crucial diagnostic check and a subsequent filtering action specifically to prepare for testing Hypothesis 3 (moderation by establishment type).
 
 -   Before using a categorical variable as a moderator, we must check its distribution. The output of this count reveals that while some categories like 's' (store) and 'f' (fry shop) have many observations, other categories have very few (e.g., only 1, 2, or 3).
--    Attempting to run a regression or moderation analysis on a categorical level with only 1 or 2 observations is statistically unreliable; the model cannot produce a stable estimate for such a small group. It can lead to model errors or highly misleading results. By filtering down to the well-represented groups, we ensure that our analysis for Hypothesis 3 is robust and that the results are meaningful. This new dataset will be used *only* for the H3 analysis.
+-   Attempting to run a regression or moderation analysis on a categorical level with only 1 or 2 observations is statistically unreliable; the model cannot produce a stable estimate for such a small group. It can lead to model errors or highly misleading results. By filtering down to the well-represented groups, we ensure that our analysis for Hypothesis 3 is robust and that the results are meaningful. This new dataset will be used *only* for the H3 analysis.
 
 ```{r}
 #2.1 Moderated Model 1
@@ -852,7 +934,9 @@ summary(quality_model)
 summary(quality_model_moderation)
 ```
 
-The results indicate that in both the basic and the moderated models, the estimated parameters are not statistically significant. The model's explanatory power is extremely low, with an $R^2$ below 1%. Consequently, we fail to reject the null hypothesis; there is no statistical evidence in this dataset that price, quality, or their interaction influences the quantity consumed.
+The results indicate that in both the basic and the moderated models, the estimated parameters are not statistically significant.
+The model's explanatory power is extremely low, with an $R^2$ below 1%.
+Consequently, we fail to reject the null hypothesis; there is no statistical evidence in this dataset that price, quality, or their interaction influences the quantity consumed.
 
 ```{r}
 #Testing if Moderator 1 is significant
@@ -860,7 +944,8 @@ anova(quality_model, quality_model_moderation)
 lrtest(quality_model, quality_model_moderation)
 ```
 
-Neither the ANOVA (F-test for nested models) nor the Likelihood Ratio Test (LRT) indicates a significant difference between the models ($p > 0.05$). This confirms that adding the interaction term does not improve model fit, meaning we find no support for the hypothesis that quality moderates price sensitivity (H1).
+Neither the ANOVA (F-test for nested models) nor the Likelihood Ratio Test (LRT) indicates a significant difference between the models ($p > 0.05$).
+This confirms that adding the interaction term does not improve model fit, meaning we find no support for the hypothesis that quality moderates price sensitivity (H1).
 
 ```{r}
 #2.2 Moderated Model 2
@@ -870,7 +955,9 @@ summary(cash_model)
 summary(cash_model_moderation)
 ```
 
-Similar to the previous analysis, the parameters in both the main effects and interaction models are statistically insignificant. The adjusted $R^2$ remains negligible (\< 1%). We cannot reject the null hypothesis that the payment method (cash vs. credit) has no impact on consumption behavior or price sensitivity.
+Similar to the previous analysis, the parameters in both the main effects and interaction models are statistically insignificant.
+The adjusted $R^2$ remains negligible (\< 1%).
+We cannot reject the null hypothesis that the payment method (cash vs. credit) has no impact on consumption behavior or price sensitivity.
 
 ```{r}
 #Testing if Moderator 2 is significant
@@ -878,7 +965,9 @@ anova(cash_model, cash_model_moderation)
 lrtest(cash_model, cash_model_moderation)
 ```
 
-Both the ANOVA and LRT yield non-significant p-values. This suggests that the inclusion of the payment method interaction does not provide a better fit than the simple additive model. Thus, H2 is not supported.
+Both the ANOVA and LRT yield non-significant p-values.
+This suggests that the inclusion of the payment method interaction does not provide a better fit than the simple additive model.
+Thus, H2 is not supported.
 
 ```{r}
 #2.3 Moderated Model 3
@@ -888,7 +977,9 @@ summary(estb_model)
 summary(estb_model_moderation)
 ```
 
-The analysis of establishment types yields comparable results. None of the coefficients for price, establishment type, or their interaction terms achieve statistical significance. The low $R^2$ values suggest that these variables do not effectively predict deviations in purchase quantity.
+The analysis of establishment types yields comparable results.
+None of the coefficients for price, establishment type, or their interaction terms achieve statistical significance.
+The low $R^2$ values suggest that these variables do not effectively predict deviations in purchase quantity.
 
 ```{r}
 #Testing if Moderator 3 is significant
@@ -896,4 +987,6 @@ anova(estb_model, estb_model_moderation)
 lrtest(estb_model, estb_model_moderation)
 ```
 
-The model comparison tests (ANOVA and LRT) evaluate the collective contribution of the interaction terms associated with the `estb` factor. The results are non-significant, indicating that the relationship between price and demand does not vary significantly across the different establishment types. Therefore, H3 is not supported.
+The model comparison tests (ANOVA and LRT) evaluate the collective contribution of the interaction terms associated with the `estb` factor.
+The results are non-significant, indicating that the relationship between price and demand does not vary significantly across the different establishment types.
+Therefore, H3 is not supported.
