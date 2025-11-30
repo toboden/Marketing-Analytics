@@ -1,10 +1,13 @@
 ---
 title: "Set2_Task1"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r, echo=FALSE}
 # Read data
+library(AER)
 library(readr)
 library(dplyr)
 daily_data <- read_tsv("../data/daily_fish_market_data.txt")
@@ -31,8 +34,8 @@ As the lecture focuses more on omitted variables, we will also do so in the foll
 
 The relationship between price and demand (quantity of sold fish) in the fish market may be affected by endogeneity, when the price correlates well with the demand, but is not the causality. Instead, a omitted variable is the common cause for price and demand.
 
-This omitted variable could be the amount of received fish.
-In this case the quantity and price are determined by the amount of fish received at the day. When there is not much fish available, the seller just cannot sell more fish resulting in a lower quantiy with higher prices. On the other hand, when there is a lot of fish available the seller can sell more, resulting in a higher quantity with lower prices. This plausability argument is supported by the following data:
+This omitted variable could be the amount of received fish, i.e. the supply.
+In this case the quantity and price are determined by the amount of fish received at the day. When there is not much fish available, the seller just cannot sell more fish resulting in a lower quantity with higher prices. On the other hand, when there is a lot of fish available the seller can sell more, resulting in a higher quantity with lower prices. This plausability argument is supported by the following data:
 ```{r}
 price_demand = lm(daily_data$qty~ daily_data$price)
 price_demand_totr = lm(daily_data$qty~ daily_data$price + daily_data$totr)
@@ -48,10 +51,11 @@ The buyers of fish are not sensitive to the price (meaning the price elasticity 
 
 ### Is weather data a suitable instrument in this context?
 In her dataset Graddy classified the weather as stormy when a certain wave height and wind speed are exceeded. The wave height and wind speed are the moving averages of the last three days' wind speed and wave height before the trading day.
-Her argument is, that the weather is an important determinant of the supply as strong winds and high waves make it difficult to catch fish. 
+Her argument is, that storms are an important determinant of the supply as strong winds and high waves make it difficult to catch fish. 
 If supply is high, quantities rise and prices falls and vice versa.
 This is supported by the following data:
 ```{r}
+cor(daily_data$price, daily_data$stormy)
 # Fit linear models holding day-of-week constant
 # Day1..Day4 are dummies for weekdays
 lm_qty <- lm(qty ~ stormy + day1 + day2 + day3 + day4, data = daily_data)
@@ -76,10 +80,32 @@ diff_price
 mean_qty
 mean_price
 ```
-On a stormy day the average quantity of sold fish shrinks by 2370.7 pounds and the price rises by 32.22 cents. The average price on all days was 88.45 cents and average quantity was 6334.67 pounds.
+On a stormy day the average quantity of sold fish shrinks by 2370.7 pounds and the price rises by 32.22 cents. The average price on all days was 88.45 cents and average quantity was 6334.67 pounds. 
+The correlation of price and stormy weather is also positive. Therefore the requirement of relevance is fulfilled.
+```{r}
+cor(daily_data$price, daily_data$stormy)
+```
+Another requirement for instruments is exogeneity. So, to predict prices for fish, we need a variable that is independent of supply. Storms are such a variable as the supply cannot influence the weather.
+Therefore, the data and plausibility support that stormy weather can be used as an instrumental variable.
 
-Although the data and the plausibility support Graddy's argument, it makes more sense to use the supply directly in the form of total amount of received fish (totr), as we did above.
+Nevertheless, it makes more sense to use the supply in the form of total amount of received fish (totr) directly, because that is the omitted variable.
 
 ### Re-run lin-log model with instrumental variables
+```{r}
+y = daily_data$qty
+x = daily_data$price_log
+main_model = lm(y~x)
+#summary(main_model)
+# use stormy_weather as an instrumental variable:
+v = daily_data$stormy
+iv_reg_stormy = ivreg(formula = y ~ x | v)
+#summary(iv_reg_stormy)
+# hausman test:
+hausman = ((-6484.3--3327.8)^2)/(2524.1^2-961.7^2)
+
+1-pchisq(hausman,df=1)
+```
+
+
 
 
