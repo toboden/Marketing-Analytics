@@ -1,0 +1,1772 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Problem Set II Solution},
+  pdfauthor={Tobias Bodentien; Philipp Grunenberg; Alexander Haas; Osama Warshaga},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Problem Set II Solution}
+\author{Tobias Bodentien \and Philipp Grunenberg \and Alexander
+Haas \and Osama Warshaga}
+\date{01-12-2025}
+
+\begin{document}
+\maketitle
+
+\section{Task 3}\label{task-3}
+
+\section{Task 4}\label{task-4}
+
+Vorab zum Vorgehen in dieser Teilaufgabe: Da in der Aufgabenbeschreibung
+explizit gefordert ist, basierend auf der eigenen ökonomischen
+Einschätzung drei Variablen auszuwählen und das Logistische
+Regressionsmodell basierend auf diesen Variablen zu interpretieren, wird
+dies auch so durchgeführt. Wäre die Aufgabenstellung offener gestaltet,
+hätte ich ein Modell mit allen Regressoren gefitted und gegebenenfalls
+mit einem Lasso-Modell verglichen. Dieses Vorgehen wäre deshalb von
+Vorteil, da es sich bei diesem Problem klassisch um einen Forecasting
+Task handelt. Zwar sind Key metrics zunächst leichter zu verstehen und
+zu interpretieren, warum sollte man aber vorhandene Daten
+(i.e.~Regressoren) nicht nutzen, wenn man sie hat? Wichtig zu erwähnen
+ist hier, dass Multikolinearität kein Problem für Forecasting darstellt.
+Es könnten alle vorhandenen Regressoren verwendet werden (sofern die
+Anzahl der Beobachtungen \textgreater= Anzahl der Regressoren) ist.
+
+\subsection{Auswahl von drei
+Prädiktoren}\label{auswahl-von-drei-pruxe4diktoren}
+
+Die Idee ist es nun, drei Prädiktoren so auszuwäheln, dass sie möglichst
+keine inhaltlichen Überschneidungen haben, was gegebenenfalls zu
+redundanten Variablen im Modell führen und die Interpretierbarkeit
+negativ beeinflussen könnte (Vgl. einleitende Worte bzgl.
+Multikolinearität).
+
+\subsubsection{Drei monats trends von monetary value of
+sales}\label{drei-monats-trends-von-monetary-value-of-sales}
+
+Die total sales values sind automatisch über verschiedene
+Produkte/Kategorien hinweg vergleichbar. Darüber hinaus ist es intuitiv
+anzunehmen, dass Regionen bzw. Stores mit anhaltend niedrigem Umsatz als
+Kandidaten für eine Schließung in Frage kommen. Wichtig ist jedoch zu
+beachten, dass die absolute Höhe der sales sich nicht als metric eignet,
+da diese zwischen stores stark schwanken kann. Ein kleiner profitabler
+Store kann weniger Umsatz haben als ein unprofitabler großer Store.
+Deshalb wird hier der 3 monats trends betrachtet. Die Veränderung auf
+monatlicher ebene ist weniger robust, da kurzfristige schwankungen zu
+erwarten sind. Zum Beispiel können aus unbedenklichen gründen die sales
+kurzfristig einbrechen (e.g.~viele Feiertage oder Lieferengpasse) oder
+sehr stark sein (e.g.~Vorweihnachtsgeschäft).
+
+\emph{H1: } Ein anhaltender Rückgang der Sales über mehrere Monate ist
+ein Frühwarnsignal für strukturelle Nachfrageschwäche und erhöht das
+Schließungsrisiko.
+
+\subsubsection{Percentage of sales generated
+online}\label{percentage-of-sales-generated-online}
+
+Wenn ein hoher Anteil an Kunden online einkauft, führt das zu geringeren
+margen im offline geschäft. Dies kann dazu führen, dass ein Store
+strukturell unprofitabel wird.
+
+\emph{H2:} Êin hoher Online-Anteil an Verkäufen deutet auf eine
+strukturelle Verschiebung der Nachfrage vom stationären zum digitalen
+Kanal hin, was die Profitabilität des lokalen Stores verringert und
+damit das Schließungsrisiko erhöht.
+
+\subsubsection{Percentage of discounts
+offered}\label{percentage-of-discounts-offered}
+
+Falls Rabatte dazu eingesetzt werden, Nachfrage zu generieren, kann das
+ein Hinweis darauf sein, dass ein Store eine geringes
+Preissetzungsvermögen hat und von Schließung gefährdet ist. Ein
+wichtiger Punkt hierbei ist jedoch, dass ein dauerhaft hohes
+Discount-Niveau auch eine bewusste Strategie sein kann. Allerdings wird
+diese variable nicht auf dem monatlichen Level reported und kann daher
+nicht zu relative change umgewandelt werden und wird unverändert
+verwendet.
+
+\emph{H3:} Ein hoher Anteil an discounts deutet auf eine lokal schwache
+Nachfrage und mangelnde Preissetzungsmacht hin. Dies ist ein Anzeichen
+für mangelnde Profitabilität und ein erhöhtes Schließungsrisiko.
+
+Im weiteren Verlauf der Aufgabe werden logistische Regressionen für jede
+mögliche Kombination aus diesen drei Prädiktoren gefitted und über das
+AIC und den Likelihood-Ratio-Test verglichen.
+
+\subsection{Modellanalyse}\label{modellanalyse}
+
+Um information leakage (independent variablen werden durch die store
+closure potenziell beeinflusst) zu verhindern, wird der Datensatz
+zunächst auf die Monate vor den Schließungen gefiltert. Anschließend
+wird die Variable für die Veränderung der total sales auf
+drei-monats-basis erstellt und der Datensatz von allen anderen nicht
+ausgewählten regressoren bereinigt. Da alle der drei Variablen nach der
+Datentransformation ausschließlich auf county level vorliegen, werden
+die mehrfach vorliegenden Beobachtungen mit `distinct()' verworfen.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(readr)}
+\FunctionTok{library}\NormalTok{(dplyr)}
+\FunctionTok{library}\NormalTok{(ggplot2)}
+\FunctionTok{library}\NormalTok{(tidyr)}
+\FunctionTok{library}\NormalTok{(purrr)}
+\FunctionTok{library}\NormalTok{(broom)}
+\FunctionTok{library}\NormalTok{(knitr)}
+
+\NormalTok{store\_df }\OtherTok{\textless{}{-}} \FunctionTok{read.csv}\NormalTok{(}\StringTok{"../data/StoreData.csv"}\NormalTok{)}
+
+\NormalTok{store\_df\_pre\_treat }\OtherTok{\textless{}{-}}\NormalTok{ store\_df }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(month }\SpecialCharTok{\textless{}=} \DecValTok{6}\NormalTok{)}
+
+
+\CommentTok{\# create relative three month change predictor for sales\_value\_total }
+\NormalTok{store\_df\_pre\_treat }\OtherTok{\textless{}{-}}\NormalTok{ store\_df\_pre\_treat }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(county\_id) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{sales\_early =} \FunctionTok{mean}\NormalTok{(sales\_value\_total[month }\SpecialCharTok{\%in\%} \DecValTok{1}\SpecialCharTok{:}\DecValTok{3}\NormalTok{], }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{),}
+    \AttributeTok{sales\_late  =} \FunctionTok{mean}\NormalTok{(sales\_value\_total[month }\SpecialCharTok{\%in\%} \DecValTok{4}\SpecialCharTok{:}\DecValTok{6}\NormalTok{], }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ungroup}\NormalTok{() }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{sales\_trend\_3m =}\NormalTok{ (sales\_late }\SpecialCharTok{{-}}\NormalTok{ sales\_early) }\SpecialCharTok{/}\NormalTok{ sales\_early}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{sales\_late, }\SpecialCharTok{{-}}\NormalTok{sales\_early)}
+
+\NormalTok{store\_df\_pre\_treat\_3selected }\OtherTok{\textless{}{-}}\NormalTok{ store\_df\_pre\_treat }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(county\_id, month, treat, sales\_trend\_3m, pct\_online\_sales, pct\_discounts)}
+
+\NormalTok{store\_df\_pre\_treat\_3selected }\OtherTok{\textless{}{-}}\NormalTok{ store\_df\_pre\_treat\_3selected }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(county\_id, treat) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{distinct}\NormalTok{(pct\_online\_sales, pct\_discounts, sales\_trend\_3m)}
+\end{Highlighting}
+\end{Shaded}
+
+Im hier nicht gezeigten Code-Block, wird schließlich für jede der 8
+möglichen Kombinationen und das Null-model eine logistische Regression
+gefitted. Zusätzlich wird jeweils die in-sample classifiaction accuracy
+mit einer Schwelle von 0.5 berechnet und der Likelihood-Ratio Test
+durchgeführt. Die Modelle werden in einem Datensatz gespeichert, der
+absteigend nach der Größe des AIC sortiert ist.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{logit\_model\_results }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{kable}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.0039}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.0006}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.0007}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.9935}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.0007}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.0007}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+formula
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+aic
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+accuracy
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+model
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+LR\_stc
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+p\_value
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+treat \textasciitilde{} sales\_trend\_3m & 92.72777 & 0.5151515 &
+-1.033906, 1.816303, -1.495918, -2.10591, -1.677808, -2.370233,
+1.807568, 1.776059, 2.951756, -2.265818, -1.594059, 2.410263, 1.80244,
+1.923784, -2.168866, 2.154269, 2.32829, -2.109609, -1.462262, -1.489002,
+-2.778056, -2.592052, -2.07752, 1.881365, 1.885341, 2.075225, 1.648768,
+1.589994, 1.544662, 2.080713, 2.115545, -2.006937, -1.488493, 1.511113,
+1.654765, 1.684838, -1.647761, 2.31987, -2.005444, 2.044114, 2.332764,
+1.777513, 2.52435, 1.746481, -3.101203, -1.535228, -1.474356, -2.432565,
+-2.717319, -2.493831, 1.648754, -2.24021, 1.671519, -1.558519,
+-1.559203, -2.330153, -1.537293, -1.967216, 1.775285, 3.194894,
+-2.364468, 1.760549, 1.82839, -1.526836, -2.207367, 2.237964, 1.735083,
+-2.111519, 0.3315141, 0.5251459, 0.4039842, 0.5781005, 0.5532297,
+0.5630443, 0.3387814, 0.5586583, 0.3726705, 0.4148924, 0.5548036,
+0.5198089, 0.5389296, 0.4641946, 0.4294997, 0.5259785, 0.3161279,
+0.3284093, 0.6400361, 0.6142053, 0.5186568, 0.5315289, 0.5304081,
+0.4818756, 0.6065136, 0.6289332, 0.6473907, 0.4806045, 0.4726914,
+0.5017284, 0.3281796, 0.6617638, 0.6043155, 0.5935288, 0.393116,
+0.4310585, 0.5013572, 0.4892094, 0.4286761, 0.5625839, 0.3961416,
+0.57258, 0.6775445, 0.3486308, 0.3217379, 0.5889113, 0.6319903,
+0.5990105, 0.6065187, 0.5536133, 0.5982581, 0.358365, 0.3586465,
+0.5708436, 0.349506, 0.4916674, 0.5632897, 0.3129994, 0.5770718,
+0.5680045, 0.5469292, 0.3450506, 0.5469716, 0.4468348, 0.5763413,
+0.5264072, -0.01935339, -1.627816, -0.834478, -0.9844666, 1.057412,
+1.050548, 1.311064, -0.9603169, -0.8179808, 1.188932, 1.056298,
+1.082546, -0.9382822, 1.132491, 1.170739, -0.9250288, -0.7915353,
+-0.7970507, -1.081561, -1.036863, -0.9179262, 1.07339, 1.074249,
+1.115288, 1.022198, 1.008483, 0.9974302, 1.116479, 1.124051, -0.9025017,
+-0.7969469, 0.9888793, 1.023567, 1.030373, -0.828546, 1.168876,
+-0.9021783, 1.108543, 1.171729, 1.050865, 1.214421, 1.044065, -1.159958,
+-0.806355, -0.7940455, -0.999058, -1.066911, -1.013508, 1.022194,
+-0.9544576, 1.027371, -0.8109748, -0.81111, -0.9751503, -0.8067661,
+-0.8939475, 1.050379, 1.36636, -0.9831232, 1.047154, 1.061932,
+-0.8046816, -0.9469831, 1.15082, 1.041554, -0.9254531, -3.977164, 0,
+-2.274602, -0.896225, 2, -3.977164, 0.1255586, 0.123378, 0.1241746,
+0.1250033, 0.1247144, 0.1190033, 0.1248496, 0.1215729, 0.1238831,
+0.1249603, 0.125619, 0.1253361, 0.125395, 0.1244618, 0.1255479,
+0.1169083, 0.1180828, 0.1206864, 0.1223944, 0.1256302, 0.1254675,
+0.125485, 0.1256351, 0.122832, 0.121466, 0.1201314, 0.1256231,
+0.1255301, 0.125717, 0.1180617, 0.1189565, 0.1229512, 0.1234987,
+0.1228117, 0.1245169, 0.1257173, 0.1256884, 0.1244321, 0.124729,
+0.1229757, 0.1243862, 0.117525, 0.1198183, 0.1174563, 0.1237141,
+0.1212583, 0.1232282, 0.1228318, 0.1249929, 0.1232663, 0.1205684,
+0.1205893, 0.1244494, 0.1198879, 0.1257003, 0.1247065, 0.1165942,
+0.1242152, 0.1245495, 0.1251628, 0.1195286, 0.1251617, 0.125005,
+0.1242437, 0.1255423, -2.274602, -0.896225, -0.09616455, 0.116762,
+0.08661742, 0.09854396, -0.1741191, 0.09321877, -0.1339322, -0.08290307,
+0.08853247, 0.04577835, 0.06918042, -0.02254573, -0.06508009,
+0.05333848, -0.2004444, -0.1862338, 0.1903068, 0.1599571, 0.0443658,
+0.06013288, 0.05876137, -0.0008140243, 0.1508225, 0.1773274, 0.1988441,
+-0.002376653, -0.01210416, 0.02358702, -0.1865009, 0.2153768, 0.1482048,
+0.1353146, -0.1093285, -0.0631744, 0.02313104, 0.008201857, -0.06608673,
+0.09798536, -0.1056691, 0.1100941, 0.2332716, -0.1625284, -0.1939721,
+0.1297756, 0.1809116, 0.1418742, 0.1508286, 0.08708431, 0.1409749,
+-0.1509981, -0.1506636, 0.1079939, -0.1614947, 0.01122328, 0.09884171,
+-0.2040392, 0.1155207, 0.104557, 0.07894282, -0.1667508, 0.07899453,
+-0.04385516, 0.1146388, 0.05386352, 2, 1.118365, 1.052319, 1, 2, 1e-11,
+binomial, logit, function (mu) , .Call(C\_logit\_link, mu), function
+(eta) , .Call(C\_logit\_linkinv, eta), function (mu) , mu * (1 - mu),
+function (y, mu, wt) , .Call(C\_binomial\_dev\_resids, y, mu, wt),
+function (y, n, mu, wt, dev) , \{, m \textless- if (any(n \textgreater{}
+1)) , n, else wt, -2 * sum(ifelse(m \textgreater{} 0, (wt/m), 0) *
+dbinom(round(m * y), , round(m), mu, log = TRUE)), \}, function (eta) ,
+.Call(C\_logit\_mu\_eta, eta), \{, if (NCOL(y) == 1) \{, if
+(is.factor(y)) , y \textless- y != levels(y){[}1L{]}, n \textless-
+rep.int(1, nobs), y{[}weights == 0{]} \textless- 0, if (any(y
+\textless{} 0 \textbar{} y \textgreater{} 1)) , stop(``y values must be
+0 \textless= y \textless= 1''), mustart \textless- (weights * y +
+0.5)/(weights + 1), m \textless- weights * y, if (``binomial'' ==
+``binomial'' \&\& any(abs(m - round(m)) \textgreater{} , 0.001)) ,
+warning(gettextf(``non-integer \#successes in a \%s glm!'', ,
+``binomial''), domain = NA), \}, else if (NCOL(y) == 2) \{, if
+(``binomial'' == ``binomial'' \&\& any(abs(y - round(y)) \textgreater{}
+, 0.001)) , warning(gettextf(``non-integer counts in a \%s glm!'', ,
+``binomial''), domain = NA), n \textless- (y1 \textless- y{[}, 1L{]}) +
+y{[}, 2L{]}, y \textless- y1/n, if (any(n0 \textless- n == 0)) ,
+y{[}n0{]} \textless- 0, weights \textless- weights * n, mustart
+\textless- (n * y + 0.5)/(n + 1), \}, else stop(gettextf(``for the `\%s'
+family, y must be a vector of 0 and 1's\nor a 2 column matrix where col
+1 is no. successes and col 2 is no. failures'', , ``binomial''), domain
+= NA), \}, function (mu) , all(is.finite(mu)) \&\& all(mu \textgreater{}
+0 \& mu \textless{} 1), function (eta) , TRUE, function (object, nsim) ,
+\{, ftd \textless- fitted(object), n \textless- length(ftd), ntot
+\textless- n * nsim, wts \textless-
+object\(prior.weights,     if (any(wts%%1 != 0)) ,         stop("cannot simulate from non-integer prior.weights"),     if (!is.null(m <- object
+\)model)) \{, y \textless- model.response(m), if (is.factor(y)) \{, yy
+\textless- factor(1 + rbinom(ntot, size = 1, prob = ftd), , labels =
+levels(y)), split(yy, rep(seq\_len(nsim), each = n)), \}, else if
+(is.matrix(y) \&\& ncol(y) == 2) \{, yy \textless- vector(``list'',
+nsim), for (i in seq\_len(nsim)) \{, Y \textless- rbinom(n, size = wts,
+prob = ftd), YY \textless- cbind(Y, wts - Y), colnames(YY) \textless-
+colnames(y), yy{[}{[}i{]}{]} \textless- YY, \}, yy, \}, else
+rbinom(ntot, size = wts, prob = ftd)/wts, \}, else rbinom(ntot, size =
+wts, prob = ftd)/wts, \}, 1, -0.7013452, 0.1006684, -0.3888912,
+0.3149806, 0.2137286, 0.2535264, -0.6687294, 0.2357187, -0.5207771,
+-0.3437765, 0.2200987, 0.07927696, 0.1560342, -0.1434671, -0.2838925,
+0.1040077, -0.7716241, -0.7153886, 0.5755209, 0.465024, 0.07466178,
+0.1262833, 0.1217826, -0.0725295, 0.4326806, 0.5276428, 0.6075892,
+-0.07762093, -0.1093432, 0.006913519, -0.71643, 0.671164, 0.4234791,
+0.3785725, -0.4342331, -0.2775336, 0.005428824, -0.04316915, -0.2872547,
+0.2516553, -0.4215682, 0.2923852, 0.74251, -0.625063, -0.7457967,
+0.3594666, 0.5407645, 0.4013438, 0.432702, 0.2152809, 0.3982124,
+-0.5824674, -0.5812434, 0.285294, -0.6212115, -0.03333366, 0.254524,
+-0.786134, 0.3107644, 0.2737142, 0.1882708, -0.6408667, 0.1884419,
+-0.2134679, 0.3077719, 0.1057273, 88.72777, 92.72777, 91.49543, 4,
+0.2216125, 0.2493677, 0.240781, 0.2439003, 0.2471666, 0.2460254,
+0.2240086, 0.2465592, 0.2337872, 0.2427567, 0.2469966, 0.2496076,
+0.2484845, 0.248718, 0.2450297, 0.2493251, 0.2161911, 0.2205567,
+0.2303899, 0.2369572, 0.2496519, 0.2490059, 0.2490753, 0.2496715,
+0.2386549, 0.2333763, 0.228276, 0.2496238, 0.2492542, 0.249997,
+0.2204778, 0.2238325, 0.2391183, 0.2412524, 0.2385758, 0.2452471,
+0.2499982, 0.2498836, 0.2449129, 0.2460833, 0.2392134, 0.2447322,
+0.218478, 0.2270874, 0.2182227, 0.2420948, 0.2325786, 0.2401969,
+0.2386538, 0.2471256, 0.2403454, 0.2299396, 0.2300192, 0.2449812,
+0.2273516, 0.2499306, 0.2459944, 0.2150308, 0.2440599, 0.2453754,
+0.2477977, 0.2259907, 0.2477937, 0.2471735, 0.244172, 0.2493027, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 64, 65, 0, 0, 0, 0, 1,
+1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, TRUE, FALSE, 0, 0, 0, 0, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0,
+0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0.1830975, 0.6246613, 0.355125,
+0.7426549, 0.6869087, 0.7088201, 0.2010547, 0.6990158, 0.2825127,
+0.3799637, 0.6904159, 0.6128838, 0.655144, 0.4902478, 0.412934,
+0.6264998, 0.1444041, 0.1753657, 0.8861003, 0.8252641, 0.6103428,
+0.6387641, 0.6362861, 0.5293039, 0.8074569, 0.8597401, 0.9037561,
+0.5265007, 0.5090354, 0.5730427, 0.1747923, 0.9387584, 0.8023908,
+0.7776666, 0.3301611, 0.416435, 0.5722253, 0.5454688, 0.4110829,
+0.70779, 0.3371341, 0.7302146, 0.9780393, 0.2250961, 0.1586239,
+0.7671475, 0.8669645, 0.7902038, 0.8074687, 0.6877634, 0.7884798,
+0.2485479, 0.2492218, 0.7263104, 0.2272166, 0.5508839, 0.7093694,
+0.1364154, 0.7403336, 0.7199349, 0.6728924, 0.2163951, 0.6729867,
+0.4517076, 0.738686, 0.6274465, glm(formula = f, family = binomial(link
+= ``logit''), data = store\_df\_pre\_treat\_3selected), treat
+\textasciitilde{} sales\_trend\_3m, treat \textasciitilde{}
+sales\_trend\_3m, 30, 31, 12, 27, 36, 37, 38, 7, 29, 39, 40, 41, 14, 42,
+43, 9, 10, 25, 3, 24, 11, 44, 45, 46, 47, 48, 49, 50, 51, 16, 8, 52, 53,
+54, 33, 55, 34, 56, 57, 58, 59, 60, 18, 22, 32, 6, 20, 28, 61, 26, 62,
+4, 23, 19, 21, 17, 63, 64, 5, 65, 66, 13, 2, 67, 68, 15, 0, 0, 0, 0, 1,
+1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0.7920762, 1.095208, 1.006658,
+1.351556, 1.488733, 1.264122, 1.24255, 1.172679, 1.928141, 1.278592,
+0.9855499, 1.176076, 1.411168, 1.589711, 1.547734, 1.480842, 1.641596,
+1.147299, 1.546763, 1.148067, 1.212387, 1.40863, 1.544436, 1.418632,
+1.598764, 1.446273, 1.308985, 1.250404, 1.219425, 1.551805, 0.8809633,
+1.408781, 1.286795, 1.490185, 1.182606, 1.326177, 1.407469, 1.457917,
+1.789647, 1.45707, 0.8058668, 1.215351, 1.355715, 1.871972, 1.377959,
+1.334439, 1.602945, 1.437817, 1.600718, 1.543163, 1.185046, 1.314036,
+1.457908, 1.177014, 1.124846, 1.263929, 1.405596, 1.162554, 0.9881347,
+1.188123, 1.139768, 1.199237, 1.131153, 1.23158, 1.680345, 1.289368,
+7.080688, 7.704416, 7.650847, 6.955267, 6.110937, 5.777853, 7.400386,
+7.344311, 8.108207, 8.32635, 6.73922, 7.939178, 6.6218, 7.364032,
+8.229459, 7.971704, 7.643635, 7.610238, 6.958652, 7.613119, 7.370215,
+7.179605, 6.489263, 6.823597, 6.35924, 6.648309, 7.247496, 7.140899,
+7.902943, 7.35641, 8.245053, 6.763566, 7.156562, 5.541855, 7.520397,
+7.523088, 6.327822, 7.470564, 8.357375, 5.871492, 7.8242, 7.464129,
+7.382166, 5.981173, 7.807186, 7.177116, 7.02289, 7.478385, 7.909888,
+7.342883, 7.127843, 8.68363, 9.534263, 6.490295, 8.777611, 8.256674,
+6.907705, 7.988662, 6.094251, 6.900312, 8.219888, 8.058198, 7.85661,
+8.274037, 6.10402, 6.61376, 0.1830975, 0.6246613, 0.355125, 0.7426549,
+0.6869087, 0.7088201, 0.2010547, 0.6990158, 0.2825127, 0.3799637,
+0.6904159, 0.6128838, 0.655144, 0.4902478, 0.412934, 0.6264998,
+0.1444041, 0.1753657, 0.8861003, 0.8252641, 0.6103428, 0.6387641,
+0.6362861, 0.5293039, 0.8074569, 0.8597401, 0.9037561, 0.5265007,
+0.5090354, 0.5730427, 0.1747923, 0.9387584, 0.8023908, 0.7776666,
+0.3301611, 0.416435, 0.5722253, 0.5454688, 0.4110829, 0.70779,
+0.3371341, 0.7302146, 0.9780393, 0.2250961, 0.1586239, 0.7671475,
+0.8669645, 0.7902038, 0.8074687, 0.6877634, 0.7884798, 0.2485479,
+0.2492218, 0.7263104, 0.2272166, 0.5508839, 0.7093694, 0.1364154,
+0.7403336, 0.7199349, 0.6728924, 0.2163951, 0.6729867, 0.4517076,
+0.738686, 0.6274465, 1e-08, 25, FALSE, glm.fit & 2.7676530 &
+0.0961871 \\
+treat \textasciitilde{} pct\_discounts & 93.18542 & 0.6060606 &
+3.606437, -0.4920437, -2.130239, -1.831543, -1.853752, -2.202186,
+1.549037, 1.466041, 2.035492, -1.992742, -1.681707, 2.633118, 1.74793,
+2.349839, -2.416547, 2.017134, 2.557087, -1.729067, -1.856787,
+-1.870983, -2.200185, -1.869749, -1.980169, 1.928897, 1.661374,
+1.779635, 1.620386, 1.715211, 1.960451, 1.911373, 2.325986, -1.986849,
+-1.637316, 1.756943, 1.918424, 1.414948, -1.910349, 2.099935, -2.637011,
+2.071872, 2.65824, 1.488016, 2.275593, 2.068484, -1.974422, -2.941457,
+-1.79054, -2.077865, -2.162843, -1.929364, 2.330525, -1.993439,
+1.905537, -1.513611, -1.337957, -2.511237, -1.490401, -1.633682,
+1.812577, 2.383109, -2.836386, 1.809627, 2.549771, -1.69869, -1.771546,
+2.591618, 1.547172, -2.422162, 0.5305691, 0.4540122, 0.4605537,
+0.5459057, 0.6455623, 0.6821089, 0.4912818, 0.4981788, 0.4053661,
+0.3797779, 0.5721053, 0.425561, 0.5861864, 0.495753, 0.3910701,
+0.4216534, 0.4614354, 0.4655216, 0.5454928, 0.465169, 0.4949925,
+0.5184311, 0.6019115, 0.5619129, 0.6171369, 0.5830188, 0.5100867,
+0.5231841, 0.4299252, 0.4966904, 0.3892445, 0.5691703, 0.5212611,
+0.7067398, 0.4765355, 0.4762052, 0.6207828, 0.4826552, 0.3761888,
+0.6720357, 0.4394459, 0.4834459, 0.4935225, 0.6600324, 0.4415091,
+0.5187368, 0.5376456, 0.4816944, 0.4290879, 0.4983544, 0.5247864,
+0.3393284, 0.2525917, 0.6017899, 0.3290398, 0.3878859, 0.5517007,
+0.4196199, 0.6474386, 0.5526001, 0.3921922, 0.411311, 0.4355214,
+0.3858594, 0.6463407, 0.5871456, 0.001838865, 1.481224, -0.7630617,
+-1.021351, 0.7132228, 0.6172989, 1.148027, -0.872844, -0.6116074,
+1.515713, 0.913013, 1.356714, -1.156527, 1.134486, 1.475219, -0.6552309,
+-0.7655694, -0.7772301, -1.020016, -0.7762213, -0.8633166, 1.066875,
+0.8306573, 0.9416415, 0.7893008, 0.8826315, 1.091552, 1.052919,
+1.342218, -0.8683881, -0.5692455, 0.9212311, 1.058557, 0.5536782,
+-0.8089857, 1.194242, -1.281575, 1.174363, 1.528779, 0.6435454,
+1.310942, 1.171937, -0.8589363, -1.436043, -0.7096017, -0.9354301,
+-0.9948172, -0.8240278, 1.344991, -0.8733705, 1.04823, -0.4428547,
+-0.2386589, -1.21179, -0.4176444, -0.5657115, 0.9705861, 1.376618,
+-1.384819, 0.9680258, 1.471244, -0.6274314, -0.693063, 1.493791,
+0.7111586, -1.159874, -3.991503, 0, -29.25948, -3.01035, 2, -3.991503,
+0.1247351, 0.1248757, 0.124737, 0.1198402, 0.1166621, 0.1252471,
+0.1252653, 0.123002, 0.1215912, 0.1239567, 0.1238701, 0.1233911,
+0.1252616, 0.1222572, 0.1237187, 0.1248929, 0.1249679, 0.1247465,
+0.1249618, 0.1252598, 0.125181, 0.1226365, 0.1243021, 0.12178,
+0.1235273, 0.1252406, 0.1251314, 0.1240298, 0.1252634, 0.1221542,
+0.1240616, 0.1251528, 0.1140565, 0.1251281, 0.1251242, 0.1215563,
+0.1251907, 0.1213649, 0.1176178, 0.1243441, 0.1251974, 0.1252556,
+0.1186766, 0.124406, 0.1251781, 0.1249105, 0.1251821, 0.1239999,
+0.1252654, 0.1251121, 0.1186224, 0.108856, 0.1226428, 0.1177162,
+0.1220764, 0.1245946, 0.1236368, 0.1196962, 0.124571, 0.1223196,
+0.1232797, 0.1242202, 0.1219585, 0.1197807, 0.1233488, -29.25948,
+-3.01035, 0.05764722, -0.05746016, -0.189368, -0.2358691, 0.01622505,
+0.006913754, 0.1313739, 0.1650362, -0.09260963, 0.1045393, -0.1113979,
+0.01018893, 0.1502339, 0.1097472, 0.05646095, 0.05096105, -0.05690465,
+0.05143581, 0.01121567, -0.02042896, -0.1322681, -0.0789611, -0.1523395,
+-0.107179, -0.009164675, -0.02684282, 0.09871507, 0.008923249,
+0.1526329, -0.08868322, -0.02424818, -0.2662913, 0.0361207, 0.03656604,
+-0.1571233, 0.02786682, 0.1697217, -0.2231983, 0.0859827, 0.0268001,
+0.01320018, -0.2079485, 0.08321902, -0.02084155, -0.0463402, 0.02916305,
+0.09983304, 0.006676599, -0.02900446, 0.2172013, 0.3220948, -0.1321072,
+0.2302109, 0.1544169, -0.0652521, 0.1124545, -0.1917886, -0.06646077,
+0.1487582, 0.1234961, 0.09123524, 0.1570754, -0.1903726, -0.1126747, 2,
+1.125032, 1.066442, 1, 2, 1e-11, binomial, logit, function (mu) ,
+.Call(C\_logit\_link, mu), function (eta) , .Call(C\_logit\_linkinv,
+eta), function (mu) , mu * (1 - mu), function (y, mu, wt) ,
+.Call(C\_binomial\_dev\_resids, y, mu, wt), function (y, n, mu, wt, dev)
+, \{, m \textless- if (any(n \textgreater{} 1)) , n, else wt, -2 *
+sum(ifelse(m \textgreater{} 0, (wt/m), 0) * dbinom(round(m * y), ,
+round(m), mu, log = TRUE)), \}, function (eta) ,
+.Call(C\_logit\_mu\_eta, eta), \{, if (NCOL(y) == 1) \{, if
+(is.factor(y)) , y \textless- y != levels(y){[}1L{]}, n \textless-
+rep.int(1, nobs), y{[}weights == 0{]} \textless- 0, if (any(y
+\textless{} 0 \textbar{} y \textgreater{} 1)) , stop(``y values must be
+0 \textless= y \textless= 1''), mustart \textless- (weights * y +
+0.5)/(weights + 1), m \textless- weights * y, if (``binomial'' ==
+``binomial'' \&\& any(abs(m - round(m)) \textgreater{} , 0.001)) ,
+warning(gettextf(``non-integer \#successes in a \%s glm!'', ,
+``binomial''), domain = NA), \}, else if (NCOL(y) == 2) \{, if
+(``binomial'' == ``binomial'' \&\& any(abs(y - round(y)) \textgreater{}
+, 0.001)) , warning(gettextf(``non-integer counts in a \%s glm!'', ,
+``binomial''), domain = NA), n \textless- (y1 \textless- y{[}, 1L{]}) +
+y{[}, 2L{]}, y \textless- y1/n, if (any(n0 \textless- n == 0)) ,
+y{[}n0{]} \textless- 0, weights \textless- weights * n, mustart
+\textless- (n * y + 0.5)/(n + 1), \}, else stop(gettextf(``for the `\%s'
+family, y must be a vector of 0 and 1's\nor a 2 column matrix where col
+1 is no. successes and col 2 is no. failures'', , ``binomial''), domain
+= NA), \}, function (mu) , all(is.finite(mu)) \&\& all(mu \textgreater{}
+0 \& mu \textless{} 1), function (eta) , TRUE, function (object, nsim) ,
+\{, ftd \textless- fitted(object), n \textless- length(ftd), ntot
+\textless- n * nsim, wts \textless-
+object\(prior.weights,     if (any(wts%%1 != 0)) ,         stop("cannot simulate from non-integer prior.weights"),     if (!is.null(m <- object
+\)model)) \{, y \textless- model.response(m), if (is.factor(y)) \{, yy
+\textless- factor(1 + rbinom(ntot, size = 1, prob = ftd), , labels =
+levels(y)), split(yy, rep(seq\_len(nsim), each = n)), \}, else if
+(is.matrix(y) \&\& ncol(y) == 2) \{, yy \textless- vector(``list'',
+nsim), for (i in seq\_len(nsim)) \{, Y \textless- rbinom(n, size = wts,
+prob = ftd), YY \textless- cbind(Y, wts - Y), colnames(YY) \textless-
+colnames(y), yy{[}{[}i{]}{]} \textless- YY, \}, yy, \}, else
+rbinom(ntot, size = wts, prob = ftd)/wts, \}, else rbinom(ntot, size =
+wts, prob = ftd)/wts, \}, 1, 0.1224292, -0.1844725, -0.158114,
+0.1841415, 0.599589, 0.7634806, -0.03487633, -0.007284945, -0.3831553,
+-0.490491, 0.2904461, -0.2999854, 0.348222, -0.01698842, -0.4428165,
+-0.3159898, -0.1545655, -0.1381328, 0.182476, -0.1395501, -0.02003066,
+0.07375769, 0.413436, 0.2489291, 0.4774132, 0.3351782, 0.04035222,
+0.09280289, -0.2821564, -0.01323841, -0.4504891, 0.2784668, 0.0850958,
+0.8796022, -0.09392688, -0.09525102, 0.492872, -0.06940689, -0.5057567,
+0.7174066, -0.2434112, -0.06624062, -0.0259113, 0.6634387, -0.2350395,
+0.0749822, 0.150868, -0.07325515, -0.2855733, -0.006582356, 0.09922679,
+-0.6662884, -1.084837, 0.4129285, -0.7125312, -0.4562076, 0.2075445,
+-0.3243338, 0.6077993, 0.211182, -0.4381069, -0.3585486, -0.2593586,
+-0.4647509, 0.6029926, 0.352178, 89.18542, 93.18542, 91.49543, 4,
+0.2490655, 0.2478851, 0.248444, 0.2478927, 0.2288117, 0.2168364,
+0.249924, 0.2499967, 0.2410444, 0.2355467, 0.2448008, 0.2444589,
+0.2425719, 0.249982, 0.2381343, 0.2438618, 0.2485128, 0.2488112,
+0.2479304, 0.2487868, 0.2499749, 0.2496603, 0.2396141, 0.2461668,
+0.236279, 0.2431079, 0.2498983, 0.2494625, 0.2450895, 0.249989,
+0.2377332, 0.2452155, 0.249548, 0.2072587, 0.2494494, 0.2494338,
+0.2354116, 0.2496992, 0.2346708, 0.2204038, 0.2463332, 0.249726,
+0.249958, 0.2243897, 0.2465788, 0.2496489, 0.2485828, 0.2496649,
+0.2449715, 0.2499973, 0.2493856, 0.2241847, 0.1887893, 0.2396388,
+0.2207727, 0.2374304, 0.247327, 0.2435391, 0.2282619, 0.2472332,
+0.2383775, 0.2421343, 0.2458425, 0.2369719, 0.2285845, 0.2424057, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 64, 65, 0, 0, 0, 0, 1,
+1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, TRUE, FALSE, 0, 0, 0, 0, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0,
+0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 7.080688, 7.704416, 7.650847, 6.955267,
+6.110937, 5.777853, 7.400386, 7.344311, 8.108207, 8.32635, 6.73922,
+7.939178, 6.6218, 7.364032, 8.229459, 7.971704, 7.643635, 7.610238,
+6.958652, 7.613119, 7.370215, 7.179605, 6.489263, 6.823597, 6.35924,
+6.648309, 7.247496, 7.140899, 7.902943, 7.35641, 8.245053, 6.763566,
+7.156562, 5.541855, 7.520397, 7.523088, 6.327822, 7.470564, 8.357375,
+5.871492, 7.8242, 7.464129, 7.382166, 5.981173, 7.807186, 7.177116,
+7.02289, 7.478385, 7.909888, 7.342883, 7.127843, 8.68363, 9.534263,
+6.490295, 8.777611, 8.256674, 6.907705, 7.988662, 6.094251, 6.900312,
+8.219888, 8.058198, 7.85661, 8.274037, 6.10402, 6.61376, glm(formula =
+f, family = binomial(link = ``logit''), data =
+store\_df\_pre\_treat\_3selected), treat \textasciitilde{}
+pct\_discounts, treat \textasciitilde{} pct\_discounts, 30, 31, 12, 27,
+36, 37, 38, 7, 29, 39, 40, 41, 14, 42, 43, 9, 10, 25, 3, 24, 11, 44, 45,
+46, 47, 48, 49, 50, 51, 16, 8, 52, 53, 54, 33, 55, 34, 56, 57, 58, 59,
+60, 18, 22, 32, 6, 20, 28, 61, 26, 62, 4, 23, 19, 21, 17, 63, 64, 5, 65,
+66, 13, 2, 67, 68, 15, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0,
+0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1,
+1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1,
+1, 0, 0.7920762, 1.095208, 1.006658, 1.351556, 1.488733, 1.264122,
+1.24255, 1.172679, 1.928141, 1.278592, 0.9855499, 1.176076, 1.411168,
+1.589711, 1.547734, 1.480842, 1.641596, 1.147299, 1.546763, 1.148067,
+1.212387, 1.40863, 1.544436, 1.418632, 1.598764, 1.446273, 1.308985,
+1.250404, 1.219425, 1.551805, 0.8809633, 1.408781, 1.286795, 1.490185,
+1.182606, 1.326177, 1.407469, 1.457917, 1.789647, 1.45707, 0.8058668,
+1.215351, 1.355715, 1.871972, 1.377959, 1.334439, 1.602945, 1.437817,
+1.600718, 1.543163, 1.185046, 1.314036, 1.457908, 1.177014, 1.124846,
+1.263929, 1.405596, 1.162554, 0.9881347, 1.188123, 1.139768, 1.199237,
+1.131153, 1.23158, 1.680345, 1.289368, 7.080688, 7.704416, 7.650847,
+6.955267, 6.110937, 5.777853, 7.400386, 7.344311, 8.108207, 8.32635,
+6.73922, 7.939178, 6.6218, 7.364032, 8.229459, 7.971704, 7.643635,
+7.610238, 6.958652, 7.613119, 7.370215, 7.179605, 6.489263, 6.823597,
+6.35924, 6.648309, 7.247496, 7.140899, 7.902943, 7.35641, 8.245053,
+6.763566, 7.156562, 5.541855, 7.520397, 7.523088, 6.327822, 7.470564,
+8.357375, 5.871492, 7.8242, 7.464129, 7.382166, 5.981173, 7.807186,
+7.177116, 7.02289, 7.478385, 7.909888, 7.342883, 7.127843, 8.68363,
+9.534263, 6.490295, 8.777611, 8.256674, 6.907705, 7.988662, 6.094251,
+6.900312, 8.219888, 8.058198, 7.85661, 8.274037, 6.10402, 6.61376,
+0.1830975, 0.6246613, 0.355125, 0.7426549, 0.6869087, 0.7088201,
+0.2010547, 0.6990158, 0.2825127, 0.3799637, 0.6904159, 0.6128838,
+0.655144, 0.4902478, 0.412934, 0.6264998, 0.1444041, 0.1753657,
+0.8861003, 0.8252641, 0.6103428, 0.6387641, 0.6362861, 0.5293039,
+0.8074569, 0.8597401, 0.9037561, 0.5265007, 0.5090354, 0.5730427,
+0.1747923, 0.9387584, 0.8023908, 0.7776666, 0.3301611, 0.416435,
+0.5722253, 0.5454688, 0.4110829, 0.70779, 0.3371341, 0.7302146,
+0.9780393, 0.2250961, 0.1586239, 0.7671475, 0.8669645, 0.7902038,
+0.8074687, 0.6877634, 0.7884798, 0.2485479, 0.2492218, 0.7263104,
+0.2272166, 0.5508839, 0.7093694, 0.1364154, 0.7403336, 0.7199349,
+0.6728924, 0.2163951, 0.6729867, 0.4517076, 0.738686, 0.6274465, 1e-08,
+25, FALSE, glm.fit & 2.3100101 & 0.1285432 \\
+treat \textasciitilde{} 1 & 93.49543 & 0.5000000 & -1.093272e-16, -2,
+-2, -2, -2, 2, 2, 2, -2, -2, 2, 2, 2, -2, 2, 2, -2, -2, -2, -2, -2, -2,
+2, 2, 2, 2, 2, 2, 2, 2, -2, -2, 2, 2, 2, -2, 2, -2, 2, 2, 2, 2, 2, -2,
+-2, -2, -2, -2, -2, 2, -2, 2, -2, -2, -2, -2, -2, 2, 2, -2, 2, 2, -2,
+-2, 2, 2, -2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+4.440892e-16, -0.8903994, -0.8903994, -0.8903994, 1.109601, 1.109601,
+1.109601, -0.8903994, -0.8903994, 1.109601, 1.109601, 1.109601,
+-0.8903994, 1.109601, 1.109601, -0.8903994, -0.8903994, -0.8903994,
+-0.8903994, -0.8903994, -0.8903994, 1.109601, 1.109601, 1.109601,
+1.109601, 1.109601, 1.109601, 1.109601, 1.109601, -0.8903994,
+-0.8903994, 1.109601, 1.109601, 1.109601, -0.8903994, 1.109601,
+-0.8903994, 1.109601, 1.109601, 1.109601, 1.109601, 1.109601,
+-0.8903994, -0.8903994, -0.8903994, -0.8903994, -0.8903994, -0.8903994,
+1.109601, -0.8903994, 1.109601, -0.8903994, -0.8903994, -0.8903994,
+-0.8903994, -0.8903994, 1.109601, 1.109601, -0.8903994, 1.109601,
+1.109601, -0.8903994, -0.8903994, 1.109601, 1.109601, -0.8903994,
+-4.062019, 1, -4.062019, 0.1230915, 0.1230915, 0.1230915, 0.1230915,
+0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915,
+0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915,
+0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915,
+0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915,
+0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915,
+0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915,
+0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915,
+0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915,
+0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915,
+0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915, 0.1230915,
+0.1230915, 1, 1.123091, 1, 1e-11, binomial, logit, function (mu) ,
+.Call(C\_logit\_link, mu), function (eta) , .Call(C\_logit\_linkinv,
+eta), function (mu) , mu * (1 - mu), function (y, mu, wt) ,
+.Call(C\_binomial\_dev\_resids, y, mu, wt), function (y, n, mu, wt, dev)
+, \{, m \textless- if (any(n \textgreater{} 1)) , n, else wt, -2 *
+sum(ifelse(m \textgreater{} 0, (wt/m), 0) * dbinom(round(m * y), ,
+round(m), mu, log = TRUE)), \}, function (eta) ,
+.Call(C\_logit\_mu\_eta, eta), \{, if (NCOL(y) == 1) \{, if
+(is.factor(y)) , y \textless- y != levels(y){[}1L{]}, n \textless-
+rep.int(1, nobs), y{[}weights == 0{]} \textless- 0, if (any(y
+\textless{} 0 \textbar{} y \textgreater{} 1)) , stop(``y values must be
+0 \textless= y \textless= 1''), mustart \textless- (weights * y +
+0.5)/(weights + 1), m \textless- weights * y, if (``binomial'' ==
+``binomial'' \&\& any(abs(m - round(m)) \textgreater{} , 0.001)) ,
+warning(gettextf(``non-integer \#successes in a \%s glm!'', ,
+``binomial''), domain = NA), \}, else if (NCOL(y) == 2) \{, if
+(``binomial'' == ``binomial'' \&\& any(abs(y - round(y)) \textgreater{}
+, 0.001)) , warning(gettextf(``non-integer counts in a \%s glm!'', ,
+``binomial''), domain = NA), n \textless- (y1 \textless- y{[}, 1L{]}) +
+y{[}, 2L{]}, y \textless- y1/n, if (any(n0 \textless- n == 0)) ,
+y{[}n0{]} \textless- 0, weights \textless- weights * n, mustart
+\textless- (n * y + 0.5)/(n + 1), \}, else stop(gettextf(``for the `\%s'
+family, y must be a vector of 0 and 1's\nor a 2 column matrix where col
+1 is no. successes and col 2 is no. failures'', , ``binomial''), domain
+= NA), \}, function (mu) , all(is.finite(mu)) \&\& all(mu \textgreater{}
+0 \& mu \textless{} 1), function (eta) , TRUE, function (object, nsim) ,
+\{, ftd \textless- fitted(object), n \textless- length(ftd), ntot
+\textless- n * nsim, wts \textless-
+object\(prior.weights,     if (any(wts%%1 != 0)) ,         stop("cannot simulate from non-integer prior.weights"),     if (!is.null(m <- object
+\)model)) \{, y \textless- model.response(m), if (is.factor(y)) \{, yy
+\textless- factor(1 + rbinom(ntot, size = 1, prob = ftd), , labels =
+levels(y)), split(yy, rep(seq\_len(nsim), each = n)), \}, else if
+(is.matrix(y) \&\& ncol(y) == 2) \{, yy \textless- vector(``list'',
+nsim), for (i in seq\_len(nsim)) \{, Y \textless- rbinom(n, size = wts,
+prob = ftd), YY \textless- cbind(Y, wts - Y), colnames(YY) \textless-
+colnames(y), yy{[}{[}i{]}{]} \textless- YY, \}, yy, \}, else
+rbinom(ntot, size = wts, prob = ftd)/wts, \}, else rbinom(ntot, size =
+wts, prob = ftd)/wts, \}, 1, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16,
+-1.093272e-16, -1.093272e-16, -1.093272e-16, -1.093272e-16, 91.49543,
+93.49543, 91.49543, 2, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25,
+0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25,
+0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25,
+0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25,
+0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25,
+0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 65, 65, 0, 0, 0, 0, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0,
+0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, TRUE, FALSE, 0, 0, 0, 0, 1, 1, 1, 0, 0,
+1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1,
+1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1,
+1, 0, 1, 1, 0, 0, 1, 1, 0, glm(formula = f, family = binomial(link =
+``logit''), data = store\_df\_pre\_treat\_3selected), treat
+\textasciitilde{} 1, treat \textasciitilde{} 1, 30, 31, 12, 27, 36, 37,
+38, 7, 29, 39, 40, 41, 14, 42, 43, 9, 10, 25, 3, 24, 11, 44, 45, 46, 47,
+48, 49, 50, 51, 16, 8, 52, 53, 54, 33, 55, 34, 56, 57, 58, 59, 60, 18,
+22, 32, 6, 20, 28, 61, 26, 62, 4, 23, 19, 21, 17, 63, 64, 5, 65, 66, 13,
+2, 67, 68, 15, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0,
+0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0,
+0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0,
+0.7920762, 1.095208, 1.006658, 1.351556, 1.488733, 1.264122, 1.24255,
+1.172679, 1.928141, 1.278592, 0.9855499, 1.176076, 1.411168, 1.589711,
+1.547734, 1.480842, 1.641596, 1.147299, 1.546763, 1.148067, 1.212387,
+1.40863, 1.544436, 1.418632, 1.598764, 1.446273, 1.308985, 1.250404,
+1.219425, 1.551805, 0.8809633, 1.408781, 1.286795, 1.490185, 1.182606,
+1.326177, 1.407469, 1.457917, 1.789647, 1.45707, 0.8058668, 1.215351,
+1.355715, 1.871972, 1.377959, 1.334439, 1.602945, 1.437817, 1.600718,
+1.543163, 1.185046, 1.314036, 1.457908, 1.177014, 1.124846, 1.263929,
+1.405596, 1.162554, 0.9881347, 1.188123, 1.139768, 1.199237, 1.131153,
+1.23158, 1.680345, 1.289368, 7.080688, 7.704416, 7.650847, 6.955267,
+6.110937, 5.777853, 7.400386, 7.344311, 8.108207, 8.32635, 6.73922,
+7.939178, 6.6218, 7.364032, 8.229459, 7.971704, 7.643635, 7.610238,
+6.958652, 7.613119, 7.370215, 7.179605, 6.489263, 6.823597, 6.35924,
+6.648309, 7.247496, 7.140899, 7.902943, 7.35641, 8.245053, 6.763566,
+7.156562, 5.541855, 7.520397, 7.523088, 6.327822, 7.470564, 8.357375,
+5.871492, 7.8242, 7.464129, 7.382166, 5.981173, 7.807186, 7.177116,
+7.02289, 7.478385, 7.909888, 7.342883, 7.127843, 8.68363, 9.534263,
+6.490295, 8.777611, 8.256674, 6.907705, 7.988662, 6.094251, 6.900312,
+8.219888, 8.058198, 7.85661, 8.274037, 6.10402, 6.61376, 0.1830975,
+0.6246613, 0.355125, 0.7426549, 0.6869087, 0.7088201, 0.2010547,
+0.6990158, 0.2825127, 0.3799637, 0.6904159, 0.6128838, 0.655144,
+0.4902478, 0.412934, 0.6264998, 0.1444041, 0.1753657, 0.8861003,
+0.8252641, 0.6103428, 0.6387641, 0.6362861, 0.5293039, 0.8074569,
+0.8597401, 0.9037561, 0.5265007, 0.5090354, 0.5730427, 0.1747923,
+0.9387584, 0.8023908, 0.7776666, 0.3301611, 0.416435, 0.5722253,
+0.5454688, 0.4110829, 0.70779, 0.3371341, 0.7302146, 0.9780393,
+0.2250961, 0.1586239, 0.7671475, 0.8669645, 0.7902038, 0.8074687,
+0.6877634, 0.7884798, 0.2485479, 0.2492218, 0.7263104, 0.2272166,
+0.5508839, 0.7093694, 0.1364154, 0.7403336, 0.7199349, 0.6728924,
+0.2163951, 0.6729867, 0.4517076, 0.738686, 0.6274465, 1e-08, 25, FALSE,
+glm.fit & 0.0000000 & 1.0000000 \\
+treat \textasciitilde{} pct\_discounts + sales\_trend\_3m & 94.08997 &
+0.5606061 & 1.447221, -0.2998432, 1.316299, -1.647352, -1.96016,
+-1.684283, -2.403946, 1.595071, 1.523201, 2.660447, -2.17962, -1.542211,
+2.731924, 1.71512, 2.134906, -2.382764, 2.122459, 2.610883, -1.888359,
+-1.519654, -1.546717, -2.693994, -2.285018, -2.041545, 1.873481,
+1.712481, 1.906709, 1.547003, 1.556858, 1.628939, 2.000897, 2.287086,
+-1.995756, -1.451616, 1.519495, 1.69938, 1.445225, -1.688577, 2.297414,
+-2.354031, 2.077644, 2.677951, 1.538829, 2.576242, 1.843384, -2.683914,
+-1.951325, -1.504133, -2.356634, -2.620345, -2.27765, 1.870781,
+-2.162775, 1.706197, -1.436336, -1.338405, -2.579631, -1.412466,
+-1.738334, 1.733642, 3.156663, -2.811946, 1.721907, 2.140799, -1.504527,
+-1.977576, 2.551328, 1.554713, -2.336477, 0.3929653, 0.4898376,
+0.4062756, 0.5840173, 0.6269314, 0.6565122, 0.3758767, 0.5412045,
+0.3515805, 0.3660424, 0.5830496, 0.4684048, 0.5803193, 0.4711517,
+0.3830122, 0.4704396, 0.3419553, 0.3534693, 0.6288039, 0.5623668,
+0.510175, 0.5337659, 0.5839481, 0.5244638, 0.6464111, 0.6423194,
+0.6138966, 0.4997758, 0.4372377, 0.4989366, 0.3111124, 0.6581134,
+0.5884498, 0.6919337, 0.4077852, 0.4352719, 0.5751967, 0.4813144,
+0.3734198, 0.6498448, 0.3881623, 0.5424806, 0.6274098, 0.4875277,
+0.3351653, 0.575666, 0.6183709, 0.5609509, 0.5345361, 0.537631,
+0.5860987, 0.3037839, 0.2528417, 0.6123477, 0.2920183, 0.4247365,
+0.5768205, 0.3167902, 0.6443744, 0.5807514, 0.4671152, 0.3353391,
+0.4943305, 0.3919528, 0.6432053, 0.5720052, -0.02177311, 1.467074,
+1.036868, -1.210867, 0.693954, 0.610277, 1.514258, -1.059754,
+-0.4842949, 1.551329, 0.82125, 1.180113, -1.196714, 1.171957, 1.485179,
+-0.8302721, -0.4572553, -0.4886027, -1.382785, -1.133939, -0.9559203,
+0.9704571, 0.8190255, 1.000218, 0.6378429, 0.6489678, 0.72963, 1.078308,
+1.287046, -0.9193776, -0.3758337, 0.6040573, 0.8044561, 0.5119349,
+-0.641516, 1.294635, -1.177555, 1.137992, 1.522164, 0.6289571, 1.466205,
+0.942911, -1.377943, -0.8803501, -0.4391791, -1.180788, -1.341466,
+-1.128686, 0.9667288, -1.047545, 0.8114835, -0.3573296, -0.2285866,
+-1.317005, -0.3268677, -0.6923995, 0.8395433, 1.759101, -1.444889,
+0.8278098, 1.183933, -0.4400801, -0.9054818, 1.45103, 0.647399,
+-1.166549, -3.957693, 0, 0, -28.97248, -3.009927, 0, -2.264925,
+0.4289055, 0.7877147, 3, -3.957693, 0.1263101, 0.1240968, 0.1245399,
+0.1221975, 0.1199872, 0.1223815, 0.1259065, 0.1206419, 0.1217177,
+0.1245813, 0.1260837, 0.1246955, 0.1261258, 0.1228294, 0.1261152,
+0.1198589, 0.1207893, 0.1220723, 0.1253496, 0.1263101, 0.1260478,
+0.1245428, 0.1261849, 0.1207985, 0.1211103, 0.1230148, 0.1263362,
+0.125337, 0.1263359, 0.1169744, 0.1198531, 0.1243438, 0.1166574,
+0.124169, 0.1252731, 0.1248993, 0.126248, 0.1222207, 0.1205294,
+0.1231353, 0.1258794, 0.1221657, 0.1262969, 0.1192736, 0.1248812,
+0.1227448, 0.125394, 0.1260345, 0.1259779, 0.1244491, 0.1162017,
+0.1098218, 0.1231057, 0.1148878, 0.1248967, 0.1248362, 0.1175495,
+0.1209549, 0.1246777, 0.1260627, 0.1192889, 0.1263281, 0.1233512,
+0.1210436, 0.1250193, -28.97248, -3.009927, 0.05819528, -0.05550159,
+-0.1901206, -0.2392319, 0.01708747, 0.008296302, 0.1291261, 0.1651899,
+-0.0909106, 0.106928, -0.1102462, 0.01158125, 0.1510503, 0.1123484,
+0.05507133, 0.0501946, -0.05385861, 0.05256442, 0.01262504, -0.01899242,
+-0.1318153, -0.07808121, -0.1485047, -0.1028549, -0.007554024,
+-0.02546566, 0.1003231, 0.01033452, 0.1462484, -0.08362358, -0.02250311,
+-0.2687928, 0.0369309, 0.03770256, -0.1587056, 0.02927691, 0.1708585,
+-0.225473, 0.08581165, 0.02812635, 0.01413059, -0.218048, 0.08045211,
+-0.01922529, -0.04378761, 0.03036838, 0.1020322, 0.008064481,
+-0.02722162, 0.2122931, 0.3234712, -0.1301272, 0.2240899, 0.158062,
+-0.06344083, 0.1073388, -0.1908411, -0.06457221, 0.1534398, 0.1198339,
+0.09342023, 0.1589222, -0.1894263, -0.1118541, -2.264925, 0.4289055,
+0.7877147, -0.1082003, -0.01045138, 0.0003463994, 0.1942284, -0.110974,
+0.09120206, 0.01659597, -0.05949775, -0.1012663, -0.02872837,
+0.01964462, 0.003493225, -0.1123638, 0.2069645, 0.1921852, -0.1942813,
+-0.210074, -0.05700633, -0.06056857, -0.007055884, 0.03553413,
+-0.101371, -0.1543107, -0.2278693, 0.01346598, -0.03256375, -0.03230259,
+0.1421982, -0.2085242, -0.1602659, -0.02360807, 0.1076404, 0.05409529,
+0.04514072, -0.02337858, -0.004704608, -0.005754315, 0.08013618,
+-0.1396705, -0.2816958, 0.2920083, 0.1858069, -0.1403753, -0.1882496,
+-0.1779913, -0.2222439, -0.1038075, -0.1495735, 0.06782599, 0.008056815,
+-0.06273164, 0.07293738, -0.08503939, -0.08404213, 0.1835241,
+-0.04160919, -0.09000453, -0.1603465, 0.1333613, -0.133394, -0.02379894,
+-0.0413424, -0.01080633, 3, 1.123408, 1.06813, 1.082365, 1, 2, 3, 1e-11,
+binomial, logit, function (mu) , .Call(C\_logit\_link, mu), function
+(eta) , .Call(C\_logit\_linkinv, eta), function (mu) , mu * (1 - mu),
+function (y, mu, wt) , .Call(C\_binomial\_dev\_resids, y, mu, wt),
+function (y, n, mu, wt, dev) , \{, m \textless- if (any(n \textgreater{}
+1)) , n, else wt, -2 * sum(ifelse(m \textgreater{} 0, (wt/m), 0) *
+dbinom(round(m * y), , round(m), mu, log = TRUE)), \}, function (eta) ,
+.Call(C\_logit\_mu\_eta, eta), \{, if (NCOL(y) == 1) \{, if
+(is.factor(y)) , y \textless- y != levels(y){[}1L{]}, n \textless-
+rep.int(1, nobs), y{[}weights == 0{]} \textless- 0, if (any(y
+\textless{} 0 \textbar{} y \textgreater{} 1)) , stop(``y values must be
+0 \textless= y \textless= 1''), mustart \textless- (weights * y +
+0.5)/(weights + 1), m \textless- weights * y, if (``binomial'' ==
+``binomial'' \&\& any(abs(m - round(m)) \textgreater{} , 0.001)) ,
+warning(gettextf(``non-integer \#successes in a \%s glm!'', ,
+``binomial''), domain = NA), \}, else if (NCOL(y) == 2) \{, if
+(``binomial'' == ``binomial'' \&\& any(abs(y - round(y)) \textgreater{}
+, 0.001)) , warning(gettextf(``non-integer counts in a \%s glm!'', ,
+``binomial''), domain = NA), n \textless- (y1 \textless- y{[}, 1L{]}) +
+y{[}, 2L{]}, y \textless- y1/n, if (any(n0 \textless- n == 0)) ,
+y{[}n0{]} \textless- 0, weights \textless- weights * n, mustart
+\textless- (n * y + 0.5)/(n + 1), \}, else stop(gettextf(``for the `\%s'
+family, y must be a vector of 0 and 1's\nor a 2 column matrix where col
+1 is no. successes and col 2 is no. failures'', , ``binomial''), domain
+= NA), \}, function (mu) , all(is.finite(mu)) \&\& all(mu \textgreater{}
+0 \& mu \textless{} 1), function (eta) , TRUE, function (object, nsim) ,
+\{, ftd \textless- fitted(object), n \textless- length(ftd), ntot
+\textless- n * nsim, wts \textless-
+object\(prior.weights,     if (any(wts%%1 != 0)) ,         stop("cannot simulate from non-integer prior.weights"),     if (!is.null(m <- object
+\)model)) \{, y \textless- model.response(m), if (is.factor(y)) \{, yy
+\textless- factor(1 + rbinom(ntot, size = 1, prob = ftd), , labels =
+levels(y)), split(yy, rep(seq\_len(nsim), each = n)), \}, else if
+(is.matrix(y) \&\& ncol(y) == 2) \{, yy \textless- vector(``list'',
+nsim), for (i in seq\_len(nsim)) \{, Y \textless- rbinom(n, size = wts,
+prob = ftd), YY \textless- cbind(Y, wts - Y), colnames(YY) \textless-
+colnames(y), yy{[}{[}i{]}{]} \textless- YY, \}, yy, \}, else
+rbinom(ntot, size = wts, prob = ftd)/wts, \}, else rbinom(ntot, size =
+wts, prob = ftd)/wts, \}, 1, -0.4348646, -0.04065528, -0.3793833,
+0.3392869, 0.519075, 0.6477898, -0.5070869, 0.1651927, -0.6120993,
+-0.5492331, 0.3353049, -0.1265496, 0.3240842, -0.1155216, -0.4767823,
+-0.1183797, -0.6545927, -0.6038242, 0.5270891, 0.2507731, 0.04070549,
+0.1352694, 0.3390019, 0.09793359, 0.6033006, 0.5854453, 0.4637215,
+-0.0008969616, -0.2523805, -0.004253505, -0.7949237, 0.6548981,
+0.3575605, 0.809175, -0.3731287, -0.2603733, 0.3030858, -0.07477723,
+-0.5175736, 0.6183571, -0.4550434, 0.1703331, 0.5211206, -0.04989963,
+-0.6849147, 0.3050066, 0.4826393, 0.2450223, 0.1383648, 0.1508093,
+0.3478605, -0.8293436, -1.083513, 0.4571916, -0.8856016, -0.3033592,
+0.3097346, -0.7685621, 0.5944014, 0.3258586, -0.1317292, -0.6841349,
+-0.02267893, -0.4391111, 0.5893036, 0.2900368, 88.08997, 94.08997,
+91.49543, 4, 0.2385436, 0.2498967, 0.2412158, 0.2429411, 0.2338884,
+0.225504, 0.2345934, 0.2483022, 0.2279717, 0.2320554, 0.2431028,
+0.2490017, 0.2435488, 0.2491678, 0.2363139, 0.2491262, 0.2250219,
+0.2285288, 0.2334096, 0.2461104, 0.2498965, 0.2488599, 0.2429527,
+0.2494015, 0.2285638, 0.2297452, 0.2370276, 0.2499999, 0.2460609,
+0.2499989, 0.2143216, 0.2250002, 0.2421766, 0.2131615, 0.2414965,
+0.2458103, 0.2443455, 0.2496509, 0.2339775, 0.2275466, 0.2374924,
+0.2481954, 0.2337668, 0.2498444, 0.2228296, 0.2442747, 0.2359883,
+0.246285, 0.2488073, 0.2485839, 0.242587, 0.2114993, 0.188913, 0.237378,
+0.2067437, 0.2443354, 0.2440986, 0.2164343, 0.2291561, 0.2434792,
+0.2489186, 0.2228868, 0.2499679, 0.2383258, 0.2294923, 0.2448153, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 63, 65, 0, 0, 0, 0, 1,
+1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, TRUE, FALSE, 0, 0, 0, 0, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0,
+0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 7.080688, 7.704416, 7.650847, 6.955267,
+6.110937, 5.777853, 7.400386, 7.344311, 8.108207, 8.32635, 6.73922,
+7.939178, 6.6218, 7.364032, 8.229459, 7.971704, 7.643635, 7.610238,
+6.958652, 7.613119, 7.370215, 7.179605, 6.489263, 6.823597, 6.35924,
+6.648309, 7.247496, 7.140899, 7.902943, 7.35641, 8.245053, 6.763566,
+7.156562, 5.541855, 7.520397, 7.523088, 6.327822, 7.470564, 8.357375,
+5.871492, 7.8242, 7.464129, 7.382166, 5.981173, 7.807186, 7.177116,
+7.02289, 7.478385, 7.909888, 7.342883, 7.127843, 8.68363, 9.534263,
+6.490295, 8.777611, 8.256674, 6.907705, 7.988662, 6.094251, 6.900312,
+8.219888, 8.058198, 7.85661, 8.274037, 6.10402, 6.61376, 0.1830975,
+0.6246613, 0.355125, 0.7426549, 0.6869087, 0.7088201, 0.2010547,
+0.6990158, 0.2825127, 0.3799637, 0.6904159, 0.6128838, 0.655144,
+0.4902478, 0.412934, 0.6264998, 0.1444041, 0.1753657, 0.8861003,
+0.8252641, 0.6103428, 0.6387641, 0.6362861, 0.5293039, 0.8074569,
+0.8597401, 0.9037561, 0.5265007, 0.5090354, 0.5730427, 0.1747923,
+0.9387584, 0.8023908, 0.7776666, 0.3301611, 0.416435, 0.5722253,
+0.5454688, 0.4110829, 0.70779, 0.3371341, 0.7302146, 0.9780393,
+0.2250961, 0.1586239, 0.7671475, 0.8669645, 0.7902038, 0.8074687,
+0.6877634, 0.7884798, 0.2485479, 0.2492218, 0.7263104, 0.2272166,
+0.5508839, 0.7093694, 0.1364154, 0.7403336, 0.7199349, 0.6728924,
+0.2163951, 0.6729867, 0.4517076, 0.738686, 0.6274465, glm(formula = f,
+family = binomial(link = ``logit''), data =
+store\_df\_pre\_treat\_3selected), treat \textasciitilde{}
+pct\_discounts + sales\_trend\_3m, treat \textasciitilde{}
+pct\_discounts + sales\_trend\_3m, 30, 31, 12, 27, 36, 37, 38, 7, 29,
+39, 40, 41, 14, 42, 43, 9, 10, 25, 3, 24, 11, 44, 45, 46, 47, 48, 49,
+50, 51, 16, 8, 52, 53, 54, 33, 55, 34, 56, 57, 58, 59, 60, 18, 22, 32,
+6, 20, 28, 61, 26, 62, 4, 23, 19, 21, 17, 63, 64, 5, 65, 66, 13, 2, 67,
+68, 15, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0,
+1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0,
+0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0,
+0.7920762, 1.095208, 1.006658, 1.351556, 1.488733, 1.264122, 1.24255,
+1.172679, 1.928141, 1.278592, 0.9855499, 1.176076, 1.411168, 1.589711,
+1.547734, 1.480842, 1.641596, 1.147299, 1.546763, 1.148067, 1.212387,
+1.40863, 1.544436, 1.418632, 1.598764, 1.446273, 1.308985, 1.250404,
+1.219425, 1.551805, 0.8809633, 1.408781, 1.286795, 1.490185, 1.182606,
+1.326177, 1.407469, 1.457917, 1.789647, 1.45707, 0.8058668, 1.215351,
+1.355715, 1.871972, 1.377959, 1.334439, 1.602945, 1.437817, 1.600718,
+1.543163, 1.185046, 1.314036, 1.457908, 1.177014, 1.124846, 1.263929,
+1.405596, 1.162554, 0.9881347, 1.188123, 1.139768, 1.199237, 1.131153,
+1.23158, 1.680345, 1.289368, 7.080688, 7.704416, 7.650847, 6.955267,
+6.110937, 5.777853, 7.400386, 7.344311, 8.108207, 8.32635, 6.73922,
+7.939178, 6.6218, 7.364032, 8.229459, 7.971704, 7.643635, 7.610238,
+6.958652, 7.613119, 7.370215, 7.179605, 6.489263, 6.823597, 6.35924,
+6.648309, 7.247496, 7.140899, 7.902943, 7.35641, 8.245053, 6.763566,
+7.156562, 5.541855, 7.520397, 7.523088, 6.327822, 7.470564, 8.357375,
+5.871492, 7.8242, 7.464129, 7.382166, 5.981173, 7.807186, 7.177116,
+7.02289, 7.478385, 7.909888, 7.342883, 7.127843, 8.68363, 9.534263,
+6.490295, 8.777611, 8.256674, 6.907705, 7.988662, 6.094251, 6.900312,
+8.219888, 8.058198, 7.85661, 8.274037, 6.10402, 6.61376, 0.1830975,
+0.6246613, 0.355125, 0.7426549, 0.6869087, 0.7088201, 0.2010547,
+0.6990158, 0.2825127, 0.3799637, 0.6904159, 0.6128838, 0.655144,
+0.4902478, 0.412934, 0.6264998, 0.1444041, 0.1753657, 0.8861003,
+0.8252641, 0.6103428, 0.6387641, 0.6362861, 0.5293039, 0.8074569,
+0.8597401, 0.9037561, 0.5265007, 0.5090354, 0.5730427, 0.1747923,
+0.9387584, 0.8023908, 0.7776666, 0.3301611, 0.416435, 0.5722253,
+0.5454688, 0.4110829, 0.70779, 0.3371341, 0.7302146, 0.9780393,
+0.2250961, 0.1586239, 0.7671475, 0.8669645, 0.7902038, 0.8074687,
+0.6877634, 0.7884798, 0.2485479, 0.2492218, 0.7263104, 0.2272166,
+0.5508839, 0.7093694, 0.1364154, 0.7403336, 0.7199349, 0.6728924,
+0.2163951, 0.6729867, 0.4517076, 0.738686, 0.6274465, 1e-08, 25, FALSE,
+glm.fit & 3.4054617 & 0.1821853 \\
+treat \textasciitilde{} pct\_online\_sales + sales\_trend\_3m & 94.54884
+& 0.5454545 & -1.6372, 0.4762065, 1.759192, -1.391447, -1.983384,
+-1.586789, -2.367375, 1.755671, 1.80918, 2.997298, -2.162928, -1.800905,
+2.433181, 1.954374, 1.998965, -2.206028, 2.017887, 2.189733, -2.185447,
+-1.548029, -1.457332, -2.931312, -2.435216, -2.013954, 1.854441,
+1.804431, 2.03096, 1.580066, 1.568944, 1.562127, 2.122472, 2.174697,
+-2.116135, -1.402449, 1.504026, 1.678996, 1.643714, -1.610658, 2.314001,
+-2.040499, 1.983484, 2.063733, 1.739482, 2.935483, 1.797602, -3.072923,
+-1.704852, -1.495615, -2.41599, -2.918014, -2.549014, 1.579514,
+-2.36012, 1.730363, -1.563153, -1.603804, -2.222651, -1.495681,
+-1.935946, 1.75573, 3.324727, -2.14539, 1.822756, 1.91456, -1.503871,
+-2.089126, 2.291847, 1.629719, -2.083942, 0.2813239, 0.4958112,
+0.3697966, 0.5775912, 0.5695828, 0.5527367, 0.3336338, 0.5376637,
+0.4447238, 0.4109846, 0.5116728, 0.5002589, 0.5466965, 0.4955679,
+0.4566768, 0.5424278, 0.3540175, 0.3138144, 0.6588558, 0.5893588,
+0.5034642, 0.539246, 0.5541914, 0.4923779, 0.6328851, 0.6373713,
+0.640153, 0.4711488, 0.4598342, 0.5274404, 0.2869618, 0.6648821,
+0.595594, 0.6083784, 0.3791358, 0.432152, 0.5099239, 0.5041635,
+0.4845588, 0.5748837, 0.3406594, 0.5562968, 0.6745769, 0.4134389,
+0.3313785, 0.586091, 0.6573012, 0.6076914, 0.6331061, 0.5762927,
+0.5779136, 0.3602674, 0.3764824, 0.5500868, 0.3314082, 0.4834565,
+0.5695637, 0.3007766, 0.5338844, 0.5486199, 0.5223132, 0.3350494,
+0.521331, 0.4363293, 0.6136028, 0.5201403, -0.0234922, 0.5931686,
+1.563083, -1.192388, 0.8011445, 0.9256455, 1.589212, -1.008088,
+-1.04161, 1.312514, 1.134548, 1.093994, -1.122412, 0.9527498, 1.076555,
+-1.135947, -0.718344, -0.4560524, -1.535861, -1.154524, -0.9281087,
+0.9060966, 0.8183725, 1.02498, 0.6128483, 0.6572919, 0.6999809,
+1.145843, 1.1892, -1.119947, -0.3106229, 0.6085983, 0.8124754, 0.708219,
+-0.6112446, 1.230411, -1.018111, 0.9787694, 0.908347, 0.7999225,
+1.716986, 0.9347749, -1.528794, -0.9431221, -0.5741396, -1.212458,
+-1.549956, -1.319229, 0.6116497, -1.258829, 0.8925241, -0.6158438,
+-0.7044492, -1.04559, -0.4855849, -0.8943099, 0.8318093, 1.746599,
+-0.9288571, 0.9641039, 1.049366, -0.5195045, -0.9467001, 1.252852,
+0.6271991, -1.002193, -3.971884, 0, 0, -5.308974, 0.8928265, 0,
+-2.272686, 0.09549772, 0.8885234, 3, -3.971884, 0.1258804, 0.1215417,
+0.1243599, 0.1246599, 0.1251827, 0.1187121, 0.1255272, 0.1251132,
+0.1238738, 0.1258506, 0.1258848, 0.1253347, 0.1258799, 0.1254114,
+0.1254308, 0.1203999, 0.1168317, 0.1193625, 0.1238582, 0.1258818,
+0.1254965, 0.1251433, 0.1258702, 0.1213576, 0.1210405, 0.1208382,
+0.1256751, 0.125478, 0.1256951, 0.1138865, 0.1188433, 0.1235627,
+0.122892, 0.1221516, 0.1247205, 0.1258601, 0.1258805, 0.1258248,
+0.124465, 0.1193215, 0.1250844, 0.1179624, 0.123984, 0.1185102,
+0.1240048, 0.1194929, 0.1229303, 0.1213422, 0.1244108, 0.1243471,
+0.1208691, 0.1219833, 0.1252517, 0.1185129, 0.1258159, 0.1246606,
+0.1154605, 0.1255955, 0.1252883, 0.1257594, 0.1188373, 0.1257702,
+0.12486, 0.1225926, 0.1257827, -5.308974, 0.8928265, 0.1484765,
+-0.03889058, -0.1150585, 0.009543833, 0.02044295, 0.0606346, -0.3600452,
+0.001470289, 0.1655581, 0.05890498, -0.07243335, -0.1727316, -0.1486693,
+-0.1113665, -0.193003, 0.0696252, -0.140983, 0.0733898, 0.03856921,
+-0.07110968, -0.1465156, -0.07692218, -0.1714139, -0.08885425,
+-0.01490424, 0.01725086, 0.03451654, -0.151282, 0.2028072, -0.06741957,
+-0.003042358, -0.1142205, 0.05360958, -0.02492186, -0.07066581,
+-0.09892796, -0.2845707, -0.09734651, 0.2523486, 0.03667549,
+-0.03907235, -0.3258149, -0.05098081, -0.02933672, -0.1710026,
+-0.08561736, -0.1724472, -0.1449536, 0.05322348, -0.01762392,
+-0.0958601, 0.05808623, 0.08246492, 0.009700434, -0.06895327,
+0.06097243, 0.1637783, 0.05191121, 0.07915919, 0.043363, 0.08398601,
+0.02759516, -0.2176502, -0.004536917, -2.272686, 0.09549772, 0.8885234,
+-0.1147975, -0.08017282, -0.09907908, 0.1749224, -0.09642562, 0.1580417,
+0.0844605, -0.09711975, -0.04813525, -0.06499107, 0.03255735,
+0.07459834, -0.04701935, 0.2186791, 0.1830712, -0.1814954, -0.1657276,
+-0.0456787, -0.05595741, -0.05060058, 0.005747916, -0.1404497,
+-0.1725132, -0.1997232, 0.002570281, 0.01149061, -0.01508053, 0.1719425,
+-0.2123601, -0.1488522, -0.128854, 0.10785, 0.06603564, -0.01871625,
+-0.002238267, 0.08271479, -0.09254975, 0.09154598, -0.1123328,
+-0.2329038, 0.186875, 0.2007037, -0.1285229, -0.169966, -0.1372279,
+-0.1403851, -0.0789686, -0.1449033, 0.1543782, 0.1593714, -0.1113744,
+0.1576391, -0.01075874, -0.09501498, 0.2014213, -0.1248758, -0.107524,
+-0.08284685, 0.1658027, -0.08315004, 0.04377205, -0.1019476,
+-0.05308721, 3, 1.113207, 1.104189, 1.08895, 1, 2, 3, 1e-11, binomial,
+logit, function (mu) , .Call(C\_logit\_link, mu), function (eta) ,
+.Call(C\_logit\_linkinv, eta), function (mu) , mu * (1 - mu), function
+(y, mu, wt) , .Call(C\_binomial\_dev\_resids, y, mu, wt), function (y,
+n, mu, wt, dev) , \{, m \textless- if (any(n \textgreater{} 1)) , n,
+else wt, -2 * sum(ifelse(m \textgreater{} 0, (wt/m), 0) * dbinom(round(m
+* y), , round(m), mu, log = TRUE)), \}, function (eta) ,
+.Call(C\_logit\_mu\_eta, eta), \{, if (NCOL(y) == 1) \{, if
+(is.factor(y)) , y \textless- y != levels(y){[}1L{]}, n \textless-
+rep.int(1, nobs), y{[}weights == 0{]} \textless- 0, if (any(y
+\textless{} 0 \textbar{} y \textgreater{} 1)) , stop(``y values must be
+0 \textless= y \textless= 1''), mustart \textless- (weights * y +
+0.5)/(weights + 1), m \textless- weights * y, if (``binomial'' ==
+``binomial'' \&\& any(abs(m - round(m)) \textgreater{} , 0.001)) ,
+warning(gettextf(``non-integer \#successes in a \%s glm!'', ,
+``binomial''), domain = NA), \}, else if (NCOL(y) == 2) \{, if
+(``binomial'' == ``binomial'' \&\& any(abs(y - round(y)) \textgreater{}
+, 0.001)) , warning(gettextf(``non-integer counts in a \%s glm!'', ,
+``binomial''), domain = NA), n \textless- (y1 \textless- y{[}, 1L{]}) +
+y{[}, 2L{]}, y \textless- y1/n, if (any(n0 \textless- n == 0)) ,
+y{[}n0{]} \textless- 0, weights \textless- weights * n, mustart
+\textless- (n * y + 0.5)/(n + 1), \}, else stop(gettextf(``for the `\%s'
+family, y must be a vector of 0 and 1's\nor a 2 column matrix where col
+1 is no. successes and col 2 is no. failures'', , ``binomial''), domain
+= NA), \}, function (mu) , all(is.finite(mu)) \&\& all(mu \textgreater{}
+0 \& mu \textless{} 1), function (eta) , TRUE, function (object, nsim) ,
+\{, ftd \textless- fitted(object), n \textless- length(ftd), ntot
+\textless- n * nsim, wts \textless-
+object\(prior.weights,     if (any(wts%%1 != 0)) ,         stop("cannot simulate from non-integer prior.weights"),     if (!is.null(m <- object
+\)model)) \{, y \textless- model.response(m), if (is.factor(y)) \{, yy
+\textless- factor(1 + rbinom(ntot, size = 1, prob = ftd), , labels =
+levels(y)), split(yy, rep(seq\_len(nsim), each = n)), \}, else if
+(is.matrix(y) \&\& ncol(y) == 2) \{, yy \textless- vector(``list'',
+nsim), for (i in seq\_len(nsim)) \{, Y \textless- rbinom(n, size = wts,
+prob = ftd), YY \textless- cbind(Y, wts - Y), colnames(YY) \textless-
+colnames(y), yy{[}{[}i{]}{]} \textless- YY, \}, yy, \}, else
+rbinom(ntot, size = wts, prob = ftd)/wts, \}, else rbinom(ntot, size =
+wts, prob = ftd)/wts, \}, 1, -0.937904, -0.01675551, -0.5330894,
+0.3128929, 0.2801491, 0.2117343, -0.6917952, 0.1509407, -0.2220124,
+-0.3598967, 0.04669973, 0.001035699, 0.187332, -0.01772902, -0.1737286,
+0.1701202, -0.6014262, -0.7823462, 0.6581995, 0.3613153, 0.01385717,
+0.1573078, 0.2176203, -0.03049062, 0.5446139, 0.5639728, 0.5760281,
+-0.1155331, -0.1610103, 0.1098721, -0.9101859, 0.6851273, 0.3871398,
+0.4405011, -0.4932181, -0.2730763, 0.03970062, 0.01665425, -0.06178445,
+0.301805, -0.6603571, 0.2261461, 0.7289597, -0.3497671, -0.7019568,
+0.3478288, 0.6512903, 0.4376185, 0.5455653, 0.3075727, 0.3142142,
+-0.5742036, -0.5045055, 0.2010213, -0.7018227, -0.06619798, 0.2800711,
+-0.8436027, 0.1357455, 0.195096, 0.08931227, -0.6854348, 0.08537567,
+-0.2560728, 0.4624821, 0.08060462, 88.54884, 94.54884, 91.49543, 4,
+0.2021809, 0.2499825, 0.2330471, 0.2439796, 0.2451582, 0.2472188,
+0.2223224, 0.2485814, 0.2469445, 0.2420763, 0.2498637, 0.2499999,
+0.2478194, 0.2499804, 0.2481231, 0.2481999, 0.2286891, 0.215335,
+0.2247649, 0.242015, 0.249988, 0.2484597, 0.2470633, 0.2499419,
+0.2323416, 0.2311292, 0.2303572, 0.2491676, 0.2483867, 0.249247,
+0.2046149, 0.2228139, 0.2408618, 0.2382541, 0.2353919, 0.2453967,
+0.2499015, 0.2499827, 0.2497616, 0.2443924, 0.2246107, 0.2468307,
+0.2195229, 0.2425072, 0.2215669, 0.2425884, 0.2252564, 0.2384026,
+0.2322828, 0.2441794, 0.2439295, 0.2304749, 0.2347435, 0.2474913,
+0.2215769, 0.2497263, 0.2451609, 0.2103101, 0.2488518, 0.2476361,
+0.2495021, 0.2227914, 0.249545, 0.2459461, 0.2370944, 0.2495944, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 63, 65, 0, 0, 0, 0, 1,
+1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, TRUE, FALSE, 0, 0, 0, 0, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0,
+0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0.7920762, 1.095208, 1.006658,
+1.351556, 1.488733, 1.264122, 1.24255, 1.172679, 1.928141, 1.278592,
+0.9855499, 1.176076, 1.411168, 1.589711, 1.547734, 1.480842, 1.641596,
+1.147299, 1.546763, 1.148067, 1.212387, 1.40863, 1.544436, 1.418632,
+1.598764, 1.446273, 1.308985, 1.250404, 1.219425, 1.551805, 0.8809633,
+1.408781, 1.286795, 1.490185, 1.182606, 1.326177, 1.407469, 1.457917,
+1.789647, 1.45707, 0.8058668, 1.215351, 1.355715, 1.871972, 1.377959,
+1.334439, 1.602945, 1.437817, 1.600718, 1.543163, 1.185046, 1.314036,
+1.457908, 1.177014, 1.124846, 1.263929, 1.405596, 1.162554, 0.9881347,
+1.188123, 1.139768, 1.199237, 1.131153, 1.23158, 1.680345, 1.289368,
+0.1830975, 0.6246613, 0.355125, 0.7426549, 0.6869087, 0.7088201,
+0.2010547, 0.6990158, 0.2825127, 0.3799637, 0.6904159, 0.6128838,
+0.655144, 0.4902478, 0.412934, 0.6264998, 0.1444041, 0.1753657,
+0.8861003, 0.8252641, 0.6103428, 0.6387641, 0.6362861, 0.5293039,
+0.8074569, 0.8597401, 0.9037561, 0.5265007, 0.5090354, 0.5730427,
+0.1747923, 0.9387584, 0.8023908, 0.7776666, 0.3301611, 0.416435,
+0.5722253, 0.5454688, 0.4110829, 0.70779, 0.3371341, 0.7302146,
+0.9780393, 0.2250961, 0.1586239, 0.7671475, 0.8669645, 0.7902038,
+0.8074687, 0.6877634, 0.7884798, 0.2485479, 0.2492218, 0.7263104,
+0.2272166, 0.5508839, 0.7093694, 0.1364154, 0.7403336, 0.7199349,
+0.6728924, 0.2163951, 0.6729867, 0.4517076, 0.738686, 0.6274465,
+glm(formula = f, family = binomial(link = ``logit''), data =
+store\_df\_pre\_treat\_3selected), treat \textasciitilde{}
+pct\_online\_sales + sales\_trend\_3m, treat \textasciitilde{}
+pct\_online\_sales + sales\_trend\_3m, 30, 31, 12, 27, 36, 37, 38, 7,
+29, 39, 40, 41, 14, 42, 43, 9, 10, 25, 3, 24, 11, 44, 45, 46, 47, 48,
+49, 50, 51, 16, 8, 52, 53, 54, 33, 55, 34, 56, 57, 58, 59, 60, 18, 22,
+32, 6, 20, 28, 61, 26, 62, 4, 23, 19, 21, 17, 63, 64, 5, 65, 66, 13, 2,
+67, 68, 15, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0,
+0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0,
+0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0,
+0.7920762, 1.095208, 1.006658, 1.351556, 1.488733, 1.264122, 1.24255,
+1.172679, 1.928141, 1.278592, 0.9855499, 1.176076, 1.411168, 1.589711,
+1.547734, 1.480842, 1.641596, 1.147299, 1.546763, 1.148067, 1.212387,
+1.40863, 1.544436, 1.418632, 1.598764, 1.446273, 1.308985, 1.250404,
+1.219425, 1.551805, 0.8809633, 1.408781, 1.286795, 1.490185, 1.182606,
+1.326177, 1.407469, 1.457917, 1.789647, 1.45707, 0.8058668, 1.215351,
+1.355715, 1.871972, 1.377959, 1.334439, 1.602945, 1.437817, 1.600718,
+1.543163, 1.185046, 1.314036, 1.457908, 1.177014, 1.124846, 1.263929,
+1.405596, 1.162554, 0.9881347, 1.188123, 1.139768, 1.199237, 1.131153,
+1.23158, 1.680345, 1.289368, 7.080688, 7.704416, 7.650847, 6.955267,
+6.110937, 5.777853, 7.400386, 7.344311, 8.108207, 8.32635, 6.73922,
+7.939178, 6.6218, 7.364032, 8.229459, 7.971704, 7.643635, 7.610238,
+6.958652, 7.613119, 7.370215, 7.179605, 6.489263, 6.823597, 6.35924,
+6.648309, 7.247496, 7.140899, 7.902943, 7.35641, 8.245053, 6.763566,
+7.156562, 5.541855, 7.520397, 7.523088, 6.327822, 7.470564, 8.357375,
+5.871492, 7.8242, 7.464129, 7.382166, 5.981173, 7.807186, 7.177116,
+7.02289, 7.478385, 7.909888, 7.342883, 7.127843, 8.68363, 9.534263,
+6.490295, 8.777611, 8.256674, 6.907705, 7.988662, 6.094251, 6.900312,
+8.219888, 8.058198, 7.85661, 8.274037, 6.10402, 6.61376, 0.1830975,
+0.6246613, 0.355125, 0.7426549, 0.6869087, 0.7088201, 0.2010547,
+0.6990158, 0.2825127, 0.3799637, 0.6904159, 0.6128838, 0.655144,
+0.4902478, 0.412934, 0.6264998, 0.1444041, 0.1753657, 0.8861003,
+0.8252641, 0.6103428, 0.6387641, 0.6362861, 0.5293039, 0.8074569,
+0.8597401, 0.9037561, 0.5265007, 0.5090354, 0.5730427, 0.1747923,
+0.9387584, 0.8023908, 0.7776666, 0.3301611, 0.416435, 0.5722253,
+0.5454688, 0.4110829, 0.70779, 0.3371341, 0.7302146, 0.9780393,
+0.2250961, 0.1586239, 0.7671475, 0.8669645, 0.7902038, 0.8074687,
+0.6877634, 0.7884798, 0.2485479, 0.2492218, 0.7263104, 0.2272166,
+0.5508839, 0.7093694, 0.1364154, 0.7403336, 0.7199349, 0.6728924,
+0.2163951, 0.6729867, 0.4517076, 0.738686, 0.6274465, 1e-08, 25, FALSE,
+glm.fit & 2.9465908 & 0.2291690 \\
+treat \textasciitilde{} pct\_online\_sales + pct\_discounts & 95.03368 &
+0.6060606 & 2.868485, 0.4373694, -0.4708543, -1.887757, -1.755661,
+-1.745524, -2.202854, 1.526107, 1.496165, 2.075263, -1.926148,
+-1.899434, 2.636886, 1.881312, 2.426653, -2.44453, 1.90811, 2.390217,
+-1.788714, -1.987509, -1.808128, -2.307976, -1.807304, -1.930949,
+1.901199, 1.61356, 1.758789, 1.563572, 1.690282, 1.971921, 1.948332,
+2.376178, -2.086976, -1.53343, 1.740827, 1.940267, 1.402186, -1.856167,
+2.0983, -2.656301, 2.011479, 2.328279, 1.476568, 2.589011, 2.121284,
+-1.985613, -3.389221, -1.814741, -2.075464, -2.300575, -1.976396,
+2.168609, -2.089795, 1.969851, -1.52439, -1.374142, -2.387206,
+-1.461849, -1.627255, 1.793956, 2.468946, -2.539043, 1.870148, 2.654311,
+-1.669487, -1.71455, 2.630237, 1.48224, -2.374786, 0.4702708, 0.430414,
+0.4271062, 0.5460434, 0.655262, 0.6683754, 0.4818667, 0.4808291,
+0.4735274, 0.3792352, 0.531544, 0.4120902, 0.5909234, 0.5240788,
+0.4183721, 0.4409392, 0.4968577, 0.4469419, 0.5667198, 0.4466896,
+0.4821198, 0.5259838, 0.6197475, 0.568573, 0.6395613, 0.5916174,
+0.5071196, 0.5132596, 0.4208438, 0.5208378, 0.3478673, 0.5744397,
+0.5153931, 0.7131721, 0.4612552, 0.4765762, 0.6235367, 0.4971466,
+0.4295018, 0.6772464, 0.3862479, 0.4714125, 0.4963773, 0.704947,
+0.4489572, 0.51818, 0.565326, 0.4940285, 0.4611251, 0.5214841,
+0.5076525, 0.3439997, 0.2722732, 0.5811003, 0.3159348, 0.3854682,
+0.5574273, 0.4050311, 0.6061508, 0.5347171, 0.3767456, 0.4010138,
+0.4167567, 0.3801938, 0.6746544, 0.5789093, 0.006725766, 0.610347,
+1.400888, -1.054599, 0.6381006, 0.6510236, 1.161471, -0.8218367,
+-0.9640831, 1.485903, 1.073157, 1.394781, -1.214029, 0.9640341,
+1.294909, -0.7780605, -0.9689508, -0.7227205, -1.162431, -0.7222042,
+-0.8340581, 0.9976832, 0.7166275, 0.8780134, 0.6548766, 0.8106002,
+1.073043, 1.068012, 1.356706, -1.020355, -0.4164076, 0.8643216,
+1.054052, 0.4954037, -0.76933, 1.159274, -1.328439, 1.069883, 1.206757,
+0.5898013, 1.560517, 1.198723, -0.9058632, -1.752498, -0.7776864,
+-0.9655056, -1.169934, -0.9167854, 1.147141, -1.020435, 1.098249,
+-0.4961052, -0.3569922, -1.130993, -0.391499, -0.5876443, 0.9110628,
+1.421237, -1.177578, 1.020618, 1.523807, -0.6133464, -0.6393959,
+1.492351, 0.5510706, -1.14759, -3.98686, 0, 0, -5.311392, 0.9005299, 0,
+-29.23625, -0.459766, -2.975204, 3, -3.98686, 0.1241915, 0.1240721,
+0.1248791, 0.1192123, 0.1180872, 0.1253295, 0.1253198, 0.1252361,
+0.121699, 0.1251622, 0.1234584, 0.123321, 0.1252665, 0.1237294,
+0.124534, 0.1254095, 0.1247039, 0.1242904, 0.1246971, 0.1253318,
+0.1252425, 0.1217622, 0.1242269, 0.1204276, 0.1232887, 0.1253993,
+0.1253679, 0.1238304, 0.125303, 0.1194659, 0.1240143, 0.1253525,
+0.1134428, 0.1250349, 0.1252743, 0.1215238, 0.1254099, 0.1241591,
+0.1172676, 0.1221233, 0.1252068, 0.1254087, 0.1143925, 0.1247568,
+0.1253291, 0.124337, 0.125403, 0.1250323, 0.1252962, 0.1253973,
+0.1191517, 0.1116492, 0.1237513, 0.1166048, 0.1220775, 0.124582,
+0.123129, 0.1225531, 0.1251093, 0.1215418, 0.1229298, 0.1236617,
+0.1217586, 0.117512, 0.1238403, -5.311392, 0.9005299, 0.145821,
+-0.04391426, -0.1143209, 0.00418476, 0.01641096, 0.05517567, -0.363727,
+-0.003483281, 0.1587987, 0.05249941, -0.07591276, -0.1761271,
+-0.1509719, -0.1150732, -0.2051361, 0.06891635, -0.1511222, 0.06848904,
+0.03314805, -0.07568809, -0.1467939, -0.08057533, -0.1741504,
+-0.09505378, -0.02046273, 0.01205667, 0.02889228, -0.1551503, 0.2068879,
+-0.07502868, -0.008140091, -0.1095172, 0.04955502, -0.02997733,
+-0.07281629, -0.1031544, -0.2844715, -0.09601716, 0.2520923, 0.03147196,
+-0.04640952, -0.3037871, -0.05845393, -0.0345748, -0.1821054,
+-0.09198949, -0.1818912, -0.1503484, 0.04834417, -0.02210764,
+-0.09183105, 0.05211024, 0.07603164, 0.004430765, -0.07361535,
+0.05973023, 0.1540861, 0.04652871, 0.07122154, 0.03966974, 0.07718012,
+0.0218569, -0.212377, -0.009452728, -29.23625, -0.459766, -2.975204,
+-0.04969091, -0.1677347, -0.2425088, 0.0127039, -0.00452143, 0.208039,
+0.1672532, -0.1268859, 0.09433314, -0.09762271, 0.04537089, 0.1836719,
+0.1344245, 0.09821268, 0.03711704, -0.02725934, 0.03768166, 0.004266071,
+-0.005811704, -0.1035453, -0.06392049, -0.1175593, -0.08935845,
+-0.005552187, -0.03000726, 0.09339115, 0.03986934, 0.1088133,
+-0.07487647, -0.02330515, -0.24598, 0.02609885, 0.04263764, -0.1444738,
+0.04858844, 0.2323735, -0.2059362, 0.03418432, 0.02034975, 0.02230428,
+-0.1417548, 0.0957165, -0.0145245, -0.01033782, 0.04765255, 0.1379698,
+0.03663049, -0.0395159, 0.2245638, 0.3520128, -0.1456083, 0.2147785,
+0.1547793, -0.05151011, 0.1007617, -0.2298785, -0.07722746, 0.134653,
+0.116074, 0.07585288, 0.1536959, -0.1463545, -0.1128176, 3, 1.12519,
+1.097275, 1.028122, 1, 2, 3, 1e-11, binomial, logit, function (mu) ,
+.Call(C\_logit\_link, mu), function (eta) , .Call(C\_logit\_linkinv,
+eta), function (mu) , mu * (1 - mu), function (y, mu, wt) ,
+.Call(C\_binomial\_dev\_resids, y, mu, wt), function (y, n, mu, wt, dev)
+, \{, m \textless- if (any(n \textgreater{} 1)) , n, else wt, -2 *
+sum(ifelse(m \textgreater{} 0, (wt/m), 0) * dbinom(round(m * y), ,
+round(m), mu, log = TRUE)), \}, function (eta) ,
+.Call(C\_logit\_mu\_eta, eta), \{, if (NCOL(y) == 1) \{, if
+(is.factor(y)) , y \textless- y != levels(y){[}1L{]}, n \textless-
+rep.int(1, nobs), y{[}weights == 0{]} \textless- 0, if (any(y
+\textless{} 0 \textbar{} y \textgreater{} 1)) , stop(``y values must be
+0 \textless= y \textless= 1''), mustart \textless- (weights * y +
+0.5)/(weights + 1), m \textless- weights * y, if (``binomial'' ==
+``binomial'' \&\& any(abs(m - round(m)) \textgreater{} , 0.001)) ,
+warning(gettextf(``non-integer \#successes in a \%s glm!'', ,
+``binomial''), domain = NA), \}, else if (NCOL(y) == 2) \{, if
+(``binomial'' == ``binomial'' \&\& any(abs(y - round(y)) \textgreater{}
+, 0.001)) , warning(gettextf(``non-integer counts in a \%s glm!'', ,
+``binomial''), domain = NA), n \textless- (y1 \textless- y{[}, 1L{]}) +
+y{[}, 2L{]}, y \textless- y1/n, if (any(n0 \textless- n == 0)) ,
+y{[}n0{]} \textless- 0, weights \textless- weights * n, mustart
+\textless- (n * y + 0.5)/(n + 1), \}, else stop(gettextf(``for the `\%s'
+family, y must be a vector of 0 and 1's\nor a 2 column matrix where col
+1 is no. successes and col 2 is no. failures'', , ``binomial''), domain
+= NA), \}, function (mu) , all(is.finite(mu)) \&\& all(mu \textgreater{}
+0 \& mu \textless{} 1), function (eta) , TRUE, function (object, nsim) ,
+\{, ftd \textless- fitted(object), n \textless- length(ftd), ntot
+\textless- n * nsim, wts \textless-
+object\(prior.weights,     if (any(wts%%1 != 0)) ,         stop("cannot simulate from non-integer prior.weights"),     if (!is.null(m <- object
+\)model)) \{, y \textless- model.response(m), if (is.factor(y)) \{, yy
+\textless- factor(1 + rbinom(ntot, size = 1, prob = ftd), , labels =
+levels(y)), split(yy, rep(seq\_len(nsim), each = n)), \}, else if
+(is.matrix(y) \&\& ncol(y) == 2) \{, yy \textless- vector(``list'',
+nsim), for (i in seq\_len(nsim)) \{, Y \textless- rbinom(n, size = wts,
+prob = ftd), YY \textless- cbind(Y, wts - Y), colnames(YY) \textless-
+colnames(y), yy{[}{[}i{]}{]} \textless- YY, \}, yy, \}, else
+rbinom(ntot, size = wts, prob = ftd)/wts, \}, else rbinom(ntot, size =
+wts, prob = ftd)/wts, \}, 1, -0.1190573, -0.2801621, -0.2936675,
+0.184697, 0.6422506, 0.7008465, -0.07256506, -0.07672141, -0.1059894,
+-0.4927957, 0.1263436, -0.3553313, 0.367784, 0.09638988, -0.3294598,
+-0.2373513, -0.01256936, -0.2130346, 0.2684805, -0.2140554, -0.07155119,
+0.104029, 0.4884768, 0.2760315, 0.5734604, 0.3706555, 0.02848045,
+0.05305096, -0.3193103, 0.08339953, -0.628427, 0.2999885, 0.06159172,
+0.9108403, -0.1552904, -0.09376393, 0.5045869, -0.01141375, -0.2838841,
+0.7411459, -0.4631116, -0.1144748, -0.01449114, 0.8709676, -0.2048849,
+0.072752, 0.2628061, -0.02388733, -0.1558142, 0.08598953, 0.03061241,
+-0.6455203, -0.9831197, 0.3272918, -0.7725175, -0.4664018, 0.2307273,
+-0.3845451, 0.4311608, 0.1390922, -0.5033847, -0.4012428, -0.3361018,
+-0.4887255, 0.7293128, 0.3182977, 89.03368, 95.03368, 91.49543, 4,
+0.2491162, 0.2451578, 0.2446865, 0.24788, 0.2258938, 0.2216498,
+0.2496712, 0.2496325, 0.2492992, 0.2354159, 0.249005, 0.2422719,
+0.241733, 0.2494202, 0.2433369, 0.2465118, 0.2499901, 0.2471848,
+0.2455485, 0.247158, 0.2496803, 0.2493248, 0.2356606, 0.2452978,
+0.2305227, 0.2416063, 0.2499493, 0.2498242, 0.2437343, 0.2495658,
+0.2268557, 0.2444587, 0.2497631, 0.2045578, 0.2484988, 0.2494513,
+0.2347387, 0.2499919, 0.24503, 0.2185838, 0.2370605, 0.2491828,
+0.2499869, 0.2079968, 0.2473946, 0.2496695, 0.2457325, 0.2499643,
+0.2484887, 0.2495384, 0.2499414, 0.225664, 0.1981406, 0.2434228,
+0.2161201, 0.2368825, 0.2467021, 0.2409809, 0.238732, 0.2487947,
+0.2348084, 0.2402017, 0.2430706, 0.2356465, 0.2194959, 0.2437733, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 63, 65, 0, 0, 0, 0, 1,
+1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, TRUE, FALSE, 0, 0, 0, 0, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0,
+0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0.7920762, 1.095208, 1.006658,
+1.351556, 1.488733, 1.264122, 1.24255, 1.172679, 1.928141, 1.278592,
+0.9855499, 1.176076, 1.411168, 1.589711, 1.547734, 1.480842, 1.641596,
+1.147299, 1.546763, 1.148067, 1.212387, 1.40863, 1.544436, 1.418632,
+1.598764, 1.446273, 1.308985, 1.250404, 1.219425, 1.551805, 0.8809633,
+1.408781, 1.286795, 1.490185, 1.182606, 1.326177, 1.407469, 1.457917,
+1.789647, 1.45707, 0.8058668, 1.215351, 1.355715, 1.871972, 1.377959,
+1.334439, 1.602945, 1.437817, 1.600718, 1.543163, 1.185046, 1.314036,
+1.457908, 1.177014, 1.124846, 1.263929, 1.405596, 1.162554, 0.9881347,
+1.188123, 1.139768, 1.199237, 1.131153, 1.23158, 1.680345, 1.289368,
+7.080688, 7.704416, 7.650847, 6.955267, 6.110937, 5.777853, 7.400386,
+7.344311, 8.108207, 8.32635, 6.73922, 7.939178, 6.6218, 7.364032,
+8.229459, 7.971704, 7.643635, 7.610238, 6.958652, 7.613119, 7.370215,
+7.179605, 6.489263, 6.823597, 6.35924, 6.648309, 7.247496, 7.140899,
+7.902943, 7.35641, 8.245053, 6.763566, 7.156562, 5.541855, 7.520397,
+7.523088, 6.327822, 7.470564, 8.357375, 5.871492, 7.8242, 7.464129,
+7.382166, 5.981173, 7.807186, 7.177116, 7.02289, 7.478385, 7.909888,
+7.342883, 7.127843, 8.68363, 9.534263, 6.490295, 8.777611, 8.256674,
+6.907705, 7.988662, 6.094251, 6.900312, 8.219888, 8.058198, 7.85661,
+8.274037, 6.10402, 6.61376, glm(formula = f, family = binomial(link =
+``logit''), data = store\_df\_pre\_treat\_3selected), treat
+\textasciitilde{} pct\_online\_sales + pct\_discounts, treat
+\textasciitilde{} pct\_online\_sales + pct\_discounts, 30, 31, 12, 27,
+36, 37, 38, 7, 29, 39, 40, 41, 14, 42, 43, 9, 10, 25, 3, 24, 11, 44, 45,
+46, 47, 48, 49, 50, 51, 16, 8, 52, 53, 54, 33, 55, 34, 56, 57, 58, 59,
+60, 18, 22, 32, 6, 20, 28, 61, 26, 62, 4, 23, 19, 21, 17, 63, 64, 5, 65,
+66, 13, 2, 67, 68, 15, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0,
+0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1,
+1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1,
+1, 0, 0.7920762, 1.095208, 1.006658, 1.351556, 1.488733, 1.264122,
+1.24255, 1.172679, 1.928141, 1.278592, 0.9855499, 1.176076, 1.411168,
+1.589711, 1.547734, 1.480842, 1.641596, 1.147299, 1.546763, 1.148067,
+1.212387, 1.40863, 1.544436, 1.418632, 1.598764, 1.446273, 1.308985,
+1.250404, 1.219425, 1.551805, 0.8809633, 1.408781, 1.286795, 1.490185,
+1.182606, 1.326177, 1.407469, 1.457917, 1.789647, 1.45707, 0.8058668,
+1.215351, 1.355715, 1.871972, 1.377959, 1.334439, 1.602945, 1.437817,
+1.600718, 1.543163, 1.185046, 1.314036, 1.457908, 1.177014, 1.124846,
+1.263929, 1.405596, 1.162554, 0.9881347, 1.188123, 1.139768, 1.199237,
+1.131153, 1.23158, 1.680345, 1.289368, 7.080688, 7.704416, 7.650847,
+6.955267, 6.110937, 5.777853, 7.400386, 7.344311, 8.108207, 8.32635,
+6.73922, 7.939178, 6.6218, 7.364032, 8.229459, 7.971704, 7.643635,
+7.610238, 6.958652, 7.613119, 7.370215, 7.179605, 6.489263, 6.823597,
+6.35924, 6.648309, 7.247496, 7.140899, 7.902943, 7.35641, 8.245053,
+6.763566, 7.156562, 5.541855, 7.520397, 7.523088, 6.327822, 7.470564,
+8.357375, 5.871492, 7.8242, 7.464129, 7.382166, 5.981173, 7.807186,
+7.177116, 7.02289, 7.478385, 7.909888, 7.342883, 7.127843, 8.68363,
+9.534263, 6.490295, 8.777611, 8.256674, 6.907705, 7.988662, 6.094251,
+6.900312, 8.219888, 8.058198, 7.85661, 8.274037, 6.10402, 6.61376,
+0.1830975, 0.6246613, 0.355125, 0.7426549, 0.6869087, 0.7088201,
+0.2010547, 0.6990158, 0.2825127, 0.3799637, 0.6904159, 0.6128838,
+0.655144, 0.4902478, 0.412934, 0.6264998, 0.1444041, 0.1753657,
+0.8861003, 0.8252641, 0.6103428, 0.6387641, 0.6362861, 0.5293039,
+0.8074569, 0.8597401, 0.9037561, 0.5265007, 0.5090354, 0.5730427,
+0.1747923, 0.9387584, 0.8023908, 0.7776666, 0.3301611, 0.416435,
+0.5722253, 0.5454688, 0.4110829, 0.70779, 0.3371341, 0.7302146,
+0.9780393, 0.2250961, 0.1586239, 0.7671475, 0.8669645, 0.7902038,
+0.8074687, 0.6877634, 0.7884798, 0.2485479, 0.2492218, 0.7263104,
+0.2272166, 0.5508839, 0.7093694, 0.1364154, 0.7403336, 0.7199349,
+0.6728924, 0.2163951, 0.6729867, 0.4517076, 0.738686, 0.6274465, 1e-08,
+25, FALSE, glm.fit & 2.4617514 & 0.2920367 \\
+treat \textasciitilde{} pct\_online\_sales & 95.08891 & 0.5000000 &
+-0.9273548, 0.6953241, -1.686187, -1.84719, -1.796601, -2.012492,
+1.89781, 2.04957, 2.065431, -1.894077, -2.511841, 2.039063, 2.273894,
+2.115833, -2.055342, 1.836935, 1.861723, -2.107727, -2.23873, -1.878438,
+-2.159683, -1.878907, -1.919107, 1.949234, 1.863701, 1.942656, 1.831683,
+1.924712, 2.017334, 2.059629, 2.082701, -2.163756, -1.729935, 1.949135,
+2.033153, 1.896904, -1.90027, 2.005246, -2.052631, 1.917255, 1.728309,
+1.917795, 2.443421, 2.085773, -2.015424, -2.453933, -2.031251,
+-2.000513, -2.205882, -2.075079, 1.830553, -2.156784, 2.108895,
+-1.986419, -2.090203, -1.896776, -1.86483, -1.952643, 1.951239,
+2.126373, -1.786407, 2.106525, 2.144361, -1.910741, -1.868631, 2.073589,
+1.785818, -1.969644, 0.406946, 0.4586371, 0.4433934, 0.5031037,
+0.5269233, 0.4879073, 0.4841604, 0.4720385, 0.6018856, 0.4904214,
+0.4397743, 0.4726272, 0.5134629, 0.5443852, 0.5371369, 0.5255552,
+0.5533182, 0.4676428, 0.5369691, 0.4677756, 0.4789243, 0.5130219,
+0.5365668, 0.5147593, 0.5459461, 0.5195584, 0.4957036, 0.4855244,
+0.4801457, 0.5378406, 0.4219436, 0.5130482, 0.4918468, 0.5271749,
+0.473759, 0.498692, 0.5128203, 0.5215791, 0.5786002, 0.5214321,
+0.4092622, 0.4794386, 0.5038266, 0.5924909, 0.5076927, 0.5001282,
+0.5466667, 0.5180906, 0.546283, 0.5363468, 0.474182, 0.4965816,
+0.5215775, 0.4727897, 0.4637582, 0.4878737, 0.5124948, 0.4702844,
+0.4402171, 0.4747155, 0.4663393, 0.4766428, 0.4648489, 0.4822556,
+0.5599673, 0.492294, 0.0002306537, 0.6344098, -0.6915144, -0.9466957,
+0.9502711, 1.120181, 1.136798, -0.8121865, -1.404904, 1.109062,
+1.338155, 1.188299, -0.9924534, 0.8759396, 0.9066722, -1.046475,
+-1.173151, -0.7934665, -1.098093, -0.7940311, -0.8416635, 1.010181,
+0.9090967, 1.002657, 0.8693434, 0.9819279, 1.085781, 1.130742, 1.154664,
+-1.10206, -0.6031268, 1.010068, 1.102769, 0.9491928, -0.8195345,
+1.072657, -0.9896013, 0.9732237, 0.7330916, 0.9738564, 1.482069,
+1.157817, -0.9498736, -1.358952, -0.9669076, -0.9336389, -1.14245,
+-1.013049, 0.867921, -1.095262, 1.181324, -0.9181248, -1.02863,
+-0.8153932, -0.7769849, -0.8802576, 1.012466, 1.198828, -0.6783215,
+1.178933, 1.216609, -0.8318762, -0.7816068, 1.145266, 0.8104377,
+-0.8994406, -4.049556, 0, -5.400567, 0.9123943, 2, -4.049556, 0.1230479,
+0.122678, 0.123468, 0.1232916, 0.1234343, 0.1234085, 0.1232775,
+0.1208848, 0.1234477, 0.1225731, 0.1232855, 0.1234257, 0.1229839,
+0.12313, 0.1233093, 0.1227677, 0.123212, 0.123133, 0.1232141, 0.1233608,
+0.1234285, 0.1231404, 0.1234166, 0.122949, 0.123376, 0.1234658,
+0.1234187, 0.1233731, 0.1231169, 0.1219594, 0.1234284, 0.1234539,
+0.1232882, 0.1233005, 0.1234699, 0.1234298, 0.1233555, 0.1219382,
+0.1233571, 0.1214241, 0.1233661, 0.1234667, 0.1213436, 0.1234557,
+0.1234703, 0.1229324, 0.1233897, 0.1229413, 0.1231443, 0.1233059,
+0.1234674, 0.1233555, 0.1232877, 0.1231462, 0.1234341, 0.1234319,
+0.1232525, 0.1225863, 0.1233127, 0.1231907, 0.1233358, 0.1231654,
+0.1233927, 0.1225808, 0.1234557, -5.400567, 0.9123943, 0.1461258,
+-0.04193687, -0.1169422, 0.005975292, 0.0177898, 0.05600114, -0.350416,
+-0.001952026, 0.1574843, 0.054146, -0.07457855, -0.1717688, -0.1490325,
+-0.11264, -0.1997389, 0.06985048, -0.1485057, 0.06943209, 0.03429798,
+-0.07318968, -0.1472428, -0.07866148, -0.1766605, -0.09377133,
+-0.01860751, 0.01348892, 0.0304473, -0.1512413, 0.2133088, -0.07327222,
+-0.006446701, -0.1177334, 0.05057896, -0.02802945, -0.07255457,
+-0.1001309, -0.2785155, -0.0996684, 0.252844, 0.03267649, -0.04421545,
+-0.3214951, -0.05639966, -0.03255729, -0.178918, -0.08915099,
+-0.1777158, -0.146552, 0.04924594, -0.02137561, -0.1001258, 0.05363388,
+0.08208535, 0.006081308, -0.07152932, 0.06152835, 0.1560949, 0.04756445,
+0.0739564, 0.04148972, 0.07865047, 0.0237955, -0.2205165, -0.007856787,
+2, 1.121317, 1.098207, 1, 2, 1e-11, binomial, logit, function (mu) ,
+.Call(C\_logit\_link, mu), function (eta) , .Call(C\_logit\_linkinv,
+eta), function (mu) , mu * (1 - mu), function (y, mu, wt) ,
+.Call(C\_binomial\_dev\_resids, y, mu, wt), function (y, n, mu, wt, dev)
+, \{, m \textless- if (any(n \textgreater{} 1)) , n, else wt, -2 *
+sum(ifelse(m \textgreater{} 0, (wt/m), 0) * dbinom(round(m * y), ,
+round(m), mu, log = TRUE)), \}, function (eta) ,
+.Call(C\_logit\_mu\_eta, eta), \{, if (NCOL(y) == 1) \{, if
+(is.factor(y)) , y \textless- y != levels(y){[}1L{]}, n \textless-
+rep.int(1, nobs), y{[}weights == 0{]} \textless- 0, if (any(y
+\textless{} 0 \textbar{} y \textgreater{} 1)) , stop(``y values must be
+0 \textless= y \textless= 1''), mustart \textless- (weights * y +
+0.5)/(weights + 1), m \textless- weights * y, if (``binomial'' ==
+``binomial'' \&\& any(abs(m - round(m)) \textgreater{} , 0.001)) ,
+warning(gettextf(``non-integer \#successes in a \%s glm!'', ,
+``binomial''), domain = NA), \}, else if (NCOL(y) == 2) \{, if
+(``binomial'' == ``binomial'' \&\& any(abs(y - round(y)) \textgreater{}
+, 0.001)) , warning(gettextf(``non-integer counts in a \%s glm!'', ,
+``binomial''), domain = NA), n \textless- (y1 \textless- y{[}, 1L{]}) +
+y{[}, 2L{]}, y \textless- y1/n, if (any(n0 \textless- n == 0)) ,
+y{[}n0{]} \textless- 0, weights \textless- weights * n, mustart
+\textless- (n * y + 0.5)/(n + 1), \}, else stop(gettextf(``for the `\%s'
+family, y must be a vector of 0 and 1's\nor a 2 column matrix where col
+1 is no. successes and col 2 is no. failures'', , ``binomial''), domain
+= NA), \}, function (mu) , all(is.finite(mu)) \&\& all(mu \textgreater{}
+0 \& mu \textless{} 1), function (eta) , TRUE, function (object, nsim) ,
+\{, ftd \textless- fitted(object), n \textless- length(ftd), ntot
+\textless- n * nsim, wts \textless-
+object\(prior.weights,     if (any(wts%%1 != 0)) ,         stop("cannot simulate from non-integer prior.weights"),     if (!is.null(m <- object
+\)model)) \{, y \textless- model.response(m), if (is.factor(y)) \{, yy
+\textless- factor(1 + rbinom(ntot, size = 1, prob = ftd), , labels =
+levels(y)), split(yy, rep(seq\_len(nsim), each = n)), \}, else if
+(is.matrix(y) \&\& ncol(y) == 2) \{, yy \textless- vector(``list'',
+nsim), for (i in seq\_len(nsim)) \{, Y \textless- rbinom(n, size = wts,
+prob = ftd), YY \textless- cbind(Y, wts - Y), colnames(YY) \textless-
+colnames(y), yy{[}{[}i{]}{]} \textless- YY, \}, yy, \}, else
+rbinom(ntot, size = wts, prob = ftd)/wts, \}, else rbinom(ntot, size =
+wts, prob = ftd)/wts, \}, 1, -0.3766051, -0.1658305, -0.2274011,
+0.01241497, 0.1077973, -0.04838016, -0.06337974, -0.1119629, 0.413328,
+-0.03831915, -0.2420782, -0.1096009, 0.0538646, 0.1780093, 0.1488217,
+0.1023101, 0.2140867, -0.1296098, 0.1481467, -0.1290763, -0.08435296,
+0.05209956, 0.1465288, 0.05905426, 0.1843044, 0.07827346, -0.01718594,
+-0.05791854, -0.07945894, 0.1516524, -0.3147998, 0.05220446,
+-0.03261559, 0.1088068, -0.1050603, -0.00523194, 0.0512925, 0.08636997,
+0.3170298, 0.08578094, -0.3670162, -0.08229198, 0.01530669, 0.3742723,
+0.03077306, 0.0005129478, 0.1872116, 0.0723941, 0.1856633, 0.1456439,
+-0.1033639, -0.01367395, 0.08636348, -0.1089489, -0.145222, -0.04851472,
+0.04998972, -0.1190027, -0.240281, -0.1012242, -0.1348467, -0.09349677,
+-0.1408367, -0.07100757, 0.2410295, -0.03082635, 91.08891, 95.08891,
+91.49543, 3, 0.2413573, 0.2482924, 0.2468018, 0.2499904, 0.2492766,
+0.249854, 0.2497496, 0.2492196, 0.2396392, 0.2499084, 0.2463797,
+0.2492521, 0.2498191, 0.2480339, 0.2486236, 0.2493483, 0.2471628,
+0.248955, 0.248636, 0.2489635, 0.2495566, 0.2498308, 0.2486655,
+0.2497826, 0.2478931, 0.2496183, 0.2499816, 0.2497908, 0.2496065,
+0.2485709, 0.2439187, 0.2498301, 0.2499336, 0.249263, 0.2493127,
+0.2499983, 0.249836, 0.2495353, 0.243834, 0.2495416, 0.2417822,
+0.249578, 0.2499854, 0.2414619, 0.249941, 0.25, 0.2478265, 0.2496734,
+0.2478621, 0.2486816, 0.2493347, 0.2499883, 0.2495354, 0.249261,
+0.248689, 0.2498532, 0.2498442, 0.2491186, 0.2464328, 0.2493619,
+0.2488691, 0.2494555, 0.2487667, 0.2496857, 0.246411, 0.2499407, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 64, 65, 0, 0, 0, 0, 1,
+1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, TRUE, FALSE, 0, 0, 0, 0, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0,
+0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0.7920762, 1.095208, 1.006658,
+1.351556, 1.488733, 1.264122, 1.24255, 1.172679, 1.928141, 1.278592,
+0.9855499, 1.176076, 1.411168, 1.589711, 1.547734, 1.480842, 1.641596,
+1.147299, 1.546763, 1.148067, 1.212387, 1.40863, 1.544436, 1.418632,
+1.598764, 1.446273, 1.308985, 1.250404, 1.219425, 1.551805, 0.8809633,
+1.408781, 1.286795, 1.490185, 1.182606, 1.326177, 1.407469, 1.457917,
+1.789647, 1.45707, 0.8058668, 1.215351, 1.355715, 1.871972, 1.377959,
+1.334439, 1.602945, 1.437817, 1.600718, 1.543163, 1.185046, 1.314036,
+1.457908, 1.177014, 1.124846, 1.263929, 1.405596, 1.162554, 0.9881347,
+1.188123, 1.139768, 1.199237, 1.131153, 1.23158, 1.680345, 1.289368,
+glm(formula = f, family = binomial(link = ``logit''), data =
+store\_df\_pre\_treat\_3selected), treat \textasciitilde{}
+pct\_online\_sales, treat \textasciitilde{} pct\_online\_sales, 30, 31,
+12, 27, 36, 37, 38, 7, 29, 39, 40, 41, 14, 42, 43, 9, 10, 25, 3, 24, 11,
+44, 45, 46, 47, 48, 49, 50, 51, 16, 8, 52, 53, 54, 33, 55, 34, 56, 57,
+58, 59, 60, 18, 22, 32, 6, 20, 28, 61, 26, 62, 4, 23, 19, 21, 17, 63,
+64, 5, 65, 66, 13, 2, 67, 68, 15, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0,
+1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0,
+1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1,
+0, 0, 1, 1, 0, 0.7920762, 1.095208, 1.006658, 1.351556, 1.488733,
+1.264122, 1.24255, 1.172679, 1.928141, 1.278592, 0.9855499, 1.176076,
+1.411168, 1.589711, 1.547734, 1.480842, 1.641596, 1.147299, 1.546763,
+1.148067, 1.212387, 1.40863, 1.544436, 1.418632, 1.598764, 1.446273,
+1.308985, 1.250404, 1.219425, 1.551805, 0.8809633, 1.408781, 1.286795,
+1.490185, 1.182606, 1.326177, 1.407469, 1.457917, 1.789647, 1.45707,
+0.8058668, 1.215351, 1.355715, 1.871972, 1.377959, 1.334439, 1.602945,
+1.437817, 1.600718, 1.543163, 1.185046, 1.314036, 1.457908, 1.177014,
+1.124846, 1.263929, 1.405596, 1.162554, 0.9881347, 1.188123, 1.139768,
+1.199237, 1.131153, 1.23158, 1.680345, 1.289368, 7.080688, 7.704416,
+7.650847, 6.955267, 6.110937, 5.777853, 7.400386, 7.344311, 8.108207,
+8.32635, 6.73922, 7.939178, 6.6218, 7.364032, 8.229459, 7.971704,
+7.643635, 7.610238, 6.958652, 7.613119, 7.370215, 7.179605, 6.489263,
+6.823597, 6.35924, 6.648309, 7.247496, 7.140899, 7.902943, 7.35641,
+8.245053, 6.763566, 7.156562, 5.541855, 7.520397, 7.523088, 6.327822,
+7.470564, 8.357375, 5.871492, 7.8242, 7.464129, 7.382166, 5.981173,
+7.807186, 7.177116, 7.02289, 7.478385, 7.909888, 7.342883, 7.127843,
+8.68363, 9.534263, 6.490295, 8.777611, 8.256674, 6.907705, 7.988662,
+6.094251, 6.900312, 8.219888, 8.058198, 7.85661, 8.274037, 6.10402,
+6.61376, 0.1830975, 0.6246613, 0.355125, 0.7426549, 0.6869087,
+0.7088201, 0.2010547, 0.6990158, 0.2825127, 0.3799637, 0.6904159,
+0.6128838, 0.655144, 0.4902478, 0.412934, 0.6264998, 0.1444041,
+0.1753657, 0.8861003, 0.8252641, 0.6103428, 0.6387641, 0.6362861,
+0.5293039, 0.8074569, 0.8597401, 0.9037561, 0.5265007, 0.5090354,
+0.5730427, 0.1747923, 0.9387584, 0.8023908, 0.7776666, 0.3301611,
+0.416435, 0.5722253, 0.5454688, 0.4110829, 0.70779, 0.3371341,
+0.7302146, 0.9780393, 0.2250961, 0.1586239, 0.7671475, 0.8669645,
+0.7902038, 0.8074687, 0.6877634, 0.7884798, 0.2485479, 0.2492218,
+0.7263104, 0.2272166, 0.5508839, 0.7093694, 0.1364154, 0.7403336,
+0.7199349, 0.6728924, 0.2163951, 0.6729867, 0.4517076, 0.738686,
+0.6274465, 1e-08, 25, FALSE, glm.fit & 0.4065165 & 0.5237429 \\
+treat \textasciitilde{} pct\_online\_sales + pct\_discounts +
+sales\_trend\_3m & 95.98330 & 0.5454545 & 0.8497096, 0.3706875,
+-0.2842159, 1.296095, -1.531629, -1.883019, -1.611799, -2.399994,
+1.574051, 1.551649, 2.703039, -2.108522, -1.688065, 2.733851, 1.823254,
+2.192938, -2.404835, 2.018746, 2.462733, -1.946444, -1.590342, -1.51651,
+-2.81083, -2.198576, -1.995466, 1.852816, 1.668614, 1.884943, 1.50586,
+1.543039, 1.639906, 2.034526, 2.329295, -2.079883, -1.390411, 1.513588,
+1.717004, 1.433897, -1.656121, 2.29322, -2.369754, 2.026477, 2.390117,
+1.528127, 2.893393, 1.882296, -2.684988, -2.145026, -1.520569,
+-2.348259, -2.771013, -2.324974, 1.785437, -2.253805, 1.751947,
+-1.445268, -1.369119, -2.46629, -1.393149, -1.730191, 1.721173,
+3.254761, -2.558086, 1.769467, 2.211529, -1.488924, -1.912374, 2.583942,
+1.499005, -2.29843, 0.3471002, 0.468938, 0.3795752, 0.5833323,
+0.6353035, 0.6444758, 0.369954, 0.5257341, 0.4076059, 0.3657844,
+0.5484701, 0.4560092, 0.584171, 0.4953571, 0.4060529, 0.4862427,
+0.3712046, 0.3405911, 0.6442332, 0.5451602, 0.498864, 0.539719,
+0.5992996, 0.5305199, 0.6640722, 0.6480717, 0.6097909, 0.4915149,
+0.4293144, 0.5192037, 0.280788, 0.6606817, 0.5824098, 0.6974003,
+0.3961795, 0.436068, 0.5780153, 0.4934671, 0.4183896, 0.6543959,
+0.345615, 0.5312661, 0.6275589, 0.5338052, 0.3423513, 0.5741527,
+0.6391212, 0.5698878, 0.5600871, 0.5563059, 0.5707934, 0.308087,
+0.2696032, 0.5945327, 0.2822017, 0.4220293, 0.5809992, 0.3072423,
+0.6090827, 0.5651419, 0.4521758, 0.328374, 0.4770897, 0.3870056,
+0.6671093, 0.5649205, -0.02221543, 0.6008954, 1.387576, -1.016727,
+0.6365197, 0.641636, 1.202069, -0.8135173, -0.9593098, 1.501727,
+1.077707, 1.393869, -1.201749, 0.9754338, 1.313254, -0.754578,
+-0.986769, -0.7655295, -1.189493, -0.7085217, -0.8254317, 1.010872,
+0.7191964, 0.8784883, 0.6829002, 0.8464819, 1.104882, 1.073424,
+1.362125, -1.00652, -0.4736176, 0.9096926, 1.076617, 0.4913197,
+-0.7859725, 1.172785, -1.300399, 1.081634, 1.229461, 0.5835213,
+1.581126, 1.209982, -0.9356794, -1.65782, -0.8127389, -0.9654443,
+-1.191568, -0.9121937, 1.172039, -1.010561, 1.115896, -0.5145673,
+-0.3473236, -1.1312, -0.4176313, -0.560707, 0.9284452, 1.49891,
+-1.178543, 1.033296, 1.511583, -0.6493734, -0.6144809, 1.497188,
+0.559836, -1.13643, -3.954468, 0, 0, 0, -5.28005, 0.8934005, 0, 0,
+-28.95481, -0.4858788, -2.974999, 0, -2.263905, 0.1015578, 0.4182053,
+-0.7844544, 4, -3.954468, 0.126195, 0.1227172, 0.1246708, 0.1217218,
+0.1210458, 0.1220877, 0.1262717, 0.1242618, 0.1217988, 0.1258437,
+0.1259489, 0.1246348, 0.1264338, 0.1241873, 0.1263914, 0.1221725,
+0.1198412, 0.1210643, 0.1259225, 0.1264389, 0.1260397, 0.1239207,
+0.1262035, 0.119438, 0.1207676, 0.1233534, 0.126421, 0.1251694,
+0.126346, 0.1136396, 0.1197324, 0.12471, 0.1161682, 0.1236835,
+0.1254014, 0.1248907, 0.1264285, 0.1247437, 0.1202601, 0.120261,
+0.1261918, 0.1222554, 0.1261499, 0.11999, 0.125041, 0.1214463, 0.125198,
+0.1255229, 0.125635, 0.1251655, 0.1167547, 0.1122158, 0.1241589,
+0.1138133, 0.1248924, 0.1247691, 0.1166657, 0.1233936, 0.1253616,
+0.1258596, 0.1187573, 0.1263065, 0.1231683, 0.1191685, 0.1253689,
+-5.28005, 0.8934005, 0.1467654, -0.04122396, -0.1141568, 0.00682076,
+0.01853697, 0.0582245, -0.3582223, -0.000937608, 0.1622625, 0.0561819,
+-0.07409832, -0.1750864, -0.148901, -0.1141212, -0.1972436, 0.06872201,
+-0.1446364, 0.07178164, 0.03607873, -0.07351738, -0.1467726,
+-0.07920026, -0.1701849, -0.09056438, -0.01754435, 0.01479989,
+0.03181688, -0.153766, 0.199134, -0.06991839, -0.005487975, -0.1096948,
+0.0515964, -0.02737831, -0.07220553, -0.1013257, -0.2831415,
+-0.09593119, 0.2507118, 0.03435259, -0.04267577, -0.3323019,
+-0.05369874, -0.0318725, -0.175294, -0.08920097, -0.179941, -0.1480953,
+0.05086292, -0.01921608, -0.08993037, 0.0548681, 0.07657666,
+0.007144498, -0.07110052, 0.05902344, 0.1576915, 0.0492351, 0.07636895,
+0.04079941, 0.08145636, 0.02468177, -0.2128327, -0.006944922, -28.95481,
+-0.4858788, -2.974999, -0.04780822, -0.1677328, -0.245721, 0.01302025,
+-0.004164248, 0.209526, 0.1669914, -0.1273041, 0.09583492, -0.09611838,
+0.04826224, 0.185408, 0.1375191, 0.09794708, 0.03557591, -0.02386569,
+0.03795334, 0.004860733, -0.004047392, -0.1020149, -0.06259847,
+-0.1129227, -0.08493125, -0.004279447, -0.02919774, 0.09426765,
+0.04248735, 0.1014314, -0.07004154, -0.02197851, -0.2477975, 0.02601414,
+0.04359561, -0.145549, 0.05064137, 0.2355602, -0.2075421, 0.03165308,
+0.02095271, 0.02296526, -0.1505579, 0.09281437, -0.01307081,
+-0.007214928, 0.04910587, 0.1402773, 0.03897789, -0.03870051, 0.2193786,
+0.3527709, -0.1445368, 0.2080113, 0.1579601, -0.04945318, 0.09497557,
+-0.2303156, -0.07631636, 0.1384718, 0.111713, 0.076959, 0.1549104,
+-0.144039, -0.1122491, -2.263905, 0.1015578, 0.4182053, -0.7844544,
+-0.01463173, -0.04216868, -0.1936609, 0.1082875, -0.04906465,
+0.01025301, 0.03321777, 0.1147783, 0.0143395, -0.00710542, 0.03106261,
+0.1385361, -0.1900394, -0.1883839, 0.1930821, 0.2149248, 0.05606781,
+0.06154862, -0.006116227, -0.04441598, 0.0863596, 0.1423175, 0.2282615,
+-0.01969066, 0.0464224, 0.04343796, -0.1288033, 0.1987686, 0.1569512,
+-0.01487984, -0.1057229, -0.0470885, -0.06802385, 0.03421962,
+0.05196282, -0.0264863, -0.08197144, 0.142024, 0.2871648, -0.3080426,
+-0.1712714, 0.1390063, 0.190366, 0.1884082, 0.2501634, 0.1141397,
+0.142064, -0.03215769, 0.05235024, 0.0369229, -0.04115515, 0.1104618,
+0.07745616, -0.1696384, -0.001429446, 0.0757346, 0.1803473, -0.1167599,
+0.1431694, 0.0479389, 0.02281169, -0.008390743, 4, 1.120382, 1.101463,
+1.026976, 1.101189, 1, 2, 3, 4, 1e-11, binomial, logit, function (mu) ,
+.Call(C\_logit\_link, mu), function (eta) , .Call(C\_logit\_linkinv,
+eta), function (mu) , mu * (1 - mu), function (y, mu, wt) ,
+.Call(C\_binomial\_dev\_resids, y, mu, wt), function (y, n, mu, wt, dev)
+, \{, m \textless- if (any(n \textgreater{} 1)) , n, else wt, -2 *
+sum(ifelse(m \textgreater{} 0, (wt/m), 0) * dbinom(round(m * y), ,
+round(m), mu, log = TRUE)), \}, function (eta) ,
+.Call(C\_logit\_mu\_eta, eta), \{, if (NCOL(y) == 1) \{, if
+(is.factor(y)) , y \textless- y != levels(y){[}1L{]}, n \textless-
+rep.int(1, nobs), y{[}weights == 0{]} \textless- 0, if (any(y
+\textless{} 0 \textbar{} y \textgreater{} 1)) , stop(``y values must be
+0 \textless= y \textless= 1''), mustart \textless- (weights * y +
+0.5)/(weights + 1), m \textless- weights * y, if (``binomial'' ==
+``binomial'' \&\& any(abs(m - round(m)) \textgreater{} , 0.001)) ,
+warning(gettextf(``non-integer \#successes in a \%s glm!'', ,
+``binomial''), domain = NA), \}, else if (NCOL(y) == 2) \{, if
+(``binomial'' == ``binomial'' \&\& any(abs(y - round(y)) \textgreater{}
+, 0.001)) , warning(gettextf(``non-integer counts in a \%s glm!'', ,
+``binomial''), domain = NA), n \textless- (y1 \textless- y{[}, 1L{]}) +
+y{[}, 2L{]}, y \textless- y1/n, if (any(n0 \textless- n == 0)) ,
+y{[}n0{]} \textless- 0, weights \textless- weights * n, mustart
+\textless- (n * y + 0.5)/(n + 1), \}, else stop(gettextf(``for the `\%s'
+family, y must be a vector of 0 and 1's\nor a 2 column matrix where col
+1 is no. successes and col 2 is no. failures'', , ``binomial''), domain
+= NA), \}, function (mu) , all(is.finite(mu)) \&\& all(mu \textgreater{}
+0 \& mu \textless{} 1), function (eta) , TRUE, function (object, nsim) ,
+\{, ftd \textless- fitted(object), n \textless- length(ftd), ntot
+\textless- n * nsim, wts \textless-
+object\(prior.weights,     if (any(wts%%1 != 0)) ,         stop("cannot simulate from non-integer prior.weights"),     if (!is.null(m <- object
+\)model)) \{, y \textless- model.response(m), if (is.factor(y)) \{, yy
+\textless- factor(1 + rbinom(ntot, size = 1, prob = ftd), , labels =
+levels(y)), split(yy, rep(seq\_len(nsim), each = n)), \}, else if
+(is.matrix(y) \&\& ncol(y) == 2) \{, yy \textless- vector(``list'',
+nsim), for (i in seq\_len(nsim)) \{, Y \textless- rbinom(n, size = wts,
+prob = ftd), YY \textless- cbind(Y, wts - Y), colnames(YY) \textless-
+colnames(y), yy{[}{[}i{]}{]} \textless- YY, \}, yy, \}, else
+rbinom(ntot, size = wts, prob = ftd)/wts, \}, else rbinom(ntot, size =
+wts, prob = ftd)/wts, \}, 1, -0.6318102, -0.1244084, -0.4913518,
+0.3364679, 0.5550374, 0.5948438, -0.5324143, 0.1030274, -0.3738713,
+-0.5503449, 0.1944911, -0.1764192, 0.3399195, -0.01857219, -0.3803068,
+-0.05504328, -0.5270527, -0.6606614, 0.5937852, 0.1811343, -0.004544116,
+0.1592116, 0.4025477, 0.1222317, 0.6814947, 0.6105738, 0.4464335,
+-0.03394358, -0.284649, 0.07685272, -0.9405563, 0.6663335, 0.3326737,
+0.8349486, -0.4214098, -0.2571355, 0.3146311, -0.02613299, -0.3293876,
+0.6384185, -0.6383703, 0.1252278, 0.5217585, 0.1354274, -0.6528334,
+0.2988145, 0.571552, 0.2813932, 0.2415156, 0.226183, 0.2850891,
+-0.8090781, -0.9966368, 0.3827356, -0.9335666, -0.3144486, 0.3268764,
+-0.8130438, 0.443458, 0.262057, -0.1918835, -0.7155483, -0.09170549,
+-0.4599166, 0.6951398, 0.2611561, 87.9833, 95.9833, 91.49543, 4,
+0.2266217, 0.2490352, 0.2354979, 0.2430557, 0.231693, 0.2291268,
+0.2330881, 0.2493378, 0.2414634, 0.2319862, 0.2476507, 0.2480648,
+0.2429153, 0.2499784, 0.241174, 0.2498107, 0.2334118, 0.2245889,
+0.2291968, 0.2479606, 0.2499987, 0.2484224, 0.2401396, 0.2490685,
+0.2230804, 0.2280748, 0.237946, 0.249928, 0.2450036, 0.2496312,
+0.2019462, 0.2241815, 0.2432086, 0.2110332, 0.2392213, 0.2459127,
+0.2439136, 0.2499573, 0.2433398, 0.226162, 0.2261654, 0.2490224,
+0.2337288, 0.2488572, 0.225147, 0.2445014, 0.2306453, 0.2451157,
+0.2463895, 0.2468296, 0.2449883, 0.2131695, 0.1969174, 0.2410636,
+0.202564, 0.2439206, 0.2434391, 0.2128446, 0.238101, 0.2457565,
+0.2477129, 0.2205446, 0.2494751, 0.2372323, 0.2220745, 0.2457853, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 62, 65, 0, 0, 0, 0, 1,
+1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, TRUE, FALSE, 0, 0, 0, 0, 1, 1, 1,
+0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0,
+0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0.7920762, 1.095208, 1.006658,
+1.351556, 1.488733, 1.264122, 1.24255, 1.172679, 1.928141, 1.278592,
+0.9855499, 1.176076, 1.411168, 1.589711, 1.547734, 1.480842, 1.641596,
+1.147299, 1.546763, 1.148067, 1.212387, 1.40863, 1.544436, 1.418632,
+1.598764, 1.446273, 1.308985, 1.250404, 1.219425, 1.551805, 0.8809633,
+1.408781, 1.286795, 1.490185, 1.182606, 1.326177, 1.407469, 1.457917,
+1.789647, 1.45707, 0.8058668, 1.215351, 1.355715, 1.871972, 1.377959,
+1.334439, 1.602945, 1.437817, 1.600718, 1.543163, 1.185046, 1.314036,
+1.457908, 1.177014, 1.124846, 1.263929, 1.405596, 1.162554, 0.9881347,
+1.188123, 1.139768, 1.199237, 1.131153, 1.23158, 1.680345, 1.289368,
+7.080688, 7.704416, 7.650847, 6.955267, 6.110937, 5.777853, 7.400386,
+7.344311, 8.108207, 8.32635, 6.73922, 7.939178, 6.6218, 7.364032,
+8.229459, 7.971704, 7.643635, 7.610238, 6.958652, 7.613119, 7.370215,
+7.179605, 6.489263, 6.823597, 6.35924, 6.648309, 7.247496, 7.140899,
+7.902943, 7.35641, 8.245053, 6.763566, 7.156562, 5.541855, 7.520397,
+7.523088, 6.327822, 7.470564, 8.357375, 5.871492, 7.8242, 7.464129,
+7.382166, 5.981173, 7.807186, 7.177116, 7.02289, 7.478385, 7.909888,
+7.342883, 7.127843, 8.68363, 9.534263, 6.490295, 8.777611, 8.256674,
+6.907705, 7.988662, 6.094251, 6.900312, 8.219888, 8.058198, 7.85661,
+8.274037, 6.10402, 6.61376, 0.1830975, 0.6246613, 0.355125, 0.7426549,
+0.6869087, 0.7088201, 0.2010547, 0.6990158, 0.2825127, 0.3799637,
+0.6904159, 0.6128838, 0.655144, 0.4902478, 0.412934, 0.6264998,
+0.1444041, 0.1753657, 0.8861003, 0.8252641, 0.6103428, 0.6387641,
+0.6362861, 0.5293039, 0.8074569, 0.8597401, 0.9037561, 0.5265007,
+0.5090354, 0.5730427, 0.1747923, 0.9387584, 0.8023908, 0.7776666,
+0.3301611, 0.416435, 0.5722253, 0.5454688, 0.4110829, 0.70779,
+0.3371341, 0.7302146, 0.9780393, 0.2250961, 0.1586239, 0.7671475,
+0.8669645, 0.7902038, 0.8074687, 0.6877634, 0.7884798, 0.2485479,
+0.2492218, 0.7263104, 0.2272166, 0.5508839, 0.7093694, 0.1364154,
+0.7403336, 0.7199349, 0.6728924, 0.2163951, 0.6729867, 0.4517076,
+0.738686, 0.6274465, glm(formula = f, family = binomial(link =
+``logit''), data = store\_df\_pre\_treat\_3selected), treat
+\textasciitilde{} pct\_online\_sales + pct\_discounts +
+sales\_trend\_3m, treat \textasciitilde{} pct\_online\_sales +
+pct\_discounts + sales\_trend\_3m, 30, 31, 12, 27, 36, 37, 38, 7, 29,
+39, 40, 41, 14, 42, 43, 9, 10, 25, 3, 24, 11, 44, 45, 46, 47, 48, 49,
+50, 51, 16, 8, 52, 53, 54, 33, 55, 34, 56, 57, 58, 59, 60, 18, 22, 32,
+6, 20, 28, 61, 26, 62, 4, 23, 19, 21, 17, 63, 64, 5, 65, 66, 13, 2, 67,
+68, 15, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0,
+1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0,
+0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0,
+0.7920762, 1.095208, 1.006658, 1.351556, 1.488733, 1.264122, 1.24255,
+1.172679, 1.928141, 1.278592, 0.9855499, 1.176076, 1.411168, 1.589711,
+1.547734, 1.480842, 1.641596, 1.147299, 1.546763, 1.148067, 1.212387,
+1.40863, 1.544436, 1.418632, 1.598764, 1.446273, 1.308985, 1.250404,
+1.219425, 1.551805, 0.8809633, 1.408781, 1.286795, 1.490185, 1.182606,
+1.326177, 1.407469, 1.457917, 1.789647, 1.45707, 0.8058668, 1.215351,
+1.355715, 1.871972, 1.377959, 1.334439, 1.602945, 1.437817, 1.600718,
+1.543163, 1.185046, 1.314036, 1.457908, 1.177014, 1.124846, 1.263929,
+1.405596, 1.162554, 0.9881347, 1.188123, 1.139768, 1.199237, 1.131153,
+1.23158, 1.680345, 1.289368, 7.080688, 7.704416, 7.650847, 6.955267,
+6.110937, 5.777853, 7.400386, 7.344311, 8.108207, 8.32635, 6.73922,
+7.939178, 6.6218, 7.364032, 8.229459, 7.971704, 7.643635, 7.610238,
+6.958652, 7.613119, 7.370215, 7.179605, 6.489263, 6.823597, 6.35924,
+6.648309, 7.247496, 7.140899, 7.902943, 7.35641, 8.245053, 6.763566,
+7.156562, 5.541855, 7.520397, 7.523088, 6.327822, 7.470564, 8.357375,
+5.871492, 7.8242, 7.464129, 7.382166, 5.981173, 7.807186, 7.177116,
+7.02289, 7.478385, 7.909888, 7.342883, 7.127843, 8.68363, 9.534263,
+6.490295, 8.777611, 8.256674, 6.907705, 7.988662, 6.094251, 6.900312,
+8.219888, 8.058198, 7.85661, 8.274037, 6.10402, 6.61376, 0.1830975,
+0.6246613, 0.355125, 0.7426549, 0.6869087, 0.7088201, 0.2010547,
+0.6990158, 0.2825127, 0.3799637, 0.6904159, 0.6128838, 0.655144,
+0.4902478, 0.412934, 0.6264998, 0.1444041, 0.1753657, 0.8861003,
+0.8252641, 0.6103428, 0.6387641, 0.6362861, 0.5293039, 0.8074569,
+0.8597401, 0.9037561, 0.5265007, 0.5090354, 0.5730427, 0.1747923,
+0.9387584, 0.8023908, 0.7776666, 0.3301611, 0.416435, 0.5722253,
+0.5454688, 0.4110829, 0.70779, 0.3371341, 0.7302146, 0.9780393,
+0.2250961, 0.1586239, 0.7671475, 0.8669645, 0.7902038, 0.8074687,
+0.6877634, 0.7884798, 0.2485479, 0.2492218, 0.7263104, 0.2272166,
+0.5508839, 0.7093694, 0.1364154, 0.7403336, 0.7199349, 0.6728924,
+0.2163951, 0.6729867, 0.4517076, 0.738686, 0.6274465, 1e-08, 25, FALSE,
+glm.fit & 3.5121326 & 0.3191920 \\
+\end{longtable}
+
+\end{document}

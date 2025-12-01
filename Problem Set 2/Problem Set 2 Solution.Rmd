@@ -11,6 +11,7 @@ editor_options:
   markdown: 
     wrap: sentence
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   echo    = TRUE,
@@ -101,3 +102,18 @@ r2(estb_model_moderation)
 anova(estb_model, estb_model_moderation)
 ```
 
+
+
+
+
+
+
+
+# Task 3
+
+
+
+
+
+
+# Task 4

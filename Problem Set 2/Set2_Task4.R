@@ -7,8 +7,9 @@
 # Zu meinem Vorgehen in der Aufgabe. Da in der Aufgabenbeschreibung explizit gefordert ist, basierend auf der eigenen ökonomischen 
 # Einschätzung drei Variablen auszuwählen, und das Logistische Regressionsmodell basierend auf diesen Variablen zu interpretieren
 # wird dies auch so durchgeführt. Wäre die Aufgabenstellung offener gestaltet, hätte ich ein Modell mit allen Regressoren gefitted
-# und mit einem Lasso-Modell verglichen. Eine weitere Idee wäre es, mittel Train und Test split die Feature-Selection durchzuführen,
-# was bei der relativ geringen Datenmenge aber mit Vorsicht zu genießen ist. 
+# und gegebenenfalls mit einem Lasso-Modell verglichen. Dieses Vorgehen wäre deshalb von Vorteil, da es sich bei diesem Problem 
+#klassisch um einen Forecasting Task handelt. Demnach stellt Multikolinearität kein Problem dar
+# und es könnten alle vorhandenen Regressoren verwendet werden (sofern die Anzahl der Beobachtungen >= Anzahl der Regressoren ist.
 
 
 
@@ -21,7 +22,7 @@
 # choose predictors
 
 # Die Idee ist es die drei Predictors so auszuwäheln, dass sie möglichst keine inhaltlichen Überschneidungen haben, was 
-# gegebenenfalls zu redundanten Variablen im Modell führen könnte.
+# gegebenenfalls zu redundanten Variablen im Modell führen könnte und die Interpretierbarkeit negativ beeinflussen könnte (VGL. Multikolinearität).
 
 # - change sales_value_total: guter Indikator über verschiedene Produktkategorien hinweg? da value unabhängig von 
 # unabhängig von wert des einzelnen verkauften produkts ist
@@ -170,6 +171,8 @@ for (i in 1:length(logit_model_results$formula)) {
 }
 
 logit_model_results <- left_join(logit_model_results, LR_test_tibble, by = "formula")
+
+
 
 
 

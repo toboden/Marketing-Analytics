@@ -1,0 +1,176 @@
+---
+title: "Set2_Tsk4"
+output: pdf_document
+---
+
+
+Vorab zum Vorgehen in dieser Teilaufgabe: Da in der Aufgabenbeschreibung explizit gefordert ist, basierend auf der eigenen ökonomischen
+Einschätzung drei Variablen auszuwählen und das Logistische Regressionsmodell basierend auf diesen Variablen zu interpretieren,
+wird dies auch so durchgeführt. Wäre die Aufgabenstellung offener gestaltet, hätte ich ein Modell mit allen Regressoren gefitted und gegebenenfalls mit einem Lasso-Modell verglichen. Dieses Vorgehen wäre deshalb von Vorteil, da es sich bei diesem Problem 
+klassisch um einen Forecasting Task handelt. Zwar sind Key metrics zunächst leichter zu verstehen und zu interpretieren, warum sollte man aber
+vorhandene Daten (i.e. Regressoren) nicht nutzen, wenn man sie hat? Wichtig zu erwähnen ist hier, dass Multikolinearität kein Problem für Forecasting darstellt. Es könnten alle vorhandenen Regressoren verwendet werden (sofern die Anzahl der Beobachtungen >= Anzahl der Regressoren) ist.
+
+## Auswahl von drei Prädiktoren
+Die Idee ist es nun, drei Prädiktoren so auszuwäheln, dass sie möglichst keine inhaltlichen Überschneidungen haben, was 
+gegebenenfalls zu redundanten Variablen im Modell führen und die Interpretierbarkeit negativ beeinflussen könnte (Vgl. einleitende Worte bzgl. Multikolinearität).
+
+
+### Drei monats trends von monetary value of sales
+Die total sales values sind automatisch über verschiedene Produkte/Kategorien hinweg vergleichbar. Darüber hinaus ist es intuitiv anzunehmen, dass Regionen bzw. Stores mit anhaltend niedrigem Umsatz als Kandidaten für eine Schließung in Frage kommen. Wichtig ist jedoch zu beachten, dass die absolute Höhe der sales sich nicht als metric eignet, da diese zwischen stores stark schwanken kann. Ein kleiner profitabler Store kann weniger Umsatz haben als ein unprofitabler großer Store. Deshalb wird hier der 3 monats trends betrachtet. Die Veränderung auf monatlicher ebene ist weniger robust, da kurzfristige schwankungen zu erwarten sind. Zum Beispiel können aus unbedenklichen gründen die sales kurzfristig einbrechen (e.g. viele Feiertage oder Lieferengpasse) oder sehr stark sein (e.g. Vorweihnachtsgeschäft). 
+
+*H1: * Ein anhaltender Rückgang der Sales über mehrere Monate ist ein Frühwarnsignal für strukturelle Nachfrageschwäche und erhöht das Schließungsrisiko.
+
+
+### Percentage of sales generated online
+Wenn ein hoher Anteil an Kunden online einkauft, führt das zu geringeren margen im offline geschäft. Dies kann dazu führen, dass ein Store strukturell unprofitabel wird. 
+
+*H2:* Êin hoher Online-Anteil an Verkäufen deutet auf eine strukturelle Verschiebung der Nachfrage vom stationären zum digitalen Kanal hin, was die Profitabilität des lokalen Stores verringert und damit das Schließungsrisiko erhöht.
+
+
+### Percentage of discounts offered
+Falls Rabatte dazu eingesetzt werden, Nachfrage zu generieren, kann das ein Hinweis darauf sein, dass ein Store eine geringes Preissetzungsvermögen hat und von Schließung gefährdet ist. Ein wichtiger Punkt hierbei ist jedoch, dass ein dauerhaft hohes Discount-Niveau auch eine bewusste Strategie sein kann. Allerdings wird diese variable nicht auf dem monatlichen Level reported und kann daher nicht zu relative change umgewandelt werden und wird unverändert verwendet.
+
+*H3:* Ein hoher Anteil an discounts deutet auf eine lokal schwache Nachfrage und mangelnde Preissetzungsmacht hin. Dies ist ein Anzeichen für mangelnde Profitabilität und ein erhöhtes Schließungsrisiko.
+
+
+
+Im weiteren Verlauf der Aufgabe werden logistische Regressionen für jede mögliche Kombination aus diesen drei Prädiktoren gefitted und über das AIC und den Likelihood-Ratio-Test verglichen.
+
+
+
+
+## Modellanalyse
+Um information leakage (independent variablen werden durch die store closure potenziell beeinflusst) zu verhindern, wird der Datensatz zunächst auf die Monate vor den Schließungen gefiltert. Anschließend wird die Variable für die Veränderung der total sales auf drei-monats-basis erstellt und der Datensatz von allen anderen nicht ausgewählten regressoren bereinigt. Da alle der drei Variablen nach der Datentransformation ausschließlich auf county level vorliegen, werden die mehrfach vorliegenden Beobachtungen mit 'distinct()' verworfen. 
+
+```{r}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(purrr)
+library(broom)
+library(knitr)
+
+store_df <- read.csv("../data/StoreData.csv")
+
+store_df_pre_treat <- store_df %>%
+  filter(month <= 6)
+
+
+# create relative three month change predictor for sales_value_total 
+store_df_pre_treat <- store_df_pre_treat %>%
+  group_by(county_id) %>%
+  mutate(
+    sales_early = mean(sales_value_total[month %in% 1:3], na.rm = TRUE),
+    sales_late  = mean(sales_value_total[month %in% 4:6], na.rm = TRUE)
+  ) %>%
+  ungroup() %>%
+  mutate(
+    sales_trend_3m = (sales_late - sales_early) / sales_early
+  ) %>%
+  select(-sales_late, -sales_early)
+
+store_df_pre_treat_3selected <- store_df_pre_treat %>%
+  select(county_id, month, treat, sales_trend_3m, pct_online_sales, pct_discounts)
+
+store_df_pre_treat_3selected <- store_df_pre_treat_3selected %>%
+  group_by(county_id, treat) %>%
+  distinct(pct_online_sales, pct_discounts, sales_trend_3m)
+```
+
+Im hier nicht gezeigten Code-Block, wird schließlich für jede der 8 möglichen Kombinationen und das Null-model eine logistische Regression gefitted. Zusätzlich wird jeweils die in-sample classifiaction accuracy mit einer Schwelle von 0.5 berechnet und der Likelihood-Ratio Test durchgeführt. Die Modelle werden in einem Datensatz gespeichert, der absteigend nach der Größe des AIC sortiert ist.
+
+
+```{r, echo=FALSE}
+vars <- c("pct_online_sales", "pct_discounts", "sales_trend_3m")
+
+logit_models_list <- unlist(
+  lapply(0:length(vars), function(k) {
+    if (k == 0) {
+      "1"                               # Intercept only
+    } else {
+      combn(vars, k, FUN = function(x) paste(x, collapse = " + "))
+    }
+  }),
+  use.names = FALSE
+)
+
+# Daraus Formeln machen: treat ~ ...
+logit_models_formulas <- lapply(logit_models_list, function(rhs) {
+  as.formula(paste("treat ~", rhs))
+})
+
+logit_model_results <- map_dfr(logit_models_formulas, function(f) {
+  
+  m <- glm(f,
+           data = store_df_pre_treat_3selected,
+           family = binomial(link = "logit"))
+  
+  prediction <- predict(m, type = "response")
+  prediction <- if_else(prediction > 0.5, 1L, 0L)
+  
+  class_accuracy <- mean(prediction == store_df_pre_treat_3selected$treat)
+  
+  
+  tibble(
+    formula = deparse(f),
+    aic     = AIC(m),
+    accuracy = class_accuracy,
+    model = list(m)
+  )
+})
+
+
+logit_model_results <- logit_model_results %>%
+  arrange(aic)
+
+# perform likelihood ratio test  for all fitted models
+logL_null_model <- as.numeric(logLik(logit_model_results %>%
+                                       filter(formula == "treat ~ 1") %>%
+                                       pull(model) %>%
+                                       .[[1]]))
+
+LR_test_tibble <- tibble(
+  formula = character(),
+  LR_stc = numeric(),
+  p_value = numeric()
+)
+
+for (i in 1:length(logit_model_results$formula)) {
+
+  current_model <- logit_model_results$model[[i]]
+
+  test_statistic <- -2*(logL_null_model-as.numeric(logLik(current_model)))
+  df_model <- attr(logLik(current_model), "df")
+  p_v <- 1-pchisq(test_statistic,df_model - 1)
+
+  LR_test_tibble <- LR_test_tibble %>%
+    add_row(formula = logit_model_results$formula[[i]],
+            LR_stc = test_statistic,
+            p_value = p_v)
+
+}
+
+logit_model_results <- left_join(logit_model_results, LR_test_tibble, by = "formula")
+
+logit_model_results_overview <- logit_model_results %>%
+  select(-model) %>% 
+  rename(
+    Formula      = formula,
+    AIC          = aic,
+    Accuracy     = accuracy,
+    `LR statistic` = LR_stc,
+    `p-value`      = p_value
+  ) %>% 
+  mutate(
+    across(where(is.numeric), ~ round(.x, 4))
+  )
+
+```
+
+
+
+```{r}
+knitr::kable(logit_model_results_overview)
+```
+
