@@ -312,7 +312,7 @@ For the sake of completeness, the following interpretation of this coefficient i
 summary(logit_model_results$model[[nrow(logit_model_results)]])
 ```
 
-In the model incorporating all three regressors, none of the predictors are statistically significant (all p-values greater than 0.30). Due to the lack of evidence, the coefficients are not interpreted further or examined for multicollinearity.
+In the model incorporating all three regressors, none of the predictors are statistically significant (all p-values greater than 0.30). Due to the lack of evidence, the coefficients are not interpreted further or examined for multicollinearity. Moreover, none of the regressors in any of the regression models is significant at a level of 10%.
 
 ## Conclusion
 The results of the logistic regression analysis show that the three selected predictors do not have any statistically significant explanatory power when it comes to predicting whether a county experiences a store closure. A larger dataset would be interesting to work with, as it would allow for a more reliable model fit and greater statistical power. Moreover, with a larger sample, the predictive performance on unseen data could be evaluated using a train–test split.

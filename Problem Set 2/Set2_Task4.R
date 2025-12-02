@@ -185,11 +185,11 @@ logit_model_results <- left_join(logit_model_results, LR_test_tibble, by = "form
 
 
 
-summary(logit_model_results$model[[2]])
+summary(logit_model_results$model[[1]])
 
 
 
-predict(logit_model_results$model[[3]], type = "response")
+predict(logit_model_results$model[[4]], type = "response")
 
 df <- store_df_pre_treat_3selected %>% filter(treat == 1)
 length(df$treat)/length(store_df_pre_treat_3selected$treat)
