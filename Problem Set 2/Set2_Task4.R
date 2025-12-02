@@ -184,3 +184,12 @@ logit_model_results <- left_join(logit_model_results, LR_test_tibble, by = "form
 # performance measure but rather as a descriptive indicator of model fit.
 
 
+
+summary(logit_model_results$model[[2]])
+
+
+
+predict(logit_model_results$model[[3]], type = "response")
+
+df <- store_df_pre_treat_3selected %>% filter(treat == 1)
+length(df$treat)/length(store_df_pre_treat_3selected$treat)
