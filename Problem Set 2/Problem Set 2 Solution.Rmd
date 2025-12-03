@@ -4,9 +4,12 @@ author:
   - "Tobias Bodentien"
   - "Philipp Grunenberg"
   - "Alexander Haas"
-  - "Osama Warshaga"
+  - "Osama Warshagha"
 date: "`r format(Sys.Date(), '%d-%m-%Y')`"
-output: pdf_document
+
+output:
+  pdf_document:
+    latex_engine: xelatex
 editor_options: 
   markdown: 
     wrap: sentence
@@ -104,17 +107,515 @@ anova(estb_model, estb_model_moderation)
 
 
 
-
-
-
-
-
 # Task 3
 
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(knitr)
+library(forecast)
+library(tseries)
+
+# 0) Load data
+store <- read_csv("../data/StoreData.csv", show_col_types = FALSE) %>%
+  mutate(
+    month = as.integer(month),
+    treat = as.integer(treat),
+    sales_value_offline = as.numeric(sales_value_offline),
+    sales_value_online  = as.numeric(sales_value_online),
+    total_sales_value   = sales_value_offline + sales_value_online,
+    period = if_else(month <= 6, "Pre (1–6)", "Post (7–18)")
+  )
+
+# 1) Keep only counties with clean structure (constant treat + complete months 1..18)
+eligible <- store %>%
+  group_by(county_id) %>%
+  summarise(
+    treat_unique = n_distinct(treat),
+    n_months     = n_distinct(month),
+    min_month    = min(month),
+    max_month    = max(month),
+    treat        = first(treat),
+    .groups = "drop"
+  ) %>%
+  filter(treat_unique == 1, n_months == 18, min_month == 1, max_month == 18)
+
+# 2) Random selection 
+treat_id   <- 39
+control_id <- 25
+```
+
+
+```{r, include=FALSE}
+# 3) Show selected counties
+kable(
+  tibble(
+    group = c("Treatment (treat=1)", "Control (treat=0)"),
+    county_id = c(treat_id, control_id)
+  ),
+  caption = "Randomly selected counties for Task 3 (reproducible via set.seed)."
+)
+```
+
+
+In Task 3, we use the **StoreData** panel dataset containing monthly county-level sales observed over 18 months, where months 1–6 form the pre-period and months 7–18 the post-period. Treatment counties are affected by a store closure, while control counties are unaffected. Our goal is (i) to develop time-series forecasting models for **total sales** (offline + online) for one treated and one control county, and (ii) to study the interaction between offline and online sales using a VAR model following Lecture Chapter 2.2. Before selecting counties, we enforce a clean panel structure by restricting the sample to counties with a constant treatment status over time and complete coverage of months 1–18, since missing months or changing treatment labels would distort time-series estimation and invalidate comparisons. From this eligible set, we then randomly draw one treated and one control county using a fixed seed to ensure reproducibility; in our run, the selected counties are **treatment: county_id = 39** and **control: county_id = 25**.
+
+
+```{r, echo=FALSE, fig.width=7, fig.height=3}
+# 4) Plot total sales trajectories
+store %>%
+  filter(county_id %in% c(treat_id, control_id)) %>%
+  mutate(group = if_else(treat == 1, "Treatment", "Control")) %>%
+  ggplot(aes(x = month, y = total_sales_value, color = group)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.8) +
+  geom_vline(xintercept = 6.5, linetype = "dashed") +
+  labs(
+    title = "Randomly selected counties: Total Sales Value over time",
+    x = "Month",
+    y = "Total Sales Value (offline + online)"
+  ) +
+  theme_minimal()
+```
+**Figure 1: Total sales trajectories for the selected counties.** Monthly total sales (offline + online) for the randomly selected treatment and control counties over months 1–18; the dashed vertical line indicates the start of the post-period (month 7).
+
+
+The figure above plots the total sales value (offline + online) over time for both selected counties, with the dashed vertical line indicating the transition from the pre-period to the post-period (start at month 7). Visually, both counties show pronounced variation over time, especially around months 5–6 and later months, which motivates a careful time-series approach (stationarity checks, possible differencing, and lag selection) in the next step.
+
+**Time series setup (Total Sales)**
+
+We model monthly total sales value (offline + online) for each county as a univariate time series. The data are observed for 18 consecutive months; hence we treat the series as monthly data and focus on trend-stationarity / differencing, while seasonality (12-month cycle) cannot be identified reliably with such a short horizon.
+
+**Stationarity**
+
+```{r, include=FALSE}
+# --- Build ts objects (monthly) ---
+treat_df <- store %>% filter(county_id == treat_id) %>% arrange(month)
+ctrl_df  <- store %>% filter(county_id == control_id) %>% arrange(month)
+
+y_treat <- ts(treat_df$total_sales_value, frequency = 12)
+y_ctrl  <- ts(ctrl_df$total_sales_value,  frequency = 12)
+
+# --- Positivity check (log only defined for strictly positive values) ---
+pos_treat <- min(as.numeric(y_treat), na.rm = TRUE) > 0
+pos_ctrl  <- min(as.numeric(y_ctrl),  na.rm = TRUE) > 0
+
+kable(
+  tibble(
+    county_id   = c(treat_id, control_id),
+    group       = c("Treatment", "Control"),
+    min_value   = c(min(as.numeric(y_treat), na.rm = TRUE),
+                    min(as.numeric(y_ctrl),  na.rm = TRUE)),
+    all_positive = c(pos_treat, pos_ctrl)
+  ),
+  caption = "Positivity check for total sales (log only if all values are strictly > 0)."
+)
+
+# --- Define log series (only if positive; otherwise set to NA) ---
+y_treat_log <- if (pos_treat) log(y_treat) else NA
+y_ctrl_log  <- if (pos_ctrl)  log(y_ctrl)  else NA
+
+# --- ADF tests: levels; log-levels only if applicable ---
+adf_tbl <- tibble(
+  Series = c(
+    paste0("Treatment ", treat_id, " (level)"),
+    paste0("Control ", control_id, " (level)"),
+    paste0("Treatment ", treat_id, " (log level)"),
+    paste0("Control ", control_id, " (log level)")
+  ),
+  ADF_p_value = c(
+    adf.test(y_treat)$p.value,
+    adf.test(y_ctrl)$p.value,
+    if (pos_treat) adf.test(y_treat_log)$p.value else NA_real_,
+    if (pos_ctrl)  adf.test(y_ctrl_log)$p.value  else NA_real_
+  )
+)
+
+```
+
+We begin by assessing the time-series properties of total monthly sales in the treatment and control counties using the Augmented Dickey–Fuller (ADF) test. The ADF test evaluates whether a series contains a unit root. Formally, the null hypothesis is that the process has a unit root (and is therefore non-stationary), while the alternative hypothesis is that the series is stationary. In practice, a small p-value (e.g., below 0.05) provides evidence against the null, whereas a large p-value indicates that we cannot reject the presence of a unit root.
+
+Before running the tests, we consider two representations of total sales for each county: levels and (when admissible) log-levels. Because the logarithm is only defined for strictly positive values, we first check whether each county’s total sales series is positive throughout the sample. Both selected series are strictly positive, so applying the natural log transformation is valid. Using log-levels is useful in this context because it often stabilizes the variance for revenue-like data and allows changes to be interpreted approximately in percentage terms.
+
+We then apply the ADF test to total sales in levels and log-levels for the treatment county (ID 39) and the control county (ID 25). The resulting p-values are relatively large (around **0.39–0.50** in levels and **0.38–0.48** in log-levels), implying that we cannot reject the null hypothesis of a unit root for any of the four series. In other words, both the level and log-level total sales series exhibit behavior that is statistically consistent with non-stationarity over the observed 18-month period.
+
+
+```{r, echo=FALSE}
+
+kable(adf_tbl, digits = 4, caption = "ADF test p-values")
+
+```
+
+To move the data closer to stationarity, we subsequently work with the first difference of the log-transformed series, Δlog(Total Sales), for both treatment and control counties. These differenced log series can be interpreted as approximate monthly growth rates in total sales. Differencing is a standard approach to remove deterministic trends and unit-root components, thereby yielding series that fluctuate around a more stable mean. Moreover, focusing on growth rates instead of levels facilitates comparison between counties that may differ substantially in their absolute sales levels.
+
+We visualize these growth-rate series over time and mark the beginning of the post-treatment period again with a vertical dashed line, while a horizontal dotted line at zero indicates no growth. The plot shows how growth rates fluctuate around a roughly stable mean in both the pre- and post-periods, without obvious deterministic trends, which is consistent with the objective of obtaining a more stationary series.
+
+```{r, echo=FALSE, fig.width=7, fig.height=3}
+# --- If (log-)levels are non-stationary: first difference of logs (growth rates) ---
+dy_treat_log <- diff(y_treat_log)
+dy_ctrl_log  <- diff(y_ctrl_log)
+
+# Plot Δlog series
+plot_df <- bind_rows(
+  tibble(month = 2:18, value = as.numeric(dy_treat_log), group = "Treatment"),
+  tibble(month = 2:18, value = as.numeric(dy_ctrl_log),  group = "Control")
+)
+
+ggplot(plot_df, aes(x = month, y = value, color = group)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.6) +
+  geom_vline(xintercept = 6.5, linetype = "dashed") +
+  labs(
+    title = "Stationarity-oriented transformation: Delta log(Total Sales)",
+    x = "Month", y = "Delta log(Total Sales)"
+  ) +
+  theme_minimal()
+```
+**Figure 2: Growth-rate transformation of total sales (Treatment vs. Control).** First differences of log total sales, $\Delta\log(\text{Total Sales})$, for the treatment and control counties over months 2–18; the dashed vertical line marks the start of the post-period (month 7) and the dotted horizontal line indicates zero growth.
 
 
 
+Finally, we re-run the ADF test on the growth-rate series Δlog(Total Sales) for both counties. Since total sales are strictly positive throughout, the log transformation is well-defined. The resulting p-values remain relatively large (about 0.48–0.60), so we still cannot reject the unit-root null hypothesis at conventional significance levels. However, this outcome should be interpreted cautiously because the sample is extremely short (only 17 observations after differencing), which severely limits the power of unit-root tests. From a practical modeling perspective, working with Δlog(Total Sales) is still a sensible variance-stabilizing transformation that captures monthly growth rates. We therefore proceed with the differenced log series as the main outcome in the subsequent analysis, while acknowledging that formal stationarity evidence is weak in such a small sample.
 
+```{r, echo=FALSE}
+# ADF p-values on Δlog
+adf_logdiff_tbl <- tibble(
+  Series = c(paste0("Treatment ", treat_id, " (Δlog)"),
+             paste0("Control ", control_id, " (Δlog)")),
+  ADF_p_value = c(adf.test(dy_treat_log)$p.value,
+                  adf.test(dy_ctrl_log)$p.value)
+)
+
+kable(adf_logdiff_tbl, digits = 4,
+      caption = "ADF tests on Δlog(Total Sales)")
+
+
+```
+
+**How many lags to include**
+
+To inform the choice of the dynamic structure in our subsequent time-series regressions, we examine the autocorrelation function (ACF) and the partial autocorrelation function (PACF) of the transformed outcome variable, i.e., the first difference of the log-transformed total sales, for both the treatment county (ID 39) and the control county (ID 25). The ACF summarizes the linear dependence of the series with its own past values at different lags, while the PACF isolates the incremental contribution of each lag after controlling for all shorter lags. Together, these diagnostics provide guidance on whether the series exhibits short-run persistence that would call for an autoregressive specification with one or more lags.
+
+The Figure below displays the ACF and PACF of Delta log(Total Sales) for both counties. Overall, the plots do not suggest strong or long-lasting autocorrelation. At all positive lags, the sample autocorrelations are small and lie within the approximate 95% confidence bands, and the PACF does not show any pronounced spikes. Given the very short time dimension of our data (only 17 monthly observations after differencing), these diagnostics should be interpreted cautiously, but they nonetheless indicate that any remaining serial dependence is weak and, if present at all, likely to be of very low order.
+
+```{r, echo=FALSE}
+par(mfrow = c(2, 2))
+
+acf(dy_treat_log, lag.max = 8,
+    main = paste0("ACF of Delta Log, Treatment ", treat_id))
+pacf(dy_treat_log, lag.max = 8,
+     main = paste0("PACF of Delta Log, Treatment ", treat_id))
+
+acf(dy_ctrl_log, lag.max = 8,
+    main = paste0("ACF of Delta Log, Control ", control_id))
+pacf(dy_ctrl_log, lag.max = 8,
+     main = paste0("PACF of Delta Log, Control ", control_id))
+
+par(mfrow = c(1, 1))
+
+```
+**Figure 3: ACF/PACF of $\Delta\log(\text{Total Sales})$ (Treatment vs. Control).** Autocorrelation (ACF) and partial autocorrelation (PACF) functions of the differenced log total sales series for the treatment county (top row) and the control county (bottom row); dashed lines indicate approximate 95% confidence bounds.
+
+In light of these considerations and the **very short sample length** (18 months), we adopt a highly parsimonious specification and avoid heavily parameterized ARMA structures that would be poorly identified. Concretely, we model $\log(\text{Total Sales})$ for each county using an ARIMA(0,1,0) with drift, i.e., a random walk with drift:
+\[
+\log(y_t) = \log(y_{t-1}) + \mu + \varepsilon_t,
+\]
+where $\mu$ denotes the average monthly growth rate in total sales (in log points) and $\varepsilon_t$ is a white-noise innovation. This specification is equivalent to:
+\[
+\Delta \log(y_t) = \mu + \varepsilon_t.
+\]
+Thus, once we account for the integrated nature of log sales via first differencing (implicit in the ARIMA(0,1,0) structure), no additional autoregressive or moving-average terms are required to capture systematic short-run dynamics. This aligns with the diagnostic impression that any remaining serial dependence is weak and, in this small sample, unlikely to justify estimating additional lags. We therefore proceed with ARIMA(0,1,0) with drift for the treatment county (ID `r treat_id`) and the control county (ID `r control_id`), and we interpret results cautiously given the limited time dimension.
+
+
+```{r, include=FALSE}
+# ARIMA(0,1,0) with drift for log(Total Sales)
+# (Equivalent to: Δlog(Total Sales) ~ constant + white noise)
+
+
+mod_treat <- Arima(y_treat_log, order = c(0,1,0), include.drift = TRUE)
+mod_ctrl  <- Arima(y_ctrl_log,  order = c(0,1,0), include.drift = TRUE)
+
+summary(mod_treat)
+summary(mod_ctrl)
+
+coef(mod_treat)
+coef(mod_ctrl)
+
+
+```
+### Results (R-Output in rmd file)
+
+The ARIMA(0,1,0) models with drift for $\log(\text{Total Sales})$ confirm the very parsimonious dynamic structure suggested by the diagnostics. 
+For the treatment county, the estimated drift is $\hat\mu = 0.0062$ (s.e. $0.0217$), corresponding to an average monthly growth rate of about $e^{0.0062}-1 \approx 0.62\%$. 
+For the control county, the drift is $\hat\mu = -0.0128$ (s.e. $0.0420$), i.e. approximately $e^{-0.0128}-1 \approx -1.27\%$ per month. 
+In both cases, the drift estimates are small relative to their standard errors, implying no statistically strong evidence of a systematic upward or downward trend in log sales over this short sample.
+
+Consistent with the ARIMA(0,1,0) specification, no additional autoregressive or moving-average parameters are estimated. 
+The innovation variance is $\hat{\sigma}^2 = 0.0085$ for the treatment county and $\hat{\sigma}^2 = 0.0319$ for the control county, indicating higher volatility of shocks to log sales in the control county. 
+Overall, these results support using a random-walk-with-drift model as a defensible, low-parameter baseline given the limited time dimension.
+
+
+**Forecasting (Total Sales)**
+
+Based on the selected parsimonious specification, we forecast total sales (offline + online) for each county for the three months following the last observed month in the dataset (months **19–21**). Forecasts are generated on the log scale and then back-transformed to levels via exponentiation; the reported prediction intervals are obtained by applying the same transformation to the interval bounds and should be interpreted as an approximation.
+
+The resulting point forecasts are very stable over the three-month horizon. For the treatment county, predicted total sales show a slight upward drift, increasing from approximately **326k** (month 19) to **330k** (month 21). For the control county, forecasts exhibit a small decline, from about **321k** (month 19) to **313k** (month 21). Overall, both counties are predicted to remain in a similar range in the immediate post-sample horizon.
+
+Uncertainty, however, increases noticeably with the forecast horizon, as reflected in the widening 95% prediction intervals. Importantly, the prediction intervals for the control county are substantially wider than for the treatment county (e.g., by month 21 roughly **170k–573k** in the control county versus **242k–452k** in the treatment county), indicating higher volatility of shocks in the control county and therefore lower forecast precision. This difference is also clearly visible in the forecasting plots: while both panels show relatively flat point forecasts after month 18, the shaded 95% prediction band is markedly broader for the control county. In sum, while the point forecasts suggest only mild changes in expected sales over months 19–21, the wide intervals—especially for the control county—underline that inference is limited by the short sample and the inherent uncertainty of forecasting with only 18 monthly observations.
+
+
+```{r, echo=FALSE}
+## --- ARIMA(0,1,0) with drift on log(total sales) ---
+# Forecasts in log-space (h=3)
+fc_treat_log <- forecast(mod_treat, h = 3)
+fc_ctrl_log  <- forecast(mod_ctrl,  h = 3)
+
+# Back-transform to level (approx.)
+fc_treat_lvl <- exp(fc_treat_log$mean)
+fc_ctrl_lvl  <- exp(fc_ctrl_log$mean)
+
+# Prediction intervals (simple exp-transform; ok as approximation)
+treat_lower <- exp(fc_treat_log$lower[,2]); treat_upper <- exp(fc_treat_log$upper[,2])  # 95%
+ctrl_lower  <- exp(fc_ctrl_log$lower[,2]);  ctrl_upper  <- exp(fc_ctrl_log$upper[,2])
+
+# Put into a nice table
+last_m <- max(store$month)  # should be 18
+forecast_tbl <- tibble(
+  month = (last_m + 1):(last_m + 3),
+  treat_forecast = as.numeric(fc_treat_lvl),
+  treat_lo95     = as.numeric(treat_lower),
+  treat_hi95     = as.numeric(treat_upper),
+  ctrl_forecast  = as.numeric(fc_ctrl_lvl),
+  ctrl_lo95      = as.numeric(ctrl_lower),
+  ctrl_hi95      = as.numeric(ctrl_upper)
+)
+
+knitr::kable(forecast_tbl, digits = 2, caption = "3-month forecasts for Total Sales (levels), with 95% PI.")
+
+```
+
+```{r, echo=FALSE, fig.width=7, fig.height=3}
+# --- Plot: history + forecasts (levels) with 95% PI ---
+
+hist_df <- store %>%
+  filter(county_id %in% c(treat_id, control_id)) %>%
+  mutate(group = if_else(county_id == treat_id, "Treatment", "Control")) %>%
+  select(month, group, total_sales_value)
+
+fc_long <- forecast_tbl %>%
+  transmute(
+    month,
+    treat_forecast, treat_lo95, treat_hi95,
+    ctrl_forecast,  ctrl_lo95,  ctrl_hi95
+  ) %>%
+  pivot_longer(
+    cols = -month,
+    names_to = c("group", ".value"),
+    names_pattern = "(treat|ctrl)_(forecast|lo95|hi95)"
+  ) %>%
+  mutate(group = recode(group, treat = "Treatment", ctrl = "Control"))
+
+ggplot() +
+  geom_line(data = hist_df, aes(x = month, y = total_sales_value),
+            linewidth = 1) +
+  geom_ribbon(data = fc_long,
+              aes(x = month, ymin = lo95, ymax = hi95),
+              alpha = 0.2) +
+  geom_line(data = fc_long,
+            aes(x = month, y = forecast),
+            linewidth = 1, linetype = "dashed") +
+  geom_point(data = fc_long,
+             aes(x = month, y = forecast),
+             size = 1.8) +
+  geom_vline(xintercept = max(hist_df$month) + 0.5, linetype = "dashed") +
+  facet_wrap(~group, scales = "free_y") +
+  labs(
+    title = "Total Sales: observed series and 3-month forecasts",
+    x = "Month",
+    y = "Total Sales (offline + online)"
+  ) +
+  theme_minimal()
+
+```
+**Figure 4: Total sales forecasts (Treatment vs. Control).** Observed total sales (offline + online) for months 1–18 and 3-month ahead forecasts for months 19–21 from the fitted ARIMA(0,1,0) with drift model (points/line); the dashed vertical line marks the forecast start and the shaded band shows the 95% prediction interval.
+
+
+**Residual ACF/ Seasonality**
+
+The residual ACF plots for both counties show no pronounced spikes outside the 95% confidence bands at positive lags, suggesting that the ARIMA(0,1,0) specification captures the main time-series structure reasonably well. In particular, there is no clear seasonal pattern (e.g., no prominent spike around the 12-month lag); given the very short sample (18 months), this also supports our decision **not** to model seasonality explicitly.
+
+
+```{r, echo=FALSE, fig.width=7, fig.height=3}
+par(mfrow = c(1,2))
+acf(residuals(mod_treat), main = "Residual ACF: Treatment")
+acf(residuals(mod_ctrl),  main = "Residual ACF: Control")
+par(mfrow = c(1,1))
+```
+**Figure 5: Residual ACF diagnostics (Treatment vs. Control).** Residual ACFs of the fitted ARIMA(0,1,0) with drift models for the treatment (left) and control (right) county; dashed lines indicate approximate 95% confidence bounds.
+
+---
+
+### VAR analysis (Online vs. Offline Sales)
+
+```{r, include=FALSE}
+library(vars)
+
+# --- Build VAR data for one county: offline/online -> (d)log series ---
+make_var_df <- function(df){
+  df <- df %>% arrange(month)
+
+  # Check positivity for each channel (offline/online can have zeros even if total sales > 0)
+  min_off <- min(df$sales_value_offline, na.rm = TRUE)
+  min_on  <- min(df$sales_value_online,  na.rm = TRUE)
+
+  # Use log if strictly positive, otherwise log1p as a safe fallback for VAR only
+  trans <- function(x, is_pos) if (is_pos) log(x) else log1p(x)
+
+  off_pos <- min_off > 0
+  on_pos  <- min_on  > 0
+
+  df %>%
+    transmute(
+      month,
+      off = sales_value_offline,
+      on  = sales_value_online,
+      log_off = trans(off, off_pos),
+      log_on  = trans(on,  on_pos),
+      dlog_off = c(NA, diff(log_off)),
+      dlog_on  = c(NA, diff(log_on))
+    ) %>%
+    filter(!is.na(dlog_off), !is.na(dlog_on))
+}
+
+# --- Prepare county-specific VAR matrices ---
+treat_raw <- store %>% filter(county_id == treat_id)
+ctrl_raw  <- store %>% filter(county_id == control_id)
+
+treat_var_df <- make_var_df(treat_raw)
+ctrl_var_df  <- make_var_df(ctrl_raw)
+
+Y_treat <- ts(cbind(offline = treat_var_df$dlog_off,
+                    online  = treat_var_df$dlog_on))
+Y_ctrl  <- ts(cbind(offline = ctrl_var_df$dlog_off,
+                    online  = ctrl_var_df$dlog_on))
+
+# --- Lag order selection (keep small due to short sample) ---
+sel_treat <- VARselect(Y_treat, lag.max = 2, type = "const")
+sel_ctrl  <- VARselect(Y_ctrl,  lag.max = 2, type = "const")
+
+p_treat <- as.integer(sel_treat$selection["AIC(n)"])
+p_ctrl  <- as.integer(sel_ctrl$selection["AIC(n)"])
+
+# --- Estimate VARs ---
+var_treat <- VAR(Y_treat, p = p_treat, type = "const")
+var_ctrl  <- VAR(Y_ctrl,  p = p_ctrl,  type = "const")
+
+summary(var_treat)
+summary(var_ctrl)
+
+```
+
+We now turn to the second part of the task and analyze the interdependencies between offline and online sales using a Vector Autoregression (VAR) model for both the treatment and the control county. Given the very short sample (18 monthly observations), we make a few simplifying choices to keep the model identifiable and interpretable.
+
+**Transformation and simplifying assumptions.**  
+Instead of modeling the sales levels, we work with log growth rates, i.e., the first differences of log sales, because the level series are likely non-stationary and a VAR in levels could lead to spurious dynamics in such a small sample. Working with $\Delta \log(\cdot)$ yields an approximately stationarity-oriented representation and has a natural economic interpretation as (approximate) monthly percentage changes. We further keep the specification parsimonious: we include a constant term and restrict the maximum lag order to a small number (due to limited degrees of freedom), and we do not attempt to estimate separate pre-/post-regimes.
+
+**Model setup.**  
+For each county, we estimate a bivariate VAR on the transformed series
+$$
+y_t \;=\; 
+\begin{pmatrix}
+\Delta \log(\text{offline}_t)\\
+\Delta \log(\text{online}_t)
+\end{pmatrix},
+\qquad
+y_t \;=\; c + A_1 y_{t-1} + \dots + A_p y_{t-p} + u_t,
+$$
+where $c$ is a constant vector and $u_t$ is a vector of innovations. The key quantities of interest are the cross-lag coefficients, i.e., how past online growth predicts offline growth (and vice versa).
+
+**Lag length selection.**  
+To choose the lag order $p$, we use standard information criteria (AIC, HQ, SC, FPE) while restricting the search to very small lag lengths. For the treatment county, all criteria select **$p=2$** (VAR(2)), whereas for the control county, all criteria select **$p=1$** (VAR(1)). This yields a more flexible dynamic structure for the treatment county while remaining parsimonious.
+
+### Results (coefficients, R-Output in rmd file)
+
+**Treatment county (VAR(2)).**  
+In the offline equation, we find a statistically significant cross-lag effect from online growth: $\Delta \log(\text{online})_{t-1}$ enters with a positive coefficient (estimate $\approx 0.62$, $p \approx 0.009$). This suggests that increases in online sales growth tend to be followed by higher offline sales growth one month later in the treatment county. The second lag of offline growth is negative and marginally significant (estimate $\approx -0.55$, $p \approx 0.074$), indicating some mean reversion in offline growth at the two-month horizon. Overall, the offline equation is jointly significant (F-test $p \approx 0.042$), consistent with meaningful short-run dynamics.
+
+In the online equation, the lagged offline growth rate shows a positive but only weakly significant association ($\Delta \log(\text{offline})_{t-1}$ estimate $\approx 0.89$, $p \approx 0.093$), while the remaining terms are not statistically strong. Hence, the most robust dynamic linkage in the treatment county runs from online (lag 1) to offline.
+
+**Control county (VAR(1)).**  
+For the control county, the VAR(1) results are substantially weaker. Neither cross-lag coefficient is statistically significant in either equation, and the overall explanatory power is low—especially for the online equation. The only term that comes close to significance is the own-lag in the offline equation ($\Delta \log(\text{offline})_{t-1}$ estimate $\approx -0.58$, $p \approx 0.097$), which is consistent with mild mean reversion in offline growth. Overall, these estimates suggest that short-run interactions between online and offline growth are much less pronounced in the control county.
+
+**Contemporaneous comovement.**  
+In both counties, the residual correlation between the offline and online equations is relatively high (around 0.63–0.69), indicating that both channels are affected by common shocks within the same month, even when lagged dynamics are weak.
+
+Taken together, the coefficient estimates point to stronger dynamic interdependence in the treatment county, in particular from online to offline sales growth, whereas the control county exhibits little evidence of systematic cross-channel lag structure. In the next step, we use impulse response functions (IRFs) to summarize and compare these dynamics more directly over time.
+
+**Impulse response functions (IRFs)**
+
+```{r, echo=FALSE, fig.width=7, fig.height=3, fig.keep='last'}
+# --- Impulse response functions (IRFs) ---
+irf_treat_off2on <- irf(var_treat, impulse = "offline", response = "online",
+                        n.ahead = 6, boot = TRUE, runs = 500)
+irf_ctrl_off2on  <- irf(var_ctrl,  impulse = "offline", response = "online",
+                        n.ahead = 6, boot = TRUE, runs = 500)
+
+irf_treat_on2off <- irf(var_treat, impulse = "online", response = "offline",
+                        n.ahead = 6, boot = TRUE, runs = 500)
+irf_ctrl_on2off  <- irf(var_ctrl,  impulse = "online", response = "offline",
+                        n.ahead = 6, boot = TRUE, runs = 500)
+
+# --- helper: extract one IRF into a tidy tibble ---
+extract_irf_df <- function(irf_obj, impulse, response, county){
+  pull_resp <- function(obj){
+    if (is.null(dim(obj))) return(as.numeric(obj))
+    if (!is.null(colnames(obj)) && response %in% colnames(obj)) return(as.numeric(obj[, response]))
+    as.numeric(obj[, 1])
+  }
+
+  irf_vals <- pull_resp(irf_obj$irf[[impulse]])
+  lo_vals  <- pull_resp(irf_obj$Lower[[impulse]])
+  hi_vals  <- pull_resp(irf_obj$Upper[[impulse]])
+
+  tibble(
+    horizon = 0:(length(irf_vals) - 1),
+    irf     = irf_vals,
+    lower   = lo_vals,
+    upper   = hi_vals,
+    county  = county,
+    effect  = paste0(impulse, " -> ", response)
+  )
+}
+
+irf_df <- bind_rows(
+  extract_irf_df(irf_treat_off2on, "offline", "online",  "Treatment"),
+  extract_irf_df(irf_ctrl_off2on,  "offline", "online",  "Control"),
+  extract_irf_df(irf_treat_on2off, "online",  "offline", "Treatment"),
+  extract_irf_df(irf_ctrl_on2off,  "online",  "offline", "Control")
+) %>%
+  mutate(
+    county = factor(county, levels = c("Control", "Treatment")),
+    effect = factor(effect, levels = c("offline -> online", "online -> offline"))
+  )
+
+ggplot(irf_df, aes(x = horizon, y = irf)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 1.4) +
+  facet_grid(county ~ effect, scales = "free_y") +
+  labs(
+    x = "Horizon (months)",
+    y = "Response (Delta log units)"
+  ) +
+  theme_minimal()
+```
+**Figure 6: Impulse response functions (IRFs) from the VAR model (Treatment vs. Control).** Estimated responses of $\Delta\log(\text{online})$ to a one-unit shock in $\Delta\log(\text{offline})$ (left column) and of $\Delta\log(\text{offline})$ to a one-unit shock in $\Delta\log(\text{online})$ (right column), shown separately for the control (top row) and treatment county (bottom row); the shaded areas denote bootstrap confidence bands and the dotted horizontal line marks zero response.
+
+The IRFs broadly confirm the coefficient-based findings. In the control county, both the offline→online and online→offline responses remain close to zero across horizons, with confidence bands that typically include zero, indicating little evidence of systematic cross-channel dynamics. In contrast, the treatment county shows more pronounced short-run interactions: an offline shock is followed by a positive response of online growth at short horizons, and an online shock is associated with a noticeable response in offline growth (peaking early and then fading). Overall, the dynamic effects in the treatment county appear stronger but also imprecisely estimated, so results should be interpreted cautiously given the very short sample.
 
 # Task 4
 
