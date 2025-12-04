@@ -1,0 +1,212 @@
+---
+title: "Set2_Tsk4"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.height = 4     # Höhe in Inches
+)
+```
+
+A brief note on the approach to this subtask: since the task description requires the selection of three variables based on economic judgement and the interpretation of the logistic regression model using these variables, this is how I will proceed.
+
+An alternative approach would be to fit a model incorporating all regressors and, if appropriate, compare it to a Lasso model. This approach would essentially treat the problem as a classic forecasting task. Although key metrics are initially easier to understand and interpret, using all available data (i.e. regressors) in this way could improve predictive performance.
+
+## Selection of three predictors 
+The idea is now to select three predictors that have as little conceptual overlap as possible. This will prevent redundant variables from being included in the model, which could otherwise negatively affect its interpretability (cf. multicollinearity).
+
+
+### 1. Trend in Monetary value of sales: *sales_trend_3m*
+The total sales values can be compared automatically across different products and categories. It is also intuitive to assume that regions or stores with persistently low sales are potential candidates for closure. However, it is important to note that absolute sales figures are not a suitable metric, since they can vary substantially between stores. For example, a small but profitable store may generate less revenue than a large but unprofitable one.
+
+For this reason, the three-month trend is considered here: *sales_trend_3m*, which is the relative change in average sales between the first three months and the subsequent three months of the pre-closure period. Changes at the monthly level are less robust since short-term fluctuations are to be expected. For instance, sales may temporarily decrease for non-critical reasons, such as an abundance of public holidays or supply bottlenecks, or temporarily increase due to pre-Christmas shopping.
+
+**H1: ** *A decline in sales over several months is an early warning sign of structural weakness in demand, which increases the risk of closure.*
+
+
+### 2. Percentage of sales generated online: *pct_online_sales*
+If a large proportion of customers shop online, this results in lower margins for the offline business. This can cause a store to become unprofitable in the long term.
+
+**H2:** *A high proportion of sales made online indicates a structural shift in demand from physical stores to digital channels. This reduces the profitability of local stores and increases their risk of closure.*
+
+
+### 3. Percentage of discounts offered: *pct_discounts*
+Using discounts to stimulate demand may indicate that a store has weak pricing power and is therefore at risk of closure. However, it is important to note that persistently high levels of discounting may also be a deliberate strategic choice.
+This variable is not reported at the monthly level, so it cannot be transformed into a relative change measure. It is therefore used in its original (untransformed) form.
+
+**H3:** *A high proportion of discounts suggests weak local demand and limited pricing power. This indicates insufficient profitability and an increased risk of closure.*
+
+
+## Model analysis
+To prevent information leakage, i.e. the independent variables being potentially influenced by store closures, the dataset is first filtered to include only the months prior to the closures. Next, a variable is constructed to capture the change in total sales over three months, and all other non-selected regressors are removed from the dataset. After the data transformation, since all three variables are available exclusively at the county level, duplicate observations are dropped using *'distinct()'*.
+
+```{r, echo=FALSE}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(purrr)
+library(broom)
+library(knitr)
+
+store_df <- read.csv("../data/StoreData.csv")
+
+store_df_pre_treat <- store_df %>%
+  filter(month <= 6)
+
+
+# create relative three month change predictor for sales_value_total 
+store_df_pre_treat <- store_df_pre_treat %>%
+  group_by(county_id) %>%
+  mutate(
+    sales_early = mean(sales_value_total[month %in% 1:3], na.rm = TRUE),
+    sales_late  = mean(sales_value_total[month %in% 4:6], na.rm = TRUE)
+  ) %>%
+  ungroup() %>%
+  mutate(
+    sales_trend_3m = (sales_late - sales_early) / sales_early
+  ) %>%
+  select(-sales_late, -sales_early)
+
+store_df_pre_treat_3selected <- store_df_pre_treat %>%
+  select(county_id, month, treat, sales_trend_3m, pct_online_sales, pct_discounts)
+
+store_df_pre_treat_3selected <- store_df_pre_treat_3selected %>%
+  group_by(county_id, treat) %>%
+  distinct(pct_online_sales, pct_discounts, sales_trend_3m)
+
+
+df_pre__treat_treated <- store_df_pre_treat_3selected %>% filter(treat == 1)
+
+```
+
+```{r}
+paste0("Proportion of closed stores: ", 
+       length(df_pre__treat_treated$treat)/length(store_df_pre_treat_3selected$treat))
+```
+
+Next, a logistic regression is fitted for each of the seven possible combinations, as well as for the null model. Additionally, the in-sample classification accuracy with a threshold of 0.5 is computed for each model. A likelihood-ratio test is also performed for each model. The logistic regression models are stored in a dataset that is sorted in descending order by AIC value.
+
+
+```{r, echo=FALSE}
+vars <- c("pct_online_sales", "pct_discounts", "sales_trend_3m")
+
+logit_models_list <- unlist(
+  lapply(0:length(vars), function(k) {
+    if (k == 0) {
+      "1"                               # Intercept only
+    } else {
+      combn(vars, k, FUN = function(x) paste(x, collapse = " + "))
+    }
+  }),
+  use.names = FALSE
+)
+
+# Formulas from the list: treat ~ ...
+logit_models_formulas <- lapply(logit_models_list, function(rhs) {
+  as.formula(paste("treat ~", rhs))
+})
+
+# Fit the models
+logit_model_results <- map_dfr(logit_models_formulas, function(f) {
+  
+  m <- glm(f,
+           data = store_df_pre_treat_3selected,
+           family = binomial(link = "logit"))
+  
+  prediction <- predict(m, type = "response")
+  prediction <- if_else(prediction > 0.5, 1L, 0L)
+  
+  class_accuracy <- mean(prediction == store_df_pre_treat_3selected$treat)
+  
+  
+  tibble(
+    formula = deparse(f),
+    aic     = AIC(m),
+    accuracy = class_accuracy,
+    model = list(m)
+  )
+})
+
+# Arrange by AIC
+logit_model_results <- logit_model_results %>%
+  arrange(aic)
+
+# Perform likelihood ratio test  for all fitted models
+logL_null_model <- as.numeric(logLik(logit_model_results %>%
+                                       filter(formula == "treat ~ 1") %>%
+                                       pull(model) %>%
+                                       .[[1]]))
+
+LR_test_tibble <- tibble(
+  formula = character(),
+  LR_stc = numeric(),
+  p_value = numeric()
+)
+
+for (i in 1:length(logit_model_results$formula)) {
+
+  current_model <- logit_model_results$model[[i]]
+
+  test_statistic <- -2*(logL_null_model-as.numeric(logLik(current_model)))
+  df_model <- attr(logLik(current_model), "df")
+  p_v <- 1-pchisq(test_statistic,df_model - 1)
+
+  LR_test_tibble <- LR_test_tibble %>%
+    add_row(formula = logit_model_results$formula[[i]],
+            LR_stc = test_statistic,
+            p_value = p_v)
+
+}
+
+logit_model_results <- left_join(logit_model_results, LR_test_tibble, by = "formula")
+
+# Dataset that is shown as table
+logit_model_results_overview <- logit_model_results %>%
+  select(-model) %>% 
+  rename(
+    Formula      = formula,
+    AIC          = aic,
+    Accuracy     = accuracy,
+    `LR statistic` = LR_stc,
+    `p-value`      = p_value
+  ) %>% 
+  mutate(
+    across(where(is.numeric), ~ round(.x, 4))
+  )
+
+```
+
+
+```{r}
+knitr::kable(logit_model_results_overview)
+```
+
+In terms of AIC, all models are very close to each other (with a difference of only 3.3 between the best and worst model). The best model uses *sales_trend_3m* as the sole regressor, whereas the worst model incorporates all three of the aforementioned economically motivated regressors. 
+50% of the stores in the dataset are closed (see above). Consequently, this is the automatic baseline in-sample accuracy of the null model. None of the other logistic regression models achieves substantially higher accuracy than this baseline (the best value is 60%). 
+The null hypothesis of the LR test cannot be rejected at the 5% significance level for any of the models. Only the AIC-best model is statistically significant at the 10% level. Therefore, none of the additional parameters in the unrestricted models leads to a statistically significant improvement in the likelihood of observing the data.
+
+### Best-performing model according to AIC: *sales_trend_3m* only
+
+```{r}
+summary(logit_model_results$model[[1]])
+```
+
+With a p-value of 0.104 for sales_trend_3m, we cannot reject the null hypothesis that an increase in the three-month sales trend has no effect on the probability of store closure. It should also be noted that multicollinearity is not an issue in models with a single regressor.
+
+For the sake of completeness, the following interpretation of this coefficient is provided; however, due to the low level of statistical significance, it should be treated with caution. A relative increase in average sales over the three-month period is associated with higher log-odds of store closure. Specifically, a 100% increase in the three-month sales trend (i.e. doubling sales) increases the log-odds of store closure by 1.8163. According to the model, therefore, a positive sales growth trend increases the risk of closure and contradicts hypothesis H1.
+
+### Worst-performing model according to AIC: all three regressors
+
+```{r}
+summary(logit_model_results$model[[nrow(logit_model_results)]])
+```
+
+In the model incorporating all three regressors, none of the predictors are statistically significant (all p-values greater than 0.30). Due to the lack of evidence, the coefficients are not interpreted further or examined for multicollinearity.
+
+## Conclusion
+The results of the logistic regression analysis show that the three selected predictors do not have any statistically significant explanatory power when it comes to predicting whether a county experiences a store closure. A larger dataset would be interesting to work with, as it would allow for a more reliable model fit and greater statistical power. Moreover, with a larger sample, the predictive performance on unseen data could be evaluated using a train–test split.
