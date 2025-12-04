@@ -23,7 +23,9 @@ knitr::opts_chunk$set(
   fig.height = 4     # Höhe in Inches
 )
 ```
-#Task 1
+
+# Task 1
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 # Read data
 library(AER)
@@ -156,7 +158,7 @@ According to the Hausman tests using weather data as an instrument, we do not ha
 
 
 
-#Task 2
+# Task 2
 
 
 ```{r, echo=TRUE}
@@ -814,10 +816,10 @@ store_df_pre_treat <- store_df_pre_treat %>%
   mutate(
     sales_trend_3m = (sales_late - sales_early) / sales_early
   ) %>%
-  select(-sales_late, -sales_early)
+  dplyr::select(-sales_late, -sales_early)
 
 store_df_pre_treat_3selected <- store_df_pre_treat %>%
-  select(county_id, month, treat, sales_trend_3m, pct_online_sales, pct_discounts)
+  dplyr::select(county_id, month, treat, sales_trend_3m, pct_online_sales, pct_discounts)
 
 store_df_pre_treat_3selected <- store_df_pre_treat_3selected %>%
   group_by(county_id, treat) %>%
@@ -825,6 +827,7 @@ store_df_pre_treat_3selected <- store_df_pre_treat_3selected %>%
 
 
 df_pre__treat_treated <- store_df_pre_treat_3selected %>% filter(treat == 1)
+
 
 ```
 
@@ -911,7 +914,7 @@ logit_model_results <- left_join(logit_model_results, LR_test_tibble, by = "form
 
 # Dataset that is shown as table
 logit_model_results_overview <- logit_model_results %>%
-  select(-model) %>% 
+  dplyr::select(-model) %>% 
   rename(
     Formula      = formula,
     AIC          = aic,
