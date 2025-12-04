@@ -25,6 +25,12 @@ knitr::opts_chunk$set(
 ```
 
 # Task 1
+TODO:
+1.⁠ ⁠cov (x, error) nahe 0 —> kein endogenitätsproblem
+2.⁠ ⁠Plausibilitätsargument, dass supply eine ommited variable sein kann
+3.⁠ ⁠⁠kann durch wetter als instrument abgebildet werden
+4.⁠ ⁠⁠hausman ergibt keine signifikanz —> keine endogenität
+5.⁠ ⁠⁠andere Probleme? omitted variable, control variable totr
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 # Read data
@@ -42,7 +48,14 @@ daily_data$qty <- exp(daily_data$qty_log)
 
 ### How could the relationship between price and demand be affected by endogeneity?
 
-Endogeneity describes the problem, that a regressor x may predict the dependent variable very well, but has no causal relationship with it. There are two mechanisms creating endogeneity: Omitted variables and reverse causality.
+Endogeneity describes the problem, that the regressor x correlates with residuals. If endogeneity is present in the dataset, the estimated coefficients are biased regarding causation. The following data suggests that the residuals do not correlate with price (cov is almost 0). 
+```{r}
+price_demand = lm(daily_data$qty~ daily_data$price)
+res <- residuals(price_demand)
+cov(res, daily_data$price)
+```
+
+There are two mechanisms creating endogeneity: Omitted variables and reverse causality.
 
 Reverse causality:
 In an ideal economic model the demand is a function of the price. The higher the price, the lower the demand and vice versa. 
@@ -56,7 +69,12 @@ This omitted variable could be the amount of received fish, i.e. the supply.
 In this case the quantity and price are determined by the amount of fish received at the day. When there is not much fish available, the seller just cannot sell more fish resulting in a lower quantity with higher prices. On the other hand, when there is a lot of fish available the seller can sell more, resulting in a higher quantity with lower prices. This plausability argument is supported by the following data:
 ```{r}
 price_demand = lm(daily_data$qty~ daily_data$price)
+res <- residuals(price_demand)
+cor(res, daily_data$price)
+
 price_demand_totr = lm(daily_data$qty~ daily_data$price + daily_data$totr)
+res_totr <-residuals(price_demand_totr)
+cor(res_totr, daily_data$totr)
 round(summary(price_demand)$coefficients, 5)
 round(summary(price_demand_totr)$coefficients, 5)
 ```
@@ -82,11 +100,11 @@ lm_price <- lm(price ~ stormy + day1 + day2 + day3 + day4, data = daily_data)
 # For quantity:
 coef_qty <- coef(lm_qty)
 diff_qty <- coef_qty["stormy"]
-
 # For price:
 coef_price <- coef(lm_price)
 diff_price <- coef_price["stormy"]
-
+```
+```{r, echo=FALSE}
 # Overall averages
 mean_qty <- mean(daily_data$qty)
 mean_price <- mean(daily_data$price)
@@ -99,6 +117,7 @@ cat(
     "mean_qty =", mean_qty, 
     "mean_price =", mean_price, "\n")
 ```
+
 On a stormy day the average quantity of sold fish shrinks by 2370.7 pounds and the price rises by 32.22 cents. The average price on all days was 88.45 cents and average quantity was 6334.67 pounds. 
 The correlation of price and stormy weather is also positive. Therefore the requirement of relevance is fulfilled.
 ```{r}
@@ -106,8 +125,6 @@ cor(daily_data$price, daily_data$stormy)
 ```
 Another requirement for instruments is exogeneity. So, to predict prices for fish, we need a variable that is independent of supply. Storms are such a variable as the supply cannot influence the weather.
 Therefore, the data and plausibility support that stormy weather can be used as an instrumental variable.
-
-Nevertheless, it makes more sense to use the supply in the form of total amount of received fish (totr) directly, because that is the omitted variable.
 
 ### Re-run lin-log model with instrumental variables
 ```{r}
@@ -155,7 +172,6 @@ Again, the Hausman test (p = 0.316) indicates no evidence of price endogeneity. 
 ### Is there an endogeneity problem in the data? Do you see other endogeneity problems not captured by your instrument?
 
 According to the Hausman tests using weather data as an instrument, we do not have an endogeneity problem in the data. But as seen above the total amount of received fish (totr), i.e. the supply, is an omitted variable that changes the results significantly. Therefore we conclude that we have an endogeneity problem, that is not captured by the instruments.
-
 
 
 # Task 2
@@ -232,7 +248,7 @@ estb_model_moderation = lmer(quan ~ price_c * estb + (1|cusn), data = detailed_d
 summary(estb_model)
 summary(estb_model_moderation)
 ```
-In the main effects model, controlling for establishment type confirms the robustness of the price effect. The coefficient for price remains stable and statistically significant ($b = -52.84, p < 0.05$), reinforcing the finding that higher prices lead to lower purchase volumes regardless of store type.Additionally, the model reveals significant differences in baseline demand between establishment categories. 'Stores' (estbs) purchase significantly less than the reference group 'Fry Shops' (f), with a reduction of approximately 101 units ($p < 0.05$). In contrast, hybrid establishments ('sf') do not show a statistically significant difference in baseline purchase quantity compared to Fry Shops.
+In the main effects model, controlling for establishment type confirms the robustness of the price effect. The coefficient for price remains stable and statistically significant ($b = -52.84, p < 0.05$), reinforcing the finding that higher prices lead to lower purchase volumes regardless of store type. Additionally, the model reveals significant differences in baseline demand between establishment categories. 'Stores' (estbs) purchase significantly less than the reference group 'Fry Shops' (f), with a reduction of approximately 101 units ($p < 0.05$). In contrast, hybrid establishments ('sf') do not show a statistically significant difference in baseline purchase quantity compared to Fry Shops.
 
 The moderated model provides no support for Hypothesis 3, as neither of the interaction terms (price_c:estbs and price_c:estbsf) reaches statistical significance ($p > 0.39$). This suggests that the sensitivity to price changes does not vary significantly across different types of establishments. However, similar to the payment method analysis, this null result must be interpreted with caution due to severe multicollinearity. The correlation matrix indicates an extremely high correlation between the main price effect and the interaction term for stores (price_c:estbs), with a coefficient of -0.90. This collinearity inflates the standard error for the price coefficient more than twofold (from ~25 to ~63), reducing the statistical power to detect true interaction effects. Thus, while we find no evidence for moderation, the estimation is compromised by the structural dependencies in the data.
 ```{r}
