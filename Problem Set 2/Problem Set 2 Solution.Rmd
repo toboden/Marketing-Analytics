@@ -56,7 +56,7 @@ detailed_data_prep <- detailed_data %>%
 detailed_data_perep_estb = detailed_data_prep %>%
   filter(estb %in% c("s", "f", "sf"))
 ```
-The data preprocessing remians the same as in PS1 Task 3, however this time we do not group by the customer id and will leve this column unmodified as dependend variable.
+The data preprocessing remains the same as in PS1 Task 3, however this time we do not group by the customer id and will leave this column unmodified as dependent variable.
 
 ```{r}
 
@@ -65,11 +65,11 @@ summary(baseline_model)
 
 icc(baseline_model)
 ```
-We fit a baseline model with just the price as explanatory variable. After that we use this model to look at the inter-class correlation to check weather we have a nested/clustered dataset. The ICC strongly indicates that the data is heaviliy clustered and by that justifies the employment of multi-level regression. The ICC indicates that about 56% of the variation in bought amount can be explained by the differences in the clusters.
+The baseline model yields an Intraclass Correlation Coefficient (ICC) of approximately 0.56. This indicates that over half (56%) of the variance in purchase quantity is attributable to stable differences between customers rather than daily fluctuations. This strong clustering violates OLS independence assumptions and confirms the necessity of a multilevel approach to avoid biased standard errors.
 
-The baseline model could not find a signifcant effect of price, however the p-value is just slightly above the 5% mark, meaning the effect of price can still be arguable.
-The model found a negative effect of price. An increase of the price of 1 unit decreases the bought quantity by 46. That is a very strong slope meaning that costomers are very price sensitive
+The model estimates a substantial negative price effect (-46.85), implying that a one-unit price increase reduces demand by nearly 47 units. However, this effect is only marginally significant ($p \approx 0.051$), likely due to the more conservative standard error estimation in the multilevel framework. While not statistically significant at the strict 5% level, the coefficient's magnitude suggests considerable economic relevance and high price sensitivity.
 
+We will continue only with a random intercept model, instead of a random slope model, as we have a total of 478 data points and 210 distinct customer ids. Fitting a different slope for each customer would be statistically extremely unstable. 
 ```{r}
 #2.2 Moderated Model 2
 cash_model = lmer(quan ~ price_c+cash_dummy + (1|cusn), data=detailed_data_prep)
@@ -77,27 +77,35 @@ cash_model_moderation = lmer(quan ~ price_c*cash_dummy + (1|cusn), data=detailed
 summary(cash_model)
 summary(cash_model_moderation)
 ```
-When we control for cash the effect of price becomes with a p-value of about 3.5% significant. The effect size is even estimated to be bigger, as the model found a 52 unit decrease for a one unit increase of price. The effect of cash itself is not significant. 
+Incorporating the payment method (cash_dummy) as a control variable sharpens the model's precision regarding price sensitivity. Unlike the unconditional baseline model, this specification reveals a statistically significant negative effect of price ($b = -52.02, p < 0.05$).The magnitude of the coefficient suggests a stronger price sensitivity than previously estimated: holding the payment method constant, a one-unit increase in price is associated with a decrease in quantity of approximately 52 units. However, the payment method itself does not show a significant main effect ($p \approx 0.115$), indicating that the mere act of paying with cash does not significantly shift the baseline demand volume (intercept) compared to credit/invoice payments.
 
-The moderated model could not find any significant effect. This could stem from multicolinearity that sabotages the model. We can see a strong correlation between price and price*cash of -0.86, which leads to serious estimation problems, as the real effect cannot be assigned to any of these variables. Also supported by the increased standard error of estimation for both.
+The moderated model fails to support Hypothesis 2, as the interaction between price and payment method (price_c:cash_dummy) is not statistically significant ($p \approx 0.255$). However, diagnostics reveal that this null result is likely driven by structural multicollinearity rather than a definitive absence of an effect.The correlation matrix shows a strong dependency between the main price effect and the interaction term ($r \approx -0.85$). This high correlation causes a substantial inflation of the standard errors—the standard error for the price coefficient nearly doubles from 24.62 in the main effects model to 46.16 here. This statistical instability makes it difficult for the model to cleanly disentangle the general price sensitivity from the specific sensitivity of cash payers. Consequently, while we cannot reject the null hypothesis, the results are arguably inconclusive due to estimation issues.
 ```{r}
 r2(cash_model)
 r2(cash_model_moderation)
 
 anova(cash_model, cash_model_moderation)
 ```
+Using Nakagawa’s $R^2$, we find that ~56% of the variation in purchase quantity is driven by stable customer differences (Conditional $R^2$). In contrast, price and payment method explain only ~2% of the variance (Marginal $R^2$). While low, this is consistent with marketing data where individual heterogeneity often outweighs daily transaction factors.
 
+The ANOVA confirms that adding the interaction term yields no statistically significant improvement. This is supported by the Information Criteria (AIC/BIC), which favor the simpler main-effects model.
+
+Conclusion: We find a significant main effect of price, explaining about 2% of the variance. However, we reject Hypothesis 2: the data provides no evidence that paying with cash makes customers more price-sensitive than paying with credit.
 ```{r}
 estb_model = lmer(quan ~ price_c + estb + (1|cusn), data = detailed_data_perep_estb)
 estb_model_moderation = lmer(quan ~ price_c * estb + (1|cusn), data = detailed_data_perep_estb)
 summary(estb_model)
 summary(estb_model_moderation)
 ```
+In the main effects model, controlling for establishment type confirms the robustness of the price effect. The coefficient for price remains stable and statistically significant ($b = -52.84, p < 0.05$), reinforcing the finding that higher prices lead to lower purchase volumes regardless of store type.Additionally, the model reveals significant differences in baseline demand between establishment categories. 'Stores' (estbs) purchase significantly less than the reference group 'Fry Shops' (f), with a reduction of approximately 101 units ($p < 0.05$). In contrast, hybrid establishments ('sf') do not show a statistically significant difference in baseline purchase quantity compared to Fry Shops.
 
+The moderated model provides no support for Hypothesis 3, as neither of the interaction terms (price_c:estbs and price_c:estbsf) reaches statistical significance ($p > 0.39$). This suggests that the sensitivity to price changes does not vary significantly across different types of establishments.However, similar to the payment method analysis, this null result must be interpreted with caution due to severe multicollinearity. The correlation matrix indicates an extremely high correlation between the main price effect and the interaction term for stores (price_c:estbs), with a coefficient of -0.90. This collinearity inflates the standard error for the price coefficient more than twofold (from ~25 to ~63), reducing the statistical power to detect true interaction effects. Thus, while we find no evidence for moderation, the estimation is compromised by the structural dependencies in the data.
 ```{r}
 r2(estb_model)
 r2(estb_model_moderation)
 
 anova(estb_model, estb_model_moderation)
 ```
+The Conditional $R^2$ remains consistent at ~56.2%, reaffirming that customer identity is the primary driver of purchase volume. However, a key difference emerges in the Marginal $R^2$, which rises to ~5.6%. This is more than double the explanatory power of the payment method model (~2%), indicating that the type of establishment (estb) is a much stronger predictor of daily purchase quantity than the mode of payment, even if it does not explain the price sensitivity.
 
+The model comparison confirms that this additional explanatory power comes from the main effects (intercept differences), not the interaction. The ANOVA yields a clearly non-significant result ($\chi^2(2) = 0.74, p \approx 0.69$), and information criteria (AIC/BIC) penalize the inclusion of the interaction terms.Conclusion: We reject Hypothesis 3. While different establishment types buy significantly different amounts on average (e.g., Stores buy less than Fry Shops), there is no evidence that their demand curves have different slopes. Price sensitivity appears to be uniform across all establishment types.
