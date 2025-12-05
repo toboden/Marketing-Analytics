@@ -153,7 +153,7 @@ hausman = ((b_iv - b)^2)/(se_iv ^2 - se^2)
 hausman = unname(hausman)
 cat("hausman windpeed p-value: ", 1-pchisq(hausman,df=1))
 ```
-Again, the Hausman test between the OLS regression and the IV regression with windspeed indicates no evidence of price endogeneity (p-value = 0.316). Using wind speed as an instrument does not improve the model statistically. This implies that, as a buyer, looking at the weather to determine if the price or quantity of fish is high is not a good strategy.
+Again, the Hausman test between the OLS regression and the IV regression with windspeed indicates no evidence of price endogeneity (p-value = 0.316). Using wind speed as an instrument does not improve the model statistically. 
 
 ### Is there an endogeneity problem in the data? Do you see other endogeneity problems not captured by your instrument?
 
