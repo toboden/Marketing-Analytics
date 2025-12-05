@@ -389,7 +389,7 @@ Our goal is (i) to develop time-series forecasting models for **total sales** (o
 Before selecting counties, we enforce a clean panel structure by restricting the sample to counties with a constant treatment status over time and complete coverage of months 1--18, since missing months or changing treatment labels would distort time-series estimation and invalidate comparisons.
 From this eligible set, we then randomly draw one treated and one control county using a fixed seed to ensure reproducibility; in our run, the selected counties are **treatment: county_id = 39** and **control: county_id = 25**.
 
-```{r, echo=FALSE, fig.width=7, fig.height=3}
+```{r, echo=FALSE, fig.width=7, fig.height=2.5}
 # 4) Plot total sales trajectories
 store %>%
   filter(county_id %in% c(treat_id, control_id)) %>%
@@ -491,7 +491,7 @@ Moreover, focusing on growth rates instead of levels facilitates comparison betw
 We visualize these growth-rate series over time and mark the beginning of the post-treatment period again with a vertical dashed line, while a horizontal dotted line at zero indicates no growth.
 The plot shows how growth rates fluctuate around a roughly stable mean in both the pre- and post-periods, without obvious deterministic trends, which is consistent with the objective of obtaining a more stationary series.
 
-```{r, echo=FALSE, fig.width=7, fig.height=3}
+```{r, echo=FALSE, fig.width=7, fig.height=2.5}
 # --- If (log-)levels are non-stationary: first difference of logs (growth rates) ---
 dy_treat_log <- diff(y_treat_log)
 dy_ctrl_log  <- diff(y_ctrl_log)
@@ -539,14 +539,13 @@ kable(adf_logdiff_tbl, digits = 4,
 ```
 
 **How many lags to include**
-
 To inform the choice of the dynamic structure in our subsequent time-series regressions, we examine the autocorrelation function (ACF) and the partial autocorrelation function (PACF) of the transformed outcome variable, i.e., the first difference of the log-transformed total sales, for both the treatment county (ID 39) and the control county (ID 25).
 The ACF summarizes the linear dependence of the series with its own past values at different lags, while the PACF isolates the incremental contribution of each lag after controlling for all shorter lags.
 Together, these diagnostics provide guidance on whether the series exhibits short-run persistence that would call for an autoregressive specification with one or more lags.
 
-The Figure below displays the ACF and PACF of Delta log(Total Sales) for both counties.
-Overall, the plots do not suggest strong or long-lasting autocorrelation.
-At all positive lags, the sample autocorrelations are small and lie within the approximate 95% confidence bands, and the PACF does not show any pronounced spikes.
+The Figure below displays the ACF and PACF of Δlog(Total Sales) for both counties.
+Overall, the plots do not suggest strong or long-lasting autocorrelation. At all positive lags, the sample autocorrelations are small and lie within the approximate 95% confidence bands, and the PACF does not show any pronounced spikes. From a marketing perspective, this pattern suggests little evidence of “momentum” in sales growth: past growth rates provide limited incremental information about future growth rates, consistent with month-to-month changes being primarily driven by contemporaneous factors (e.g., promotions, seasonality, holidays, local events, or macro conditions) rather than persistent carryover effects.
+
 Given the very short time dimension of our data (only 17 monthly observations after differencing), these diagnostics should be interpreted cautiously, but they nonetheless indicate that any remaining serial dependence is weak and, if present at all, likely to be of very low order.
 
 ```{r, echo=FALSE}
@@ -817,7 +816,7 @@ The only term that comes close to significance is the own-lag in the offline equ
 Overall, these estimates suggest that short-run interactions between online and offline growth are much less pronounced in the control county.
 
 **Contemporaneous comovement.**\
-In both counties, the residual correlation between the offline and online equations is relatively high (around 0.63--0.69), indicating that both channels are affected by common shocks within the same month, even when lagged dynamics are weak.
+In both counties, the residual correlation between the offline and online equations is relatively high (around 0.63–0.69), indicating that both channels are affected by common shocks within the same month, even when lagged dynamics are weak. A plausible interpretation is that shared demand drivers—such as holidays, broad marketing campaigns spanning both channels, changes in the local economic environment, or other county-level events shift online and offline sales simultaneously. In other words, the two channels appear to react in parallel to the same monthly “news”, rather than primarily transmitting shocks to each other through delayed spillovers.
 
 Taken together, the coefficient estimates point to stronger dynamic interdependence in the treatment county, in particular from online to offline sales growth, whereas the control county exhibits little evidence of systematic cross-channel lag structure.
 In the next step, we use impulse response functions (IRFs) to summarize and compare these dynamics more directly over time.
