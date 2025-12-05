@@ -25,12 +25,6 @@ knitr::opts_chunk$set(
 ```
 
 # Task 1
-TODO:
-1.⁠ ⁠cov (x, error) nahe 0 —> kein endogenitätsproblem
-2.⁠ ⁠Plausibilitätsargument, dass supply eine ommited variable sein kann
-3.⁠ ⁠⁠kann durch wetter als instrument abgebildet werden
-4.⁠ ⁠⁠hausman ergibt keine signifikanz —> keine endogenität
-5.⁠ ⁠⁠andere Probleme? omitted variable, control variable totr
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 # Read data
@@ -48,13 +42,7 @@ daily_data$qty <- exp(daily_data$qty_log)
 
 ### How could the relationship between price and demand be affected by endogeneity?
 
-Endogeneity describes the problem, that the regressor x correlates with residuals. If endogeneity is present in the dataset, the estimated coefficients are biased regarding causation. The following data suggests that the residuals do not correlate with price (cov is almost 0). 
-```{r}
-price_demand = lm(daily_data$qty~ daily_data$price)
-res <- residuals(price_demand)
-cov(res, daily_data$price)
-```
-
+Endogeneity describes the problem, that the regressor x correlates with the true residuals. If endogeneity is present in the dataset, the estimated coefficients are biased regarding causation. 
 There are two mechanisms creating endogeneity: Omitted variables and reverse causality.
 
 Reverse causality:
@@ -65,21 +53,19 @@ Then, we have a reverse causality.
 Omitted variables:
 The relationship between price and demand (quantity of sold fish) in the fish market may be affected by endogeneity, when the price correlates well with the demand, but is not the causality. Instead, a omitted variable is the common cause for price and demand.
 
-This omitted variable could be the amount of received fish, i.e. the supply.
+This omitted variable could be the supply of fish. Here, the total amount of received fish is a good control variable for the supply.
 In this case the quantity and price are determined by the amount of fish received at the day. When there is not much fish available, the seller just cannot sell more fish resulting in a lower quantity with higher prices. On the other hand, when there is a lot of fish available the seller can sell more, resulting in a higher quantity with lower prices. This plausability argument is supported by the following data:
-```{r}
+```{r, echo=FALSE}
 price_demand = lm(daily_data$qty~ daily_data$price)
-res <- residuals(price_demand)
-cor(res, daily_data$price)
-
 price_demand_totr = lm(daily_data$qty~ daily_data$price + daily_data$totr)
-res_totr <-residuals(price_demand_totr)
-cor(res_totr, daily_data$totr)
+```
+```{r}
 round(summary(price_demand)$coefficients, 5)
 round(summary(price_demand_totr)$coefficients, 5)
 ```
-If we include the number of received fish (totr) in the model, the effect of the price is reduced from an initial -3709 (without totr) to -1403 (with totr). Also the p-value of price in the model including totr is above 5%, indicating that it is not significant.
-The effect of the received fish on the other hand is very significant (very small p-value for totr).
+
+If we include the number of received fish (totr) in the linear regression model, the effect of the price is reduced from an initial -3709 (linear regression without totr) to -1403 (linear regression with totr). Also the p-value of price in the model including totr is above 5%, indicating that it is not significant. Although -1403 is still large it is worth noting, that the average quantity is 6334.67 pounds and the average price is 0.8846.
+The effect of the received fish on the other hand is very significant (near 0 p-value for totr).
 
 Implications:
 The quantity of sold fish is not determined by the price. Instead it is determined by the supply of fish. 
@@ -90,7 +76,7 @@ In her dataset Graddy classified the weather as stormy when a certain wave heigh
 Her argument is, that storms are an important determinant of the supply as strong winds and high waves make it difficult to catch fish. 
 If supply is high, quantities rise and prices fall and vice versa.
 This is supported by the following data:
-```{r}
+```{r, echo=FALSE}
 # Fit linear models holding day-of-week constant
 # Day1..Day4 are dummies for weekdays
 lm_qty <- lm(qty ~ stormy + day1 + day2 + day3 + day4, data = daily_data)
@@ -119,23 +105,23 @@ cat(
 ```
 
 On a stormy day the average quantity of sold fish shrinks by 2370.7 pounds and the price rises by 32.22 cents. The average price on all days was 88.45 cents and average quantity was 6334.67 pounds. 
-The correlation of price and stormy weather is also positive. Therefore the requirement of relevance is fulfilled.
-```{r}
-cor(daily_data$price, daily_data$stormy)
+The correlation of price and stormy weather is also positive (0,42). Therefore the requirement of relevance is fulfilled.
+```{r, echo=FALSE}
+cat("cor(price, stormy) =", cor(daily_data$price, daily_data$stormy))
 ```
 Another requirement for instruments is exogeneity. So, to predict prices for fish, we need a variable that is independent of supply. Storms are such a variable as the supply cannot influence the weather.
 Therefore, the data and plausibility support that stormy weather can be used as an instrumental variable.
 
 ### Re-run lin-log model with instrumental variables
-```{r}
+```{r, echo=FALSE}
 y = daily_data$qty # linear
 x = daily_data$price_log # log
 main_model = lm(y~x)
 b = coef(main_model)["x"]
 se = summary(main_model)$coefficients["x", "Std. Error"]
 ```
-First we run the lin-log model with stormy as an instrumental variable as proposed by Graddy:
-```{r}
+First we run the lin-log model with stormy as an instrumental variable as proposed by Graddy and calculate the Hausman test of the OLS regression and the iv regression.
+```{r, echo=FALSE}
 # use stormy_weather as an instrumental variable:
 v = daily_data$stormy
 iv_reg_stormy = ivreg(formula = y ~ x | v)
@@ -145,17 +131,17 @@ se_iv = summary(iv_reg_stormy)$coefficients["x", "Std. Error"]
 # hausman test:
 hausman = ((b_iv - b)^2)/(se_iv ^2 - se^2)
 hausman = unname(hausman)
-1-pchisq(hausman,df=1)
+cat("hausman stormy p-value: ", 1-pchisq(hausman,df=1))
 ```
 The Hausman test (p = 0.176) does not reject the null hypothesis of identical estimates. This implies that the instrument based on stormy weather conditions is not strong enough to provide a statistically significant improvement over OLS.
 As a result, the OLS estimate appears adequate for this dataset, and the evidence for price endogeneity is weak.
 
-The stormy variable is a binary variable indicating if wave height and windspeed are above a certain threshold. This omits information. Therefore, we now use windspeed directly as an instrumental variable. It fulfills the requirement of relevance as it is correlated with price:
-```{r}
-cor(daily_data$price, daily_data$windspd)
+The stormy variable is a binary variable indicating if wave height and windspeed are above a certain threshold. This omits information. Therefore, we now use windspeed directly as an instrumental variable. It fulfills the requirement of relevance as it is correlated with price (cor(price, windspd) = 0.42)
+```{r, echo=FALSE}
+cat("cor(price, windspd)= ", cor(daily_data$price, daily_data$windspd))
 ```
 As windspeed also describes the weather the same argument as above holds regarding exogeneity.
-```{r}
+```{r, echo=FALSE}
 # use totr as an instrumental variable:
 v = daily_data$windspd
 iv_reg_wind = ivreg(formula = y ~ x | v)
@@ -165,13 +151,13 @@ se_iv = summary(iv_reg_wind)$coefficients["x", "Std. Error"]
 # hausman test:
 hausman = ((b_iv - b)^2)/(se_iv ^2 - se^2)
 hausman = unname(hausman)
-1-pchisq(hausman,df=1)
+cat("hausman windpeed p-value: ", 1-pchisq(hausman,df=1))
 ```
-Again, the Hausman test (p = 0.316) indicates no evidence of price endogeneity. OLS and IV estimates do not differ significantly, so the OLS estimate of the demand function is likely consistent. Using wind speed as an instrument does not improve the model statistically.
+Again, the Hausman test between the OLS regression and the IV regression with windspeed indicates no evidence of price endogeneity (p-value = 0.316). Using wind speed as an instrument does not improve the model statistically. This implies that, as a buyer, looking at the weather to determine if the price or quantity of fish is high is not a good strategy.
 
 ### Is there an endogeneity problem in the data? Do you see other endogeneity problems not captured by your instrument?
 
-According to the Hausman tests using weather data as an instrument, we do not have an endogeneity problem in the data. But as seen above the total amount of received fish (totr), i.e. the supply, is an omitted variable that changes the results significantly. Therefore we conclude that we have an endogeneity problem, that is not captured by the instruments.
+According to the Hausman tests using weather data as an instrument, we do not have an endogeneity problem in the data. But as seen above the total amount of received fish (totr), i.e. the supply, is an omitted variable that changes the results significantly. Therefore we conclude that we have an endogeneity problem, that is not captured by the instruments of weather.
 
 
 # Task 2
