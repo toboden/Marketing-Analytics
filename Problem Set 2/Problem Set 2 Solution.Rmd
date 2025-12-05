@@ -389,7 +389,7 @@ Our goal is (i) to develop time-series forecasting models for **total sales** (o
 Before selecting counties, we enforce a clean panel structure by restricting the sample to counties with a constant treatment status over time and complete coverage of months 1--18, since missing months or changing treatment labels would distort time-series estimation and invalidate comparisons.
 From this eligible set, we then randomly draw one treated and one control county using a fixed seed to ensure reproducibility; in our run, the selected counties are **treatment: county_id = 39** and **control: county_id = 25**.
 
-```{r, echo=FALSE, fig.width=7, fig.height=3}
+```{r, echo=FALSE, fig.width=7, fig.height=2.5}
 # 4) Plot total sales trajectories
 store %>%
   filter(county_id %in% c(treat_id, control_id)) %>%
@@ -491,7 +491,7 @@ Moreover, focusing on growth rates instead of levels facilitates comparison betw
 We visualize these growth-rate series over time and mark the beginning of the post-treatment period again with a vertical dashed line, while a horizontal dotted line at zero indicates no growth.
 The plot shows how growth rates fluctuate around a roughly stable mean in both the pre- and post-periods, without obvious deterministic trends, which is consistent with the objective of obtaining a more stationary series.
 
-```{r, echo=FALSE, fig.width=7, fig.height=3}
+```{r, echo=FALSE, fig.width=7, fig.height=2.5}
 # --- If (log-)levels are non-stationary: first difference of logs (growth rates) ---
 dy_treat_log <- diff(y_treat_log)
 dy_ctrl_log  <- diff(y_ctrl_log)
