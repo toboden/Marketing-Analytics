@@ -178,13 +178,52 @@ plot_2d_scatter <- function(data, x_var, y_var, color_var = NULL, trendline = FA
   return(p)
 }
 
+plot_interaction <- function(data, x_var, interact_var, target = "lap_time_adjusted") {
+  
+  # 1. Daten vorbereiten
+  # Wir schneiden die Interaktions-Variable in 3 Teile (Quantile)
+  plot_data <- data %>%
+    select(.data[[x_var]], .data[[interact_var]], .data[[target]]) %>%
+    mutate(
+      Group = cut_number(.data[[interact_var]], n = 3, 
+                         labels = c("Low", "Medium", "High"))
+    )
+  
+  # 2. Plotten
+  ggplot(plot_data, aes(x = .data[[x_var]], y = .data[[target]], color = Group)) +
+    
+    # Punkte (leicht transparent, damit man die Masse sieht)
+    geom_point(alpha = 0.3, size = 1) +
+    
+    # Trendlinien (Linear) - Das ist der Beweis!
+    # se = FALSE macht den Plot sauberer
+    geom_smooth(method = "lm", se = FALSE, size = 1.5) +
+    
+    # Styling
+    scale_color_manual(values = c("Low" = "#E74C3C",    # Rot
+                                  "Medium" = "#F1C40F", # Gelb
+                                  "High" = "#2E86C1")) + # Blau
+    
+    labs(title = paste("Interaction:", x_var, "x", interact_var),
+         subtitle = paste("Effect of", x_var, "on Time, split by", interact_var),
+         x = x_var,
+         y = paste(target, "(Residuals)"),
+         color = paste(interact_var, "Level")) +
+    
+    theme_minimal() +
+    theme(plot.title = element_text(face="bold"),
+          legend.position = "bottom")
+}
+
+
+
 plot_2d_scatter(simulator_data, "Lap Distance","Lap Time", sample_rate = 0.1, trendline = TRUE)
 
-plot_2d_scatter(simulator_data, "Cornering","Lap Time", sample_rate = 0.1, trendline = TRUE)
+#plot_2d_scatter(simulator_data, "Cornering","Lap Time", sample_rate = 0.1, trendline = TRUE)
 
-plot_2d_scatter(simulator_data, "Grip", "Lap Time", sample_rate = 0.1, trendline = TRUE)
+#plot_2d_scatter(simulator_data, "Grip", "Lap Time", sample_rate = 0.1, trendline = TRUE)
 
-#checking pearson correlations
+#checking pearson correlations with target and distance
 cor(simulator_data[condition_features], simulator_data[target])
 cor(simulator_data[car_features], simulator_data[target])
 
@@ -195,11 +234,13 @@ cor(simulator_data[car_features], simulator_data['Lap Distance'])
 cor(simulator_data[condition_features], simulator_data[target], method = "spearman")
 cor(simulator_data[car_features], simulator_data[target], method = "spearman")
 
+
 cor(simulator_data[condition_features], simulator_data['Lap Distance'], method = "spearman")
 cor(simulator_data[car_features], simulator_data['Lap Distance'], method = "spearman")
 
 #distance adjust lap time
 model_distance <- lm(`Lap Time` ~ `Lap Distance`, data = simulator_data)
+summary(model_distance)
 simulator_data$lap_time_adjusted <- residuals(model_distance)
 
 #correlations with adjusted lap time
@@ -210,7 +251,22 @@ cor(simulator_data[car_features], simulator_data['lap_time_adjusted'])
 cor(simulator_data[setdiff(condition_features, "Lap Distance")], simulator_data['lap_time_adjusted'], method='spearman')
 cor(simulator_data[car_features], simulator_data['lap_time_adjusted'], method='spearman')
 
-#Analyze Engine
+#check for correlations between features
+cor_matrix <- cor(select_if(simulator_data, is.numeric))
+
+cor_matrix[upper.tri(cor_matrix, diag = TRUE)] <- NA
+
+sorted_correlations <- as.data.frame(as.table(cor_matrix)) %>%
+  na.omit() %>% 
+  rename(Var1 = Var1, Var2 = Var2, Correlation = Freq) %>%
+  arrange(desc(abs(Correlation))) 
+
+print(head(sorted_correlations, 20))
+
+
+
+
+#Analyze Engine as special case
 plot_2d_scatter(simulator_data, "Engine", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
 create_histogram(simulator_data, "Engine")
 logged_Engine = simulator_data %>% mutate(
@@ -223,7 +279,9 @@ nmin_Engine = simulator_data %>% filter(Engine >1)
 create_histogram(min_Engine, "lap_time_adjusted")
 create_histogram(nmin_Engine, "Engine")
 
-
+############################
+### ANALYZE CAR FEATURES ###
+############################
 plot_2d_scatter(simulator_data, "Differential", "Lap Time", sample_rate = 0.3, trendline = TRUE)
 plot_2d_scatter(simulator_data, "Differential", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
 create_histogram(simulator_data, "Differential")
@@ -231,8 +289,8 @@ create_histogram(simulator_data, "Differential")
 create_histogram(simulator_data, "Rear Wing")
 plot_2d_scatter(simulator_data, "Rear Wing", "lap_time_adjusted", sample_rate = 0.3, trendline = TRUE)
 
-create_histogram(simulator_data, "Break Balance")
-plot_2d_scatter(simulator_data, "Break Balance", "lap_time_adjusted", sample_rate = 0.3, trendline = TRUE)
+create_histogram(simulator_data, "Brake Balance")
+plot_2d_scatter(simulator_data, "Brake Balance", "lap_time_adjusted", sample_rate = 0.3, trendline = TRUE)
 
 create_histogram(simulator_data, "Front Wing")
 plot_2d_scatter(simulator_data, "Front Wing", "lap_time_adjusted", sample_rate = 0.3, trendline = TRUE)
@@ -240,9 +298,21 @@ plot_2d_scatter(simulator_data, "Front Wing", "lap_time_adjusted", sample_rate =
 create_histogram(simulator_data, "Suspension")
 plot_2d_scatter(simulator_data, "Suspension", "lap_time_adjusted", sample_rate = 0.3, trendline = TRUE)
 
+##############################
+### ANALYZE TRACK FEATURES ###
+##############################
+create_histogram(simulator_data, "Lap Distance")
+create_histogram(simulator_data, "Cornering")
+create_histogram(simulator_data, "Inclines")
+create_histogram(simulator_data, "Camber")
+create_histogram(simulator_data, "Grip")
+create_histogram(simulator_data, "Wind (Avg. Speed)")
+create_histogram(simulator_data, "Temperature")
+create_histogram(simulator_data, "Humidity")
+create_histogram(simulator_data, "Air Pressure")
 
 
-
+#Check Extrem Vale Share of Car Features
 simulator_data %>%
   select(all_of(car_features)) %>%
   pivot_longer(everything(), names_to = "Feature", values_to = "Value") %>%
@@ -259,6 +329,42 @@ simulator_data %>%
     Max_Pct = paste0(round(Max_Share * 100, 1), "%")
   ) %>%
   select(Feature, Min, Max, Min_Pct, Max_Pct)
+
+
+#test track features for unifomity
+check_uniform <- function(x) {
+  c(
+    KS_p = ks.test(x, "punif", min(x), max(x))$p.value,
+    X2_p = chisq.test(table(cut(x, breaks = 20)))$p.value
+  )
+}
+
+sapply(simulator_data[condition_features], check_uniform)
+
+#test car features for normality and uniformity
+sapply(simulator_data[car_features], function(x) {
+  x_trimmed <- x[x > min(x, na.rm=TRUE) & x < max(x, na.rm=TRUE)]
+  jarque.bera.test(x_trimmed)$p.value
+})
+
+sapply(simulator_data[car_features], function(x) {
+  x_trimmed <- x[x > min(x, na.rm=TRUE) & x < max(x, na.rm=TRUE)]
+  check_uniform(x_trimmed)
+})
+
+#check range of Distance
+simulator_data %>% group_by(`Lap Distance`) %>% count()
+
+
+
+
+#check for interactions
+plot_interaction(simulator_data, "Front Wing", "Rear Wing")
+plot_interaction(simulator_data, "Brake Balance", "Cornering")
+plot_interaction(simulator_data, "Front Wing", "Air Pressure")
+plot_interaction(simulator_data, "Engine", "Inclines")
+
+
 
 
 

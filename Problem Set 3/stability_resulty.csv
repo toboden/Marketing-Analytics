@@ -1,0 +1,163 @@
+"","Feature","Count","Probability"
+"1","Brake Balance",50,1
+"2","Differential",50,1
+"3","Engine:Altitude",50,1
+"4","Engine:Brake Balance",50,1
+"5","Front Wing:Rear Wing_p2",50,1
+"6","Front Wing:Suspension_p2",50,1
+"7","Inclines:Suspension_p2",50,1
+"8","Brake Balance:Differential_p2",49,0.98
+"9","Rear Wing:Engine",49,0.98
+"10","Cornering:Suspension_p2",47,0.94
+"11","Engine:Cornering",47,0.94
+"12","Engine:Front Wing",47,0.94
+"13","Engine:Lap Distance",47,0.94
+"14","Engine:Width",46,0.92
+"15","Suspension:Altitude",44,0.88
+"16","Suspension:Grip_p2",44,0.88
+"17","Front Wing:Differential_p2",43,0.86
+"18","Altitude:Lap Distance_p2",42,0.84
+"19","Air Density:Front Wing_p2",41,0.82
+"20","Engine:Altitude_p2",41,0.82
+"21","Air Density:Air Pressure_p2",40,0.8
+"22","Inclines:Engine_p2",40,0.8
+"23","Air Pressure:Front Wing_p2",38,0.76
+"24","Differential:Engine_p2",38,0.76
+"25","Engine:Differential_p2",38,0.76
+"26","Humidity:Engine_p2",36,0.72
+"27","Differential:Camber",35,0.7
+"28","Front Wing:Air Pressure",35,0.7
+"29","Suspension:Camber",35,0.7
+"30","Air Pressure:Air Density_p2",33,0.66
+"31","Engine:Lap Distance_p2",33,0.66
+"32","Rear Wing:Grip",31,0.62
+"33","Temperature:Engine_p2",31,0.62
+"34","Suspension:Wind (Gusts)",28,0.56
+"35","Engine:Engine_p2",26,0.52
+"36","Suspension:Grip",26,0.52
+"37","Wind (Gusts):Engine_p2",20,0.4
+"38","Rear Wing",19,0.38
+"39","Air Density:Engine_p2",18,0.36
+"40","Suspension:Roughness",18,0.36
+"41","Brake Balance:Width_p2",17,0.34
+"42","Suspension:Air Pressure",17,0.34
+"43","Suspension:Width_p2",17,0.34
+"44","Engine:Camber",16,0.32
+"45","Suspension:Wind (Avg. Speed)_p2",16,0.32
+"46","Differential:Cornering_p2",15,0.3
+"47","Air Pressure:Lap Distance_p2",14,0.28
+"48","Brake Balance:Camber",14,0.28
+"49","Suspension:Engine_p2",14,0.28
+"50","Suspension:Suspension_p2",14,0.28
+"51","Brake Balance:Cornering_p2",13,0.26
+"52","Grip",13,0.26
+"53","Suspension:Roughness_p2",13,0.26
+"54","Camber:Grip",12,0.24
+"55","Differential:Camber_p2",12,0.24
+"56","Front Wing:Air Pressure_p2",12,0.24
+"57","Differential:Air Pressure",11,0.22
+"58","Engine:Front Wing_p2",11,0.22
+"59","Rear Wing:Differential_p2",11,0.22
+"60","Rear Wing:Inclines_p2",11,0.22
+"61","Wind (Gusts):Air Density_p2",11,0.22
+"62","Altitude:Air Pressure_p2",10,0.2
+"63","Differential:Inclines_p2",10,0.2
+"64","Differential:Lap Distance",10,0.2
+"65","Engine:Humidity_p2",10,0.2
+"66","Front Wing:Air Density",10,0.2
+"67","Grip:Roughness",10,0.2
+"68","Suspension:Wind (Avg. Speed)",10,0.2
+"69","Temperature:Humidity",10,0.2
+"70","Altitude:Air Density_p2",9,0.18
+"71","Inclines:Altitude_p2",9,0.18
+"72","Lap Distance:Altitude",9,0.18
+"73","Brake Balance:Differential",8,0.16
+"74","Cornering",8,0.16
+"75","Engine",8,0.16
+"76","Air Pressure:Altitude",7,0.14
+"77","Engine_p3",7,0.14
+"78","Front Wing:Inclines_p2",7,0.14
+"79","Air Pressure:Altitude_p2",6,0.12
+"80","Brake Balance:Roughness_p2",6,0.12
+"81","Camber:Width",6,0.12
+"82","Differential:Brake Balance_p2",6,0.12
+"83","Differential:Rear Wing_p2",6,0.12
+"84","Inclines:Wind (Gusts)_p2",6,0.12
+"85","Suspension:Brake Balance_p2",6,0.12
+"86","Temperature:Camber_p2",6,0.12
+"87","Brake Balance:Lap Distance",5,0.1
+"88","Cornering:Grip",5,0.1
+"89","Engine:Camber_p2",5,0.1
+"90","Grip:Engine_p2",5,0.1
+"91","Humidity:Camber_p2",5,0.1
+"92","Suspension:Air Pressure_p2",5,0.1
+"93","Suspension:Altitude_p2",5,0.1
+"94","Suspension:Temperature",5,0.1
+"95","Humidity:Width",4,0.08
+"96","Inclines:Air Density_p2",4,0.08
+"97","Wind (Gusts):Air Pressure_p2",4,0.08
+"98","Air Density:Air Pressure",3,0.06
+"99","Engine:Temperature_p2",3,0.06
+"100","Front Wing:Camber_p2",3,0.06
+"101","Air Density:Lap Distance_p2",2,0.04
+"102","Air Density_p3",2,0.04
+"103","Air Pressure:Rear Wing_p2",2,0.04
+"104","Air Pressure:Wind (Gusts)_p2",2,0.04
+"105","Brake Balance:Grip",2,0.04
+"106","Camber:Humidity",2,0.04
+"107","Differential:Suspension_p2",2,0.04
+"108","Engine:Grip_p2",2,0.04
+"109","Engine:Rear Wing_p2",2,0.04
+"110","Front Wing:Camber",2,0.04
+"111","Front Wing:Cornering_p2",2,0.04
+"112","Grip:Width",2,0.04
+"113","Rear Wing:Camber",2,0.04
+"114","Width",2,0.04
+"115","Wind (Avg. Speed):Lap Distance_p2",2,0.04
+"116","Air Density:Suspension_p2",1,0.02
+"117","Air Pressure:Engine_p2",1,0.02
+"118","Altitude:Brake Balance_p2",1,0.02
+"119","Brake Balance:Brake Balance_p2",1,0.02
+"120","Brake Balance:Humidity",1,0.02
+"121","Brake Balance:Temperature",1,0.02
+"122","Brake Balance:Wind (Gusts)",1,0.02
+"123","Brake Balance_p3",1,0.02
+"124","Camber:Camber_p2",1,0.02
+"125","Camber:Grip_p2",1,0.02
+"126","Cornering:Camber",1,0.02
+"127","Cornering:Temperature",1,0.02
+"128","Differential:Air Density_p2",1,0.02
+"129","Differential:Grip_p2",1,0.02
+"130","Engine:Air Density_p2",1,0.02
+"131","Engine:Air Pressure_p2",1,0.02
+"132","Engine:Differential",1,0.02
+"133","Engine:Inclines_p2",1,0.02
+"134","Front Wing:Front Wing_p2",1,0.02
+"135","Front Wing:Temperature",1,0.02
+"136","Front Wing:Wind (Avg. Speed)_p2",1,0.02
+"137","Grip:Differential_p2",1,0.02
+"138","Grip:Inclines_p2",1,0.02
+"139","Humidity:Air Pressure_p2",1,0.02
+"140","Humidity:Temperature_p2",1,0.02
+"141","Inclines:Air Density",1,0.02
+"142","Inclines:Altitude",1,0.02
+"143","Inclines:Wind (Gusts)",1,0.02
+"144","Lap Distance:Air Density",1,0.02
+"145","Lap Distance:Air Pressure",1,0.02
+"146","Rear Wing:Air Pressure",1,0.02
+"147","Rear Wing_p3",1,0.02
+"148","Roughness:Front Wing_p2",1,0.02
+"149","Roughness:Grip_p2",1,0.02
+"150","Roughness:Rear Wing_p2",1,0.02
+"151","Suspension",1,0.02
+"152","Suspension:Air Density",1,0.02
+"153","Suspension:Camber_p2",1,0.02
+"154","Suspension:Inclines_p2",1,0.02
+"155","Suspension:Lap Distance",1,0.02
+"156","Suspension:Width",1,0.02
+"157","Suspension_p3",1,0.02
+"158","Temperature:Humidity_p2",1,0.02
+"159","Width:Air Density_p2",1,0.02
+"160","Width:Camber_p2",1,0.02
+"161","Wind (Gusts):Grip_p2",1,0.02
+"162","Wind (Gusts):Inclines_p2",1,0.02
