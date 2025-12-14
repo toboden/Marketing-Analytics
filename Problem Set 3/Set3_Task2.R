@@ -3,8 +3,7 @@ library(dplyr)
 library(readr)
 library(tidyr)
 library(ggplot2)
-#install.packages("plotly")
-library(plotly)
+library(tseries)
 
 #load the data
 simulator_data <- read_csv("data/simulator_data.csv")
@@ -216,6 +215,8 @@ plot_interaction <- function(data, x_var, interact_var, target = "lap_time_adjus
 }
 
 
+create_histogram(simulator_data, "Lap Time")
+create_histogram(simulator_data, "lap_time_adjusted")
 
 plot_2d_scatter(simulator_data, "Lap Distance","Lap Time", sample_rate = 0.1, trendline = TRUE)
 
@@ -273,6 +274,7 @@ logged_Engine = simulator_data %>% mutate(
   Engine =log(Engine)
 )
 plot_2d_scatter(logged_Engine, "Engine", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
+create_histogram(logged_Engine, "Engine")
 min_Engine = simulator_data %>%
   filter(Engine == 1)
 nmin_Engine = simulator_data %>% filter(Engine >1)

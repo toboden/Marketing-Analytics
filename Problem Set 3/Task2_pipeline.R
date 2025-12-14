@@ -171,7 +171,7 @@ best_df_bic <- summary_frame$df[which.min(summary_frame$bic)]
 
 plot_lasso(plot_data, 0, best_df_bic)
 
-
+write.csv(summary_frame, 'Problem Set 3/summary_frame.csv')
 
 
 
@@ -209,6 +209,7 @@ predict_lap_time_wrapper <- function(x) {
   )
   
   full_data <- bind_cols(current_car, france_conditions)
+  print(head(full_data))
   
   X_matrix <- explode_matrix(full_data, all_features, verbose=FALSE)
   
@@ -246,6 +247,40 @@ names(best_setup) <- c("Rear Wing", "Engine", "Front Wing", "Brake Balance", "Di
 cat("\n=== OPTIMAL SETUP (France) ===\n")
 print(best_setup)
 cat("\nPredicted Adjusted Time:", round(opt_result$value, 4), "\n")
+
+
+
+
+#Nearest neighbours of france to valudate results
+df = simulator_data
+
+target_cond <- france_conditions
+track_cols <- colnames(target_cond)
+
+# 3. Standardize data (Z-score normalization) to ensure equal weight
+df_scaled <- scale(df[, track_cols])
+# Scale target vector using mean/sd of the training set
+target_scaled <- (unlist(target_cond) - colMeans(df[, track_cols])) / apply(df[, track_cols], 2, sd)
+
+# 4. Compute Euclidean distance (Nearest Neighbor)
+# Subtract target from all rows, square differences, sum, take sqrt
+dists <- sqrt(rowSums(sweep(df_scaled, 2, target_scaled, "-")^2))
+
+# 5. Show Top 5 most similar historical track conditions
+cat("--- Nearest Neighbors (Top 5) ---\n")
+print(df[order(dists)[1:5], c(car_features, "lap_time_adjusted")])
+cat("\nClosest Distance:", min(dists), "\n")
+
+closest_indices <- order(dists)[1:100]
+
+# 2. Daten extrahieren und nach Performance sortieren
+# Wir nehmen die Zeilen der Neighbors, wählen die Features + Zeit und sortieren.
+best_historical_setups <- df[closest_indices, ] %>%
+  select(all_of(car_features), lap_time_adjusted) %>%
+  arrange(lap_time_adjusted) # Schnellste Zeit zuerst (aufsteigend)
+
+cat("--- Best Setups in Similar Conditions (Sorted by Speed) ---\n")
+print(best_historical_setups)
 
 
 
@@ -293,6 +328,11 @@ cat("Anzahl gefundener Setup-Hebel:", nrow(actionable_importance), "\n")
 print(head(actionable_importance, 15))
 
 summary(model_clean)
+
+
+
+
+
 
 
 

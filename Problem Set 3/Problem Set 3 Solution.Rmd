@@ -1,0 +1,796 @@
+---
+title: "Problem Set III Solution"
+author: 
+  - "Tobias Bodentien"
+  - "Philipp Grunenberg"
+  - "Alexander Haas"
+  - "Osama Warshagha"
+date: "`r format(Sys.Date(), '%d-%m-%Y')`"
+
+output:
+  pdf_document:
+    latex_engine: xelatex
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+#Task 2
+
+### Exploratory Data Analysis
+#### Univariate Exploration
+
+```{r, echo = False}
+library(dplyr)
+library(readr)
+library(tidyr)
+library(ggplot2)
+
+#load the data
+simulator_data <- read_csv("../data/simulator_data.csv")
+
+target = c("Lap Time")
+car_features <- c(
+  "Rear Wing", 
+  "Engine", 
+  "Front Wing", 
+  "Brake Balance", 
+  "Differential", 
+  "Suspension"
+)
+condition_features <- c(
+  "Lap Distance", 
+  "Cornering", 
+  "Inclines", 
+  "Camber",       
+  "Grip",         
+  "Wind (Avg. Speed)", 
+  "Temperature", 
+  "Humidity", 
+  "Air Density", 
+  "Air Pressure", 
+  "Wind (Gusts)", 
+  "Altitude", 
+  "Roughness",    
+  "Width"
+)
+
+#check for NA
+simulator_data %>%
+  summarise(across(everything(), ~ sum(is.na(.)))) %>%
+  pivot_longer(everything(), names_to = "Spalte", values_to = "Anzahl_NAs") %>%
+  filter(Anzahl_NAs > 0)
+
+#View summary statistics
+#summary(simulator_data)
+
+#check for hidden categorical variables
+possible_categoricals <- simulator_data %>%
+  summarise(across(everything(), n_distinct)) %>%
+  pivot_longer(everything(), names_to = "Variable", values_to = "Unique_Values") %>%
+  filter(Unique_Values < 100) %>% # Zeige nur Spalten mit wenigen Ausprägungen
+  arrange(Unique_Values)
+
+#print(possible_categoricals)
+```
+We start by looking at the meaning of the single columns and divide them into two semantic categories: the track conditions and the car features. This distinction will be necessary for the following analysis and decision making as the conditions will be given and only the car features are actionable.
+
+We find no missing values in the dataset and find that as expected all track conditions except for "Lap Distance" and "Temperature" are between 1 and 100 and all car features are in the range of 1 and 500. Therefore, no further outlier analysis and imputations are needed. We see that "Lap Distance" contains 23 distinct values and therefore probably represents the 23 different race tracks for this simulation. "Temperature" contains 41 different aligning with real world temperatures.
+
+```{r, echo = False}
+# theme for plots
+theme_fontsize <- theme(
+  plot.title = element_text(size = 14),
+  plot.subtitle = element_text(size = 10),
+  axis.title = element_text(size = 12),
+  axis.text = element_text(size = 11),
+  legend.text = element_text(size = 11),
+)
+
+
+create_histogram <- function(data, column) {
+  
+  column_mean <- mean(data[[column]], na.rm = TRUE)
+  
+  ggplot(data, aes(x = .data[[column]])) + 
+    
+    geom_histogram(aes(y = after_stat(density)), 
+                   bins = 40, 
+                   fill = "#69b3a2",   
+                   color = "white",    
+                   alpha = 0.7) +      
+    
+    geom_density(color = "#404080", linewidth = 1, fill="#404080", alpha=0.1) +
+    
+    geom_vline(xintercept = column_mean, 
+               color = "darkred", linetype = "dashed", linewidth = 1) +
+    
+    annotate("text", x = column_mean, y = 0.01, 
+             label = paste("Mean:", round(column_mean, 2)), 
+             color = "darkred", angle = 90, vjust = -1, hjust = 0) +
+    
+    labs(title = paste("Distribution of", column),
+         subtitle = "Histogram and Kernel Density Estimate",
+         x = column,
+         y = "Density") +
+    
+    theme_minimal() + 
+    theme_fontsize
+}
+
+
+plot_2d_scatter <- function(data, x_var, y_var, color_var = NULL, trendline = FALSE, sample_rate = 1.0) {
+  
+  # 1. Downsampling
+  if (sample_rate < 1.0 && sample_rate > 0) {
+    n_keep <- floor(nrow(data) * sample_rate)
+    data <- data[sample(nrow(data), n_keep), ]
+    sample_note <- paste0(" (Sampled: ", sample_rate * 100, "%)")
+  } else {
+    sample_note <- ""
+  }
+  
+  # 2. Basis-Plot
+  p <- ggplot(data, aes(x = .data[[x_var]], y = .data[[y_var]]))
+  
+  # 3. Punkte
+  if (!is.null(color_var)) {
+    p <- p + geom_point(aes(color = .data[[color_var]]), alpha = 0.8, size = 2.5) +
+      labs(color = color_var)
+    
+    if (is.numeric(data[[color_var]])) {
+      p <- p + scale_color_viridis_c(option = "magma", end = 0.9)
+    } else {
+      p <- p + scale_color_brewer(palette = "Dark2")
+    }
+  } else {
+    p <- p + geom_point(color = "#2E86C1", alpha = 0.7, size = 2.5)
+  }
+  
+  # 4. Trendlinien & R2 (HIER WAR DER FEHLER)
+  r2_info <- ""
+  
+  if (trendline) {
+    # WICHTIG: Backticks (`) einfügen, damit Leerzeichen kein Problem sind
+    # paste0 statt paste, um Lücken zu vermeiden
+    f_lin  <- as.formula(paste0("`", y_var, "` ~ `", x_var, "`"))
+    f_quad <- as.formula(paste0("`", y_var, "` ~ poly(`", x_var, "`, 2)"))
+    
+    # Fits berechnen
+    m_lin  <- lm(f_lin, data = data)
+    m_quad <- lm(f_quad, data = data)
+    
+    # R2 extrahieren
+    r2_lin  <- round(summary(m_lin)$r.squared, 3)
+    r2_quad <- round(summary(m_quad)$r.squared, 3)
+    
+    r2_info <- paste0("\nLinear R² (Red): ", r2_lin, " | Quadratic R² (Blue): ", r2_quad)
+    
+    # Linien zum Plot hinzufügen
+    p <- p + 
+      geom_smooth(method = "lm", formula = y ~ x, 
+                  color = "#D95F02", size = 1, se = FALSE) +
+      geom_smooth(method = "lm", formula = y ~ poly(x, 2), 
+                  color = "#1B9E77", size = 1, se = FALSE)
+  }
+  
+  # 5. Styling
+  if (!is.null(color_var)) {
+    sub_text <- paste0("Colored by: ", color_var, sample_note, r2_info)
+  } else if (sample_note != "" || r2_info != "") {
+    sub_text <- paste0("Data randomly downsampled", sample_note, r2_info)
+  } else {
+    sub_text <- NULL
+  }
+  
+  p <- p + 
+    labs(
+      title = paste(x_var, "vs.", y_var),
+      subtitle = sub_text,
+      x = x_var,
+      y = y_var
+    ) +
+    theme_minimal(base_size = 12) +
+    theme(
+      plot.title = element_text(face = "bold", size = 16, color = "#333333"),
+      plot.subtitle = element_text(size = 11, color = "#444444"),
+      axis.title = element_text(face = "bold"),
+      legend.position = "right",
+      panel.grid.minor = element_blank()
+    )
+  
+  return(p)
+}
+
+plot_interaction <- function(data, x_var, interact_var, target = "lap_time_adjusted") {
+  
+  # 1. Daten vorbereiten
+  # Wir schneiden die Interaktions-Variable in 3 Teile (Quantile)
+  plot_data <- data %>%
+    select(.data[[x_var]], .data[[interact_var]], .data[[target]]) %>%
+    mutate(
+      Group = cut_number(.data[[interact_var]], n = 3, 
+                         labels = c("Low", "Medium", "High"))
+    )
+  
+  # 2. Plotten
+  ggplot(plot_data, aes(x = .data[[x_var]], y = .data[[target]], color = Group)) +
+    
+    # Punkte (leicht transparent, damit man die Masse sieht)
+    geom_point(alpha = 0.3, size = 1) +
+    
+    # Trendlinien (Linear) - Das ist der Beweis!
+    # se = FALSE macht den Plot sauberer
+    geom_smooth(method = "lm", se = FALSE, size = 1.5) +
+    
+    # Styling
+    scale_color_manual(values = c("Low" = "#E74C3C",    # Rot
+                                  "Medium" = "#F1C40F", # Gelb
+                                  "High" = "#2E86C1")) + # Blau
+    
+    labs(title = paste("Interaction:", x_var, "x", interact_var),
+         subtitle = paste("Effect of", x_var, "on Time, split by", interact_var),
+         x = x_var,
+         y = paste(target, "(Residuals)"),
+         color = paste(interact_var, "Level")) +
+    
+    theme_minimal() +
+    theme(plot.title = element_text(face="bold"),
+          legend.position = "bottom")
+}
+```
+
+In a next step we analyze the distribution of the different features. We start with the car features and find that extreme values are overrepresented. For all car features at least 10% of the observations are the minimum or the maximum, for "Engine" eve 38% of the data is at the minimum. 
+
+```{r}
+#Check Extrem Vale Share of Car Features
+simulator_data %>%
+  select(all_of(car_features)) %>%
+  pivot_longer(everything(), names_to = "Feature", values_to = "Value") %>%
+  group_by(Feature) %>%
+  summarise(
+    Min = min(Value, na.rm = TRUE),
+    Max = max(Value, na.rm = TRUE),
+    Min_Share = mean(Value == min(Value, na.rm = TRUE)),
+    Max_Share = mean(Value == max(Value, na.rm = TRUE))
+  ) %>%
+  arrange(desc(Min_Share + Max_Share)) %>%
+  mutate(
+    Min_Pct = paste0(round(Min_Share * 100, 1), "%"),
+    Max_Pct = paste0(round(Max_Share * 100, 1), "%")
+  ) %>%
+  select(Feature, Min, Max, Min_Pct, Max_Pct)
+```
+We include the histogram of "Engine" where this overrepresentation is the most pronounced to illustrate the overrepresenation visually.
+
+```{r}
+create_histogram(simulator_data, "Engine")
+```
+We find that almost all condition features exhibit a uniform like distribution, added with a lot of noise indicated by some the little spikes in the distribution. 
+
+```{r}
+create_histogram(simulator_data, "Air Pressure")
+create_histogram(simulator_data, "Cornering")
+```
+
+```{r}
+#test track features for unifomity
+check_uniform <- function(x) {
+  c(
+    KS_p = ks.test(x, "punif", min(x), max(x))$p.value,
+    X2_p = chisq.test(table(cut(x, breaks = 20)))$p.value
+  )
+}
+
+sapply(simulator_data[condition_features], check_uniform)
+```
+We find that all condition features except for "Lap Distance", "Temperature" and "Air Pressure" are uniform distributed as for all of them either the Kolmogorov-Smirniv test or the X^2-test for uniformity fails to reject the nullhypothesis of uniformity. While "Lap Distance" and "Temperature" as already found have a different distribution, the rejection of uniformity for "Air Pressure" is likely driven by the high noise in the distribution. 
+
+#### Bivariate Exploration
+
+We start by looking at especially large correlations between all variables in the dataset.
+
+```{r}
+#check for correlations between features
+cor_matrix <- cor(select_if(simulator_data, is.numeric))
+
+cor_matrix[upper.tri(cor_matrix, diag = TRUE)] <- NA
+
+sorted_correlations <- as.data.frame(as.table(cor_matrix)) %>%
+  na.omit() %>% 
+  rename(Var1 = Var1, Var2 = Var2, Correlation = Freq) %>%
+  arrange(desc(abs(Correlation))) 
+
+print(head(sorted_correlations, 20))
+```
+The first extremely high correlation of over 0.99 is interesting and will be analyzed later in this work and ignored for now. While we see a lot high correlations none of them includes the Lap Time, instead all of them include at least one car feature. The interpretation regarding the influence on lap time is therefore uninteresting, what it tells us, is that during the simulation already assumptions regarding the interplay between conditions and car features were made.
+
+
+We start by looking at the correlations between the target, Lap Time with the car features. We see, that there are only minor correlations with engine having the largest absolute value.
+
+```{r}
+cor(simulator_data[car_features], simulator_data[target])
+```
+
+Then we look at the correlation between the conditions and the target, Lap Time. We see that all correlation except for Lap Distance are pretty minor. The correlation with "Lap Distance" however is extremely large. This makes absolutely sense as we the Lap time is directly influenced by the length of the track. Infact, we have the formula Lap Time = Lap Distance * Average Velocity. The rest of the features in tha dataset only influences the average velocity and not the lap time. Modelling the lap time directly thus makes no sence.
+
+```{r}
+cor(simulator_data[condition_features], simulator_data[target])
+```
+We therefore remove the effect of the Lap Distance from the Lap Time. The analysis in the following will only include the adjusted lap time. The regression tells us, that over 99% of the variation in Lap Time is driven by the Lap Distance. The other factors and noise only leave a standard deviation of 0.67 seconds, the possible effects of optimizing the car are therefore quite small. 
+
+```{r}
+#distance adjust lap time
+model_distance <- lm(`Lap Time` ~ `Lap Distance`, data = simulator_data)
+simulator_data$lap_time_adjusted <- residuals(model_distance)
+summary(model_distance)
+```
+We redo the calculations for the correlation with the adjusted lap time. Now we see that there are infact features that have a larger relationship on the lap time. Higher "Grip" has a correlation of 0.12 and is therefore associated with slower lap times.
+```{r}
+cor(simulator_data[setdiff(condition_features, "Lap Distance")], simulator_data['lap_time_adjusted'])
+```
+The relationships get even more pronounced with the car features. We can see a clear association with higher Engine and Differential values and slower lap times.
+
+```{r}
+cor(simulator_data[car_features], simulator_data['lap_time_adjusted'])
+```
+We add the calculation of the spearman correlation coefficient to measure general monotonous relationships, not just linear.
+```{r}
+cor(simulator_data[setdiff(condition_features, "Lap Distance")], simulator_data['lap_time_adjusted'], method='spearman')
+```
+```{r}
+cor(simulator_data[car_features], simulator_data['lap_time_adjusted'], method='spearman')
+```
+While the condition features values remain mostly unchanged we see that the values for "Engine" and "Differential" increased significantly, giving evidence for a non-linear monotonous relationship.
+
+We investigate the relationship by with "Engine" and Differential further using scatter plots.
+```{r}
+plot_2d_scatter(simulator_data, "Engine", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
+```
+Aligning with the histogram, we can see a dense cloud in the left of the plot. While the relationship is visually positive we can also see that a mere linear curve seems to not capture the full effect. While takig the logarithm seems useful, we can see that the quadratic regression can capture the effect better (regarding the R2) and the point cloud moved to the right, instead of to the center, which would justify the transformation.
+
+```{r}
+logged_Engine = simulator_data %>% mutate(
+  Engine =log(Engine)
+)
+plot_2d_scatter(logged_Engine, "Engine", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
+```
+```{r}
+plot_2d_scatter(simulator_data, "Differential", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
+```
+Looking at differential also suggests that the effect might me quadratic and has a saturation. However, by looking at "Engine" and "Differential" with such positive coreelations we see a counterintuitive result. Better Engines and Differentials should lead to better times, thus smaller lap times and by that a negative correlation. We investigate further to take interaction effects with other variables into account.
+
+We investigate the hypothesis that the effect of Engine is influenced by the Grip of the track, as a strong Engine could lead to wheel spin on tracks with low Grip but be advantagous on tracks with higher Grip.
+
+```{r}
+plot_interaction(simulator_data, "Engine", "Grip")
+```
+We find evidence for this interaction effect in this graph as we can see the negtive effect of larger engines decreases as the grip on the track increases, which totally aligns with the hypothesis.
+
+Next we investigate wheather the Cornering of the track has an influence of the effect of the size of the differential. The idea is that tracks with a lot of Corners need more gear shifts and thus a better Differential.
+
+```{r}
+plot_interaction(simulator_data, "Differential", "Cornering")
+```
+Also for this hypothesis we find evidence as the negative effect of large differentials decreases and even vanishes as the cornering on the track gets larger.
+
+The observed patterns in both plots strongly indicate the necessity of including interaction terms in our final modeling approach. We conclude the visual inspection here, as providing further examples would yield diminishing marginal information gain and unnecessarily extend the analysis. Instead, we will rely on the Lasso algorithm to systematically identify the remaining relevant interactions.
+
+
+###Modelling and Interpretation
+
+We will now extend the dataset and include all interactions and ploynomials up to degree 3. This meas single variables will be included up to power 3. Interactrion terms will be included with one variable up to a power of 2 and 3-fold interactions will be included with a power of one. We will keep the lap distance as regressor inside. The single lap distance will have no effect and thus excluded by LASSO automatically, however we cannot know if the "Lap Distance" does maybe leads to interesting interaction effects with other track features.
+
+```{r, echo=FALSE}
+explode_matrix <- function(data, features, verbose = TRUE) { # NEUES ARGUMENT
+  
+  if(verbose) cat("--- START: Matrix Construction ---\n")
+  
+  # 1. Base Matrix
+  X_base <- data %>%
+    select(all_of(features)) %>%
+    mutate(across(where(is.character), as.factor)) %>%
+    as.matrix() %>% 
+    Matrix(sparse = TRUE)
+  
+  # 2. Polynomials
+  if(verbose) cat("[1/3] Polynomials...\n")
+  # ... (Dein Polynom Code wie vorher) ...
+  # Hier verkürzt dargestellt, nutze deinen vollen Code!
+  cont_feats <- features # Vereinfacht
+  X_cont <- X_base[, cont_feats, drop = FALSE]
+  X_p2 <- X_cont^2; colnames(X_p2) <- paste0(colnames(X_cont), "_p2")
+  X_p3 <- X_cont^3; colnames(X_p3) <- paste0(colnames(X_cont), "_p3")
+  X_pool <- cbind(X_base, X_p2, X_p3)
+  rm(X_base, X_cont, X_p2, X_p3); gc()
+  
+  # 3. Interactions
+  if(verbose) cat("[2/3] Interactions...\n")
+  
+  interaction_parts <- list()
+  n_cols <- ncol(X_pool)
+  col_names <- colnames(X_pool)
+  
+  # Grade bestimmen (Hilfslogik)
+  is_p2 <- grepl("_p2$", col_names); is_p3 <- grepl("_p3$", col_names)
+  degrees <- ifelse(is_p3, 3, ifelse(is_p2, 2, 1))
+  
+  for(i in 1:(n_cols-1)) {
+    vec_i <- X_pool[, i]
+    target_idx <- (i + 1):n_cols
+    
+    # Filter Maske (Degree <= 3)
+    mask_degree <- (degrees[i] + degrees[target_idx]) <= 3
+    valid_targets <- target_idx[mask_degree]
+    
+    if(length(valid_targets) == 0) next
+    
+    X_target <- X_pool[, valid_targets, drop=FALSE]
+    X_inter  <- X_target * vec_i
+    colnames(X_inter) <- paste0(col_names[i], ":", colnames(X_target))
+    interaction_parts[[i]] <- X_inter
+  }
+  
+  # 4. Assembly
+  if(verbose) cat("[3/3] Assembly...\n")
+  
+  if(length(interaction_parts) > 0) {
+    X_final <- cbind(X_pool, do.call(cbind, interaction_parts))
+  } else {
+    X_final <- X_pool
+  }
+  
+  if(verbose) cat("--- DONE ---\n")
+  return(X_final)
+}
+
+all_features <- c(car_features, condition_features)
+```
+
+```{r}
+#prepate training data
+y <- simulator_data$lap_time_adjusted
+X <- explode_matrix(simulator_data, all_features)
+```
+
+We found that due to the high correlation of some features, which is further increased by the inclusion of interactions and polynomials, the LASSO selection is quite unstable. Furthermore, we found that the model selection algorithm based on the AIC tended to select the model with the largest number of parameters, which is not useful. Therefore, we decided to perform a stability selection based on 50 iterations of Lasso estimations using the Bayesian Information Criterion for model selection. Each iteration used a random subset of 80% of the data. We employed the Bayesian Information Criterion to penalize model size more strictly than the Akaike criterion. Ultimately, we retained all features that were selected at least 70% of the time to obtain a small but insightful and actionable subset of features.
+
+```{r, echo=FALSE}
+# --- Setup ---
+run_loop = FALSE
+num_runs <- 50
+n_rows <- nrow(X) # X is the output from explode_matrix
+y <- simulator_data$lap_time_adjusted # Target is residualized lap time
+set.seed(123)
+
+# Pre-calculate random split indices for reproducibility
+train_idx_list <- replicate(num_runs, sample(n_rows, floor(0.8 * n_rows)), simplify = FALSE)
+stability_log <- list()
+
+cat("Starting Stability Selection Loop...\n")
+
+
+
+if (run_loop){
+  # --- Stability Loop ---
+  for(i in 1:num_runs){
+    
+    # Get current split data
+    idx <- train_idx_list[[i]]
+    X_train <- X[idx, ]; y_train <- y[idx]
+    
+    # Train Lasso (AICc optimized)
+    cat("Training Model", i)
+    model_gamlr <- gamlr(X_train, y_train, nlambda = 1000, lmr = 1e-4, verb = FALSE)
+    
+    # Select best model using BIC (stricter than AICc)
+    bic_values <- model_gamlr$deviance + log(model_gamlr$nobs) * model_gamlr$df
+    best_idx <- which.min(bic_values)
+    
+    # Extract non-zero coefficients (excluding intercept)
+    coefs <- coef(model_gamlr, select = best_idx)
+    active_feats <- rownames(coefs)[as.vector(coefs) != 0]
+    stability_log[[i]] <- setdiff(active_feats, "intercept")
+    
+    cat(".")
+  }
+  cat("\nDone!\n")
+  
+  stability_results <- unlist(stability_log) %>%
+    table() %>%
+    as.data.frame() %>%
+    rename(Feature = ".", Count = Freq) %>%
+    mutate(Probability = Count / num_runs) %>%
+    arrange(desc(Probability))
+  
+  
+  write.csv(stability_results, 'Problem Set 3/stability_results.csv')
+} else {
+  cat("Load stability_resulty.csc")
+  stability_results = read.csv('Problem Set 3/stability_results.csv')
+  
+}
+```
+
+```{r}
+stability_results = read.csv('stability_results.csv')
+stable_drivers <- stability_results %>% filter(Probability >= 0.7)
+
+print(head(stable_drivers, 10))
+```
+We can see directly see that only 7 features were selected all 50 times underlining the mentioned instability this setup has. We further plot the result of the last training run to illustrate the selection process for each model.
+
+```{r, echo=FALSE}
+plot_lasso <- function(summary_frame, best_df_aic, best_df_bic) {
+  plot_data <- summary_frame %>%
+  select(df, aicc, bic, r2) %>%
+  pivot_longer(cols = c("aicc", "bic", "r2"), 
+               names_to = "Metric", 
+               values_to = "Value") %>%
+  mutate(Metric = factor(Metric, levels = c("aicc", "bic", "r2")))
+  
+  # Abhängigkeit sicherstellen
+  if (!require("ggplot2")) install.packages("ggplot2")
+  library(ggplot2)
+  
+  # Plot erstellen
+  p <- ggplot(plot_data, aes(x = df, y = Value)) +
+    # Hauptlinien
+    geom_line(size = 0.8, color = "grey30") +
+    geom_point(aes(color = Metric), size = 1.2) +
+    
+    # Vertikale Linien für die Gewinner (AICc rot, BIC blau)
+    geom_vline(xintercept = best_df_aic, color = "red", linetype = "dashed") +
+    geom_vline(xintercept = best_df_bic, color = "blue", linetype = "dashed") +
+    
+    # Text-Label für die Minima
+    annotate("text", x = best_df_bic, y = Inf, label = "BIC Best", 
+             vjust = 2, hjust = 1.1, color = "blue", size = 3) +
+    
+    # Faceting
+    facet_wrap(~Metric, scales = "free_y", ncol = 1, 
+               labeller = as_labeller(c(aicc = "AICc (Information)", 
+                                        bic = "BIC (Stricter)", 
+                                        r2 = "R-Squared"))) +
+    
+    # Styling
+    scale_color_manual(values = c("red", "blue", "green4")) +
+    labs(title = "Model Complexity vs. Performance",
+         subtitle = paste0("Optimal Variables: AICc = ", best_df_aic, " | BIC = ", best_df_bic),
+         x = "Degrees of Freedom (Anzahl Variablen)",
+         y = "Wert") +
+    theme_minimal() +
+    theme(legend.position = "none", 
+          strip.text = element_text(face = "bold", size = 10))
+  
+  return(p)
+}
+
+if(run_loop){
+  #plot last training run
+  summary_frame = summary(model_gamlr)
+  summary_frame$bic = bic_values
+  
+  #plot the training
+  plot_data <- summary_frame %>%
+    select(df, aicc, bic, r2) %>%
+    pivot_longer(cols = c("aicc", "bic", "r2"), 
+                 names_to = "Metric", 
+                 values_to = "Value") %>%
+    mutate(Metric = factor(Metric, levels = c("aicc", "bic", "r2")))
+  
+  best_df_aic <- summary_frame$df[which.min(summary_frame$aicc)]
+  best_df_bic <- summary_frame$df[which.min(summary_frame$bic)]
+  write.csv(summary_frame, 'Problem Set 3/summary_frame.csv')
+}
+```
+
+```{r}
+summary_frame = read.csv("summary_frame.csv")
+best_df_aic <- summary_frame$df[which.min(summary_frame$aicc)]
+best_df_bic <- summary_frame$df[which.min(summary_frame$bic)]
+plot_lasso(summary_frame, best_df_aic, best_df_bic)
+```
+Here we can clearly see that the AIC tends to have no clear minimum but more of a asymptotic behaviour or in this case a minimum with way too many variables. For the BIC we can see the desired "Hockey-Stick" with a clear minimum and a higher penalty for larger models. Also the selected 27 parameters are a proper amount for meaningful and actionable drivers. 
+
+To get our final model we take all the drivers that were in at least 70% of the models and perform a backward selection. 
+
+```{r, echo=FALSE}
+backward_selection_p <- function(model, sig_level = 0.1) {
+  
+  current_model <- model
+  
+  while(TRUE) {
+    # 1. Tabelle der p-Werte holen
+    coef_table <- summary(current_model)$coefficients
+    p_values <- coef_table[, 4]
+    
+    # Intercept ignorieren (nie löschen!)
+    if("(Intercept)" %in% names(p_values)) {
+      p_values <- p_values[names(p_values) != "(Intercept)"]
+    }
+    
+    # 2. Das schlechteste Feature finden
+    max_p <- max(p_values)
+    worst_feature <- names(p_values)[which.max(p_values)]
+    
+    # 3. Abbruchbedingung: Wenn alle signifikant sind -> Fertig
+    if(max_p < sig_level) {
+      break
+    }
+    
+    # 4. Rauswurf & Update
+    # Wir nutzen update(), um das Modell ohne dieses Feature neu zu rechnen
+    # " . ~ . - Feature" heißt: Gleiche Formel, aber minus das Feature
+    cat("Entferne:", worst_feature, "(p =", round(max_p, 4), ")\n")
+    current_model <- update(current_model, as.formula(paste(". ~ . -", "`", worst_feature, "`", sep="")))
+  }
+  
+  return(current_model)
+}
+
+get_metrics <- function(actual, predicted, set_name = "Set") {
+  residuals <- actual - predicted
+  
+  mse <- mean(residuals^2)
+  mae <- mean(abs(residuals))
+  
+  # R2 manuell berechnen (für Testdaten ist das sicherer als summary())
+  tss <- sum((actual - mean(actual))^2) # Total Sum of Squares
+  rss <- sum(residuals^2)               # Residual Sum of Squares
+  r2  <- 1 - (rss / tss)
+  
+  return(data.frame(
+    Set = set_name,
+    R2  = round(r2, 5),
+    MSE = round(mse, 5),
+    MAE = round(mae, 5),
+    RMSE = round(sqrt(mse), 5)
+  ))
+}
+```
+
+
+```{r}
+# Prepare final dataset using only stable features (full data)
+final_features <- as.character(stable_drivers$Feature)
+X_final_stable <- X[, final_features, drop = FALSE]
+
+final_df <- data.frame(
+  lap_time_adjusted = y, 
+  as.matrix(X_final_stable)
+)
+
+# Fit OLS and refine with backward selection
+final_ols <- lm(lap_time_adjusted ~ ., data = final_df)
+final_clean <- backward_selection_p(final_ols, sig_level = 0.05)
+
+summary(final_clean)
+```
+We end up with 23 drivers for the final model, which explains 26.7% of the variance in the average velocity Given that the dataset is "high noise" the value seems pretty good as way higher values would overfit the model.
+We find that no polynomial for degree 3 is included as well as no interaction with 3 terms. Furthermore we see that all 23 drivers have at least one car feature making all of them actionable for out race car optimization.
+
+We further analyze the key drivers by their feature importance
+```{r}
+importance <- data.frame(
+  Feature = names(coef(final_clean)),
+  Coefficient = coef(final_clean),
+  Importance = abs(coef(final_clean))
+) %>%
+  filter(Feature != "(Intercept)") %>% 
+  arrange(desc(Importance)) %>%
+  mutate(
+    Share = Importance / sum(Importance),
+    Cumulative = cumsum(Importance) / sum(Importance)
+  ) %>% 
+  select(-Feature)
+    
+
+cat("---", nrow(importance),"Overall Drivers (Standardized Impact) ---\n")
+print(head(importance, 10))
+```
+We look at the first notice, that the first 3 features already make up over 97% of the complete influence. We see that higher values for the Differential increase the lap time, as well as higher values for the Brake Balance. Furthermore we can see an Interaction between Engine and Lap Distance moddeling the effect of Engine, which gets larger as the Lap Distance increases.
+
+
+This model will be used to identify the optimal starting conditions for France.
+
+###Optimization
+
+```{r, echo=FALSE}
+france_conditions <- data.frame(
+  "Lap Distance"      = 3.3, 
+  "Cornering"         = 98,
+  "Inclines"          = 73,
+  "Camber"            = 13,
+  "Grip"              = 18,   
+  "Wind (Avg. Speed)" = 48,
+  "Temperature"       = 39,   
+  "Humidity"          = 74,
+  "Air Density"       = 14,   
+  "Air Pressure"      = 41,
+  "Wind (Gusts)"      = 77,
+  "Altitude"          = 15,
+  "Roughness"         = 74,   
+  "Width"             = 8,    
+  check.names = FALSE
+)
+
+
+
+predict_lap_time_wrapper <- function(x) {
+  
+  current_car <- data.frame(
+    "Rear Wing"     = x[1],
+    "Engine"        = x[2],
+    "Front Wing"    = x[3],
+    "Brake Balance" = x[4],
+    "Differential"  = x[5],
+    "Suspension"    = x[6],
+    check.names = FALSE
+  )
+  
+  full_data <- bind_cols(current_car, france_conditions)
+  
+  X_matrix <- explode_matrix(full_data, all_features, verbose=FALSE)
+  
+  X_df <- as.data.frame(as.matrix(X_matrix))
+  colnames(X_df) <- make.names(colnames(X_df))
+  
+  prediction <- predict(model_clean, newdata = X_df)
+  
+  return(as.numeric(prediction))
+}
+
+```
+
+```{r}
+start_params <- c(250, 250, 250, 250, 250, 250)
+
+cat("Starting L-BFGS-B Optimization...\n")
+
+optimize = FALSE #we set this to FALSE for knitting the document. Otherwise the optiization would take too long
+
+if (optimize){
+  opt_result <- optim(
+    par = start_params, 
+    fn = predict_lap_time_wrapper, 
+    method = "L-BFGS-B",       # Handles box constraints (1-500) natively
+    lower = rep(1, 6),         # Minimum allowed value
+    upper = rep(500, 6),       # Maximum allowed value
+    control = list(
+      fnscale = 1, 
+      maxit = 500, 
+      trace = 6,        
+      REPORT = 1        
+    ) 
+  )
+  
+  best_setup <- round(opt_result$par) # Round ONLY at the very end for the report
+  names(best_setup) <- c("Rear Wing", "Engine", "Front Wing", "Brake Balance", "Differential", "Suspension")
+  
+  cat("\n=== OPTIMAL SETUP (France) ===\n")
+  print(best_setup)
+  cat("\nPredicted Adjusted Time:", round(opt_result$value, 4), "\n")
+}else{
+  
+  best_setup = c(1,500,1,500,500,104)
+  best_value = predict_lap_time_wrapper(best_setup)
+  names(best_setup) <- c("Rear Wing", "Engine", "Front Wing", "Brake Balance", "Differential", "Suspension")
+  
+  cat("\n=== OPTIMAL SETUP (France) ===\n")
+  print(best_setup)
+  cat("\nPredicted Adjusted Time:", round(best_value, 4), "\n")
+  
+}
+
+
+```
+We can see that the optimization leads to 5 out of 6 trivial results meaning taking either the minimum or the maximum of the range, just for Suspension the model seemed to detect a trade-off. supprisingly, the model showed that Brake Balance, Differential and Engine had positive coefficients, meaning an increase in these values would lead to an increase in lap-time, however, now they are set to the maximum, suggesting the model somehow found different interaction effect, probably with polynomial power offsetting these initial coefficients.
+
+
+
+
+
+
+
+
