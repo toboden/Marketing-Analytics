@@ -2,3 +2,15 @@
 .Rhistory
 .RData
 .Ruserdata
+
+# Virtual Environments
+Problem Set 3/Task1/venv
+.env/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
