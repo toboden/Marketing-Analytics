@@ -18,6 +18,7 @@ editor_options:
 #Task 2
 
 ### Exploratory Data Analysis
+
 #### Univariate Exploration
 
 ```{r, echo = False}
@@ -73,9 +74,11 @@ possible_categoricals <- simulator_data %>%
 
 #print(possible_categoricals)
 ```
-We start by looking at the meaning of the single columns and divide them into two semantic categories: the track conditions and the car features. This distinction will be necessary for the following analysis and decision making as the conditions will be given and only the car features are actionable.
 
-We find no missing values in the dataset and find that as expected all track conditions except for "Lap Distance" and "Temperature" are between 1 and 100 and all car features are in the range of 1 and 500. Therefore, no further outlier analysis and imputations are needed. We see that "Lap Distance" contains 23 distinct values and therefore probably represents the 23 different race tracks for this simulation. "Temperature" contains 41 different aligning with real world temperatures.
+Variables were categorized into track conditions (exogenous) and car features (actionable).
+The dataset exhibits no missing values.
+All variables fall within expected bounds, conditions range within $[1, 100]$ (excluding $Lap Distance$ and $Temperature$) and features within $[1, 500]$ rendering outlier removal and imputation unnecessary.
+$Lap Distance$ contains 23 distinct values identifying the simulated tracks, while the 41 unique $Temperature$ observations reflect realistic meteorological variance.
 
 ```{r, echo = False}
 # theme for plots
@@ -240,7 +243,9 @@ plot_interaction <- function(data, x_var, interact_var, target = "lap_time_adjus
 }
 ```
 
-In a next step we analyze the distribution of the different features. We start with the car features and find that extreme values are overrepresented. For all car features at least 10% of the observations are the minimum or the maximum, for "Engine" eve 38% of the data is at the minimum. 
+An analysis of feature distributions reveals a marked overrepresentation of boundary values within car features.
+For all variables, at least 10% of observations are located at the minimum or maximum limits.
+$Engine$ displays the strongest skew, with 38% of values concentrated at the lower bound.
 
 ```{r}
 #Check Extrem Vale Share of Car Features
@@ -261,12 +266,14 @@ simulator_data %>%
   ) %>%
   select(Feature, Min, Max, Min_Pct, Max_Pct)
 ```
-We include the histogram of "Engine" where this overrepresentation is the most pronounced to illustrate the overrepresenation visually.
+
+The $Engine$ histogram visually demonstrates this boundary saturation, exhibiting the most severe overrepresentation among all features.
 
 ```{r}
 create_histogram(simulator_data, "Engine")
 ```
-We find that almost all condition features exhibit a uniform like distribution, added with a lot of noise indicated by some the little spikes in the distribution. 
+
+Condition features predominantly exhibit quasi-uniform distributions characterized by substantial noise and intermittent local spikes.
 
 ```{r}
 create_histogram(simulator_data, "Air Pressure")
@@ -284,11 +291,13 @@ check_uniform <- function(x) {
 
 sapply(simulator_data[condition_features], check_uniform)
 ```
-We find that all condition features except for "Lap Distance", "Temperature" and "Air Pressure" are uniform distributed as for all of them either the Kolmogorov-Smirniv test or the X^2-test for uniformity fails to reject the nullhypothesis of uniformity. While "Lap Distance" and "Temperature" as already found have a different distribution, the rejection of uniformity for "Air Pressure" is likely driven by the high noise in the distribution. 
+
+Kolmogorov-Smirnov and $\chi^2$ tests fail to reject the null hypothesis of uniformity for most condition features.
+Exceptions include the structural variables $Lap Distance$ and $Temperature$, which are clearly non-uniform distributed as expected and $Air Pressure$, where deviation is likely driven by noise artifacts rather than non-uniform underlying data generation.
 
 #### Bivariate Exploration
 
-We start by looking at especially large correlations between all variables in the dataset.
+We continiue, by screening the dataset for pronounced correlations between variables.
 
 ```{r}
 #check for correlations between features
@@ -303,21 +312,28 @@ sorted_correlations <- as.data.frame(as.table(cor_matrix)) %>%
 
 print(head(sorted_correlations, 20))
 ```
-The first extremely high correlation of over 0.99 is interesting and will be analyzed later in this work and ignored for now. While we see a lot high correlations none of them includes the Lap Time, instead all of them include at least one car feature. The interpretation regarding the influence on lap time is therefore uninteresting, what it tells us, is that during the simulation already assumptions regarding the interplay between conditions and car features were made.
 
+An extremely high correlation exceeding $0.99$ is noted but deferred for later analysis.
+While we observe numerous high correlations, none involve $Lap Time$; instead and all include at least one car feature.
+Therefore, the interpretation regarding the influence on $Lap Time$ is uninteresting, but it reveals that assumptions concerning the interplay between conditions and car features were already established during the simulation.
 
-We start by looking at the correlations between the target, Lap Time with the car features. We see, that there are only minor correlations with engine having the largest absolute value.
+An examination of correlations between the target, $Lap Time$, and car features reveals only minor associations, with $Engine$ displaying the largest absolute coefficient.
 
 ```{r}
 cor(simulator_data[car_features], simulator_data[target])
 ```
 
-Then we look at the correlation between the conditions and the target, Lap Time. We see that all correlation except for Lap Distance are pretty minor. The correlation with "Lap Distance" however is extremely large. This makes absolutely sense as we the Lap time is directly influenced by the length of the track. Infact, we have the formula Lap Time = Lap Distance * Average Velocity. The rest of the features in tha dataset only influences the average velocity and not the lap time. Modelling the lap time directly thus makes no sence.
+Correlations between conditions and $Lap Time$ are negligible, with the exception of a dominant relationship with $Lap Distance$.
+This is axiomatic, as $Lap Time = \frac{Lap Distance}{Average Velocity}$.
+Since remaining features influence velocity rather than distance, directly modeling raw $Lap Time$ is methodologically unsound.
 
 ```{r}
 cor(simulator_data[condition_features], simulator_data[target])
 ```
-We therefore remove the effect of the Lap Distance from the Lap Time. The analysis in the following will only include the adjusted lap time. The regression tells us, that over 99% of the variation in Lap Time is driven by the Lap Distance. The other factors and noise only leave a standard deviation of 0.67 seconds, the possible effects of optimizing the car are therefore quite small. 
+
+To isolate vehicle performance, $Lap Time$ is regressed on $Lap Distance$, and the resulting residuals are retained as the $Adjusted Lap Time$.
+The regression indicates that $Lap Distance$ explains over $99\%$ of the variance ($R^2 > 0.99$).
+The remaining residual standard deviation of $0.67$ seconds implies that the variance attributable to car setup and noise---and consequently the optimization potential---is marginal.
 
 ```{r}
 #distance adjust lap time
@@ -325,29 +341,42 @@ model_distance <- lm(`Lap Time` ~ `Lap Distance`, data = simulator_data)
 simulator_data$lap_time_adjusted <- residuals(model_distance)
 summary(model_distance)
 ```
-We redo the calculations for the correlation with the adjusted lap time. Now we see that there are infact features that have a larger relationship on the lap time. Higher "Grip" has a correlation of 0.12 and is therefore associated with slower lap times.
+
+Re-assessing correlations with $Adjusted Lap Time$ reveals discernible dependencies previously masked by track length.
+Notably, $Grip$ exhibits a correlation of $0.12$, implying that higher grip levels are associated with increased (slower) lap times.
+
 ```{r}
 cor(simulator_data[setdiff(condition_features, "Lap Distance")], simulator_data['lap_time_adjusted'])
 ```
-The relationships get even more pronounced with the car features. We can see a clear association with higher Engine and Differential values and slower lap times.
+
+Dependencies involving car features are more pronounced.
+Specifically, *Engine* and *Differential* exhibit clear positive associations with the target, indicating that higher parameter settings correlate with slower lap times.
 
 ```{r}
 cor(simulator_data[car_features], simulator_data['lap_time_adjusted'])
 ```
-We add the calculation of the spearman correlation coefficient to measure general monotonous relationships, not just linear.
+
+Spearman rank correlations were computed to capture general monotonic dependencies, extending the analysis beyond linear associations.
+
 ```{r}
 cor(simulator_data[setdiff(condition_features, "Lap Distance")], simulator_data['lap_time_adjusted'], method='spearman')
 ```
+
 ```{r}
 cor(simulator_data[car_features], simulator_data['lap_time_adjusted'], method='spearman')
 ```
-While the condition features values remain mostly unchanged we see that the values for "Engine" and "Differential" increased significantly, giving evidence for a non-linear monotonous relationship.
 
-We investigate the relationship by with "Engine" and Differential further using scatter plots.
+While coefficients for condition features remain largely unchanged, those for $Engine$ and $Differential$ increase significantly, providing evidence of non-linear monotonic relationships.
+
+Scatter plots are utilized to further investigate the relationships involving $Engine$ and $Differential$.
+
 ```{r}
 plot_2d_scatter(simulator_data, "Engine", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
 ```
-Aligning with the histogram, we can see a dense cloud in the left of the plot. While the relationship is visually positive we can also see that a mere linear curve seems to not capture the full effect. While takig the logarithm seems useful, we can see that the quadratic regression can capture the effect better (regarding the R2) and the point cloud moved to the right, instead of to the center, which would justify the transformation.
+
+Consistent with the histograms, observations cluster densely at the lower bounds.
+Although the general trend is positive, a linear model proves insufficient.
+A quadratic regression yields a superior fit (higher $R^2$) compared to a logarithmic transformation, better capturing the non-linear structure of the data distribution.
 
 ```{r}
 logged_Engine = simulator_data %>% mutate(
@@ -355,31 +384,39 @@ logged_Engine = simulator_data %>% mutate(
 )
 plot_2d_scatter(logged_Engine, "Engine", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
 ```
+
 ```{r}
 plot_2d_scatter(simulator_data, "Differential", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
 ```
-Looking at differential also suggests that the effect might me quadratic and has a saturation. However, by looking at "Engine" and "Differential" with such positive coreelations we see a counterintuitive result. Better Engines and Differentials should lead to better times, thus smaller lap times and by that a negative correlation. We investigate further to take interaction effects with other variables into account.
 
-We investigate the hypothesis that the effect of Engine is influenced by the Grip of the track, as a strong Engine could lead to wheel spin on tracks with low Grip but be advantagous on tracks with higher Grip.
+Visual inspection of $Differential$ suggests a quadratic relationship with saturation.
+The observed positive correlations for $Engine$ and $Differential$ are counterintuitive, as superior mechanical components should theoretically decrease lap times.
+This paradox implies the presence of significant interaction effects, necessitating further multivariate investigation.
+
+We investigate the hypothesis that the impact of $Engine$ is conditional upon track $Grip$.
+Theoretically, high engine output may induce detrimental wheel spin in low-grip environments, while proving advantageous on high-traction tracks.
 
 ```{r}
 plot_interaction(simulator_data, "Engine", "Grip")
 ```
-We find evidence for this interaction effect in this graph as we can see the negtive effect of larger engines decreases as the grip on the track increases, which totally aligns with the hypothesis.
 
-Next we investigate wheather the Cornering of the track has an influence of the effect of the size of the differential. The idea is that tracks with a lot of Corners need more gear shifts and thus a better Differential.
+Graphical analysis corroborates this interaction: the detrimental impact of increased $Engine$ capacity diminishes as $Grip$ rises, validating the hypothesis.
+Subsequently, we examine whether track $Cornering$ modulates the influence of the $Differential$, hypothesizing that high-cornering circuits require frequent shifting, thereby amplifying the utility of the component.
 
 ```{r}
 plot_interaction(simulator_data, "Differential", "Cornering")
 ```
-Also for this hypothesis we find evidence as the negative effect of large differentials decreases and even vanishes as the cornering on the track gets larger.
 
-The observed patterns in both plots strongly indicate the necessity of including interaction terms in our final modeling approach. We conclude the visual inspection here, as providing further examples would yield diminishing marginal information gain and unnecessarily extend the analysis. Instead, we will rely on the Lasso algorithm to systematically identify the remaining relevant interactions.
+The data supports this hypothesis: the adverse impact of larger $Differential$ settings mitigates---and eventually vanishes, as track $Cornering$ intensity increases.
+These patterns substantiate the inclusion of interaction terms in the model.
+We conclude the visual inspection here, as further manual exploration yields diminishing returns.
+Consequently, we rely on the Lasso algorithm to systematically identify the remaining relevant interactions.
 
+### Modelling and Interpretation
 
-###Modelling and Interpretation
-
-We will now extend the dataset and include all interactions and ploynomials up to degree 3. This meas single variables will be included up to power 3. Interactrion terms will be included with one variable up to a power of 2 and 3-fold interactions will be included with a power of one. We will keep the lap distance as regressor inside. The single lap distance will have no effect and thus excluded by LASSO automatically, however we cannot know if the "Lap Distance" does maybe leads to interesting interaction effects with other track features.
+The feature space is expanded via a polynomial transformation up to degree 3.
+This encompasses univariate terms up to $x_j^3$, asymmetric pairwise interactions (e.g., $x_i^2 x_j$), and linear three-way interactions ($x_i x_j x_k$).
+$Lap Distance$ is retained in the design matrix; while its linear influence was eliminated via residualization, its inclusion allows the Lasso algorithm to probe for potential high-order interactions with other track conditions.
 
 ```{r, echo=FALSE}
 explode_matrix <- function(data, features, verbose = TRUE) { # NEUES ARGUMENT
@@ -453,7 +490,10 @@ y <- simulator_data$lap_time_adjusted
 X <- explode_matrix(simulator_data, all_features)
 ```
 
-We found that due to the high correlation of some features, which is further increased by the inclusion of interactions and polynomials, the LASSO selection is quite unstable. Furthermore, we found that the model selection algorithm based on the AIC tended to select the model with the largest number of parameters, which is not useful. Therefore, we decided to perform a stability selection based on 50 iterations of Lasso estimations using the Bayesian Information Criterion for model selection. Each iteration used a random subset of 80% of the data. We employed the Bayesian Information Criterion to penalize model size more strictly than the Akaike criterion. Ultimately, we retained all features that were selected at least 70% of the time to obtain a small but insightful and actionable subset of features.
+Given the high multicollinearity exacerbated by the feature expansion, standard Lasso selection proved unstable, while AIC minimization favored over-parameterized models.
+Consequently, we implemented a stability selection protocol comprising 50 Lasso iterations on random $80\%$ subsamples.
+Model selection relied on the Bayesian Information Criterion (BIC) to enforce stricter sparsity.
+Only features selected in $\ge 70\%$ of iterations were retained to ensure a robust, parsimonious, and actionable predictor set.
 
 ```{r, echo=FALSE}
 # --- Setup ---
@@ -518,7 +558,9 @@ stable_drivers <- stability_results %>% filter(Probability >= 0.7)
 
 print(head(stable_drivers, 10))
 ```
-We can see directly see that only 7 features were selected all 50 times underlining the mentioned instability this setup has. We further plot the result of the last training run to illustrate the selection process for each model.
+
+The consistent selection of only seven features across all 50 iterations highlights the instability of the expanded feature space.
+To illustrate the variable selection dynamics, the coefficient path of the final iteration is visualized.
 
 ```{r, echo=FALSE}
 plot_lasso <- function(summary_frame, best_df_aic, best_df_bic) {
@@ -591,9 +633,12 @@ best_df_aic <- summary_frame$df[which.min(summary_frame$aicc)]
 best_df_bic <- summary_frame$df[which.min(summary_frame$bic)]
 plot_lasso(summary_frame, best_df_aic, best_df_bic)
 ```
-Here we can clearly see that the AIC tends to have no clear minimum but more of a asymptotic behaviour or in this case a minimum with way too many variables. For the BIC we can see the desired "Hockey-Stick" with a clear minimum and a higher penalty for larger models. Also the selected 27 parameters are a proper amount for meaningful and actionable drivers. 
 
-To get our final model we take all the drivers that were in at least 70% of the models and perform a backward selection. 
+The AIC exhibits asymptotic behavior rather than a distinct minimum, favoring excessive parameterization.
+Conversely, the BIC displays a convex profile with a clear global minimum, driven by its stricter complexity penalty.
+The resulting 27 features represent a parsimonious subset, ensuring the model remains interpretable and actionable.
+
+To derive the final specification, features meeting the $70\%$ stability threshold were subjected to backward elimination.
 
 ```{r, echo=FALSE}
 backward_selection_p <- function(model, sig_level = 0.1) {
@@ -650,7 +695,6 @@ get_metrics <- function(actual, predicted, set_name = "Set") {
 }
 ```
 
-
 ```{r}
 # Prepare final dataset using only stable features (full data)
 final_features <- as.character(stable_drivers$Feature)
@@ -667,10 +711,13 @@ final_clean <- backward_selection_p(final_ols, sig_level = 0.05)
 
 summary(final_clean)
 ```
-We end up with 23 drivers for the final model, which explains 26.7% of the variance in the average velocity Given that the dataset is "high noise" the value seems pretty good as way higher values would overfit the model.
-We find that no polynomial for degree 3 is included as well as no interaction with 3 terms. Furthermore we see that all 23 drivers have at least one car feature making all of them actionable for out race car optimization.
 
-We further analyze the key drivers by their feature importance
+The final model retains 23 predictors, explaining $26.7\%$ of the variance ($R^2 = 0.267$).
+Given the inherent noise, this indicates robust signal extraction rather than overfitting.
+Notably, the selection process discarded all cubic terms and third-order interactions.
+Crucially, every retained variable involves at least one controllable car feature, ensuring full actionability for the optimization.
+We subsequently rank these predictors by feature importance.
+
 ```{r}
 importance <- data.frame(
   Feature = names(coef(final_clean)),
@@ -689,12 +736,18 @@ importance <- data.frame(
 cat("---", nrow(importance),"Overall Drivers (Standardized Impact) ---\n")
 print(head(importance, 10))
 ```
-We look at the first notice, that the first 3 features already make up over 97% of the complete influence. We see that higher values for the Differential increase the lap time, as well as higher values for the Brake Balance. Furthermore we can see an Interaction between Engine and Lap Distance moddeling the effect of Engine, which gets larger as the Lap Distance increases.
 
+The top three predictors dominate the model, accounting for over $97\%$ of the total feature importance.
+Positive coefficients for $Differential$ and $Brake Balance$ indicate that increasing these parameters correlates with slower adjusted lap times.
+Furthermore, the significant $Engine \times Lap Distance$ interaction suggests that the sensitivity of performance to engine settings scales with track length.
+It is crucial to note that ranking importance solely by coefficient magnitude has limitations; polynomial terms with smaller coefficients may still exert significant influence due to variable scaling.
 
-This model will be used to identify the optimal starting conditions for France.
+Finally, the calibrated model is deployed to determine the optimal vehicle configuration for the France circuit.
 
-###Optimization
+### Optimization
+
+Vehicle parameters are optimized while treating track features as fixed constants specific to the France circuit.
+We employ the L-BFGS algorithm, a quasi-Newton method designed for unconstrained non-linear optimization tasks.
 
 ```{r, echo=FALSE}
 france_conditions <- data.frame(
@@ -785,12 +838,8 @@ if (optimize){
 
 
 ```
-We can see that the optimization leads to 5 out of 6 trivial results meaning taking either the minimum or the maximum of the range, just for Suspension the model seemed to detect a trade-off. supprisingly, the model showed that Brake Balance, Differential and Engine had positive coefficients, meaning an increase in these values would lead to an increase in lap-time, however, now they are set to the maximum, suggesting the model somehow found different interaction effect, probably with polynomial power offsetting these initial coefficients.
 
-
-
-
-
-
-
-
+The optimization yielded boundary solutions for five of the six parameters, selecting either the range minimum or maximum.
+$Suspension$ was the sole feature to exhibit an interior optimum, indicating a convex trade-off.
+Paradoxically, although $Brake Balance$, $Differential$, and $Engine$ initially displayed positive coefficients (implying a detrimental effect on speed), the algorithm maximized these settings.
+This suggests that complex interaction effects and higher-order polynomial terms dominate the linear penalties at the upper bounds, effectively inverting the relationship to minimize lap time.
