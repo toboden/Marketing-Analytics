@@ -6,8 +6,8 @@ import os
 import unicodedata
 
 audio_dir = '/Users/philippgrunenberg/Downloads/download'
-audio_features_dir = 'data/audio_features.xlsx'
-ranked_songs_dir = 'data/Songs mit Ranking_100 Songs.xlsx'
+audio_features_dir = '/Users/philippgrunenberg/Documents/Marketing Analytics/MA Repo/data/audio_features.xlsx'
+ranked_songs_dir = '/Users/philippgrunenberg/Documents/Marketing Analytics/MA Repo/data/Songs mit Ranking_100 Songs.xlsx'
 
 
 def clean_title(title):
@@ -57,51 +57,88 @@ def rename_files(file_list, track_table):
     for file in file_list:
       print(file)
 
-def extract_features(file_path):
-    y, sr = librosa.load(file_path, sr=None)
 
-    # MFCC
-    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
-    # Spektrale Features
-    spec_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)
+def extract_features(file_path):
+    # -------------------------------------------------
+    # 1) Laden + Basis-Preprocessing
+    # -------------------------------------------------
+    # Einheitliche Samplerate & Mono
+    y, sr = librosa.load(file_path, sr=22050, mono=True)
+
+    # Lautstärke-Normalisierung
+    y = librosa.util.normalize(y)
+
+    # Stille entfernen (sehr wichtig für Ratings)
+    y, _ = librosa.effects.trim(y, top_db=20)
+
+    # -------------------------------------------------
+    # 2) Zeit-Frequenz-Repräsentationen
+    # -------------------------------------------------
+    # STFT für spektrale Features
+    S = np.abs(librosa.stft(y, n_fft=2048, hop_length=512))
+
+    # Mel-Spektrogramm (perzeptiv sinnvoll)
+    mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
+    mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+
+    # -------------------------------------------------
+    # 3) Feature-Extraktion
+    # -------------------------------------------------
+
+    # --- MFCCs (Klangfarbe / Timbre)
+    mfcc = librosa.feature.mfcc(
+        S=mel_spec_db,
+        sr=sr,
+        n_mfcc=13
+    )
+
+    # Delta-MFCCs (Dynamik / Veränderung)
+    mfcc_delta = librosa.feature.delta(mfcc)
+
+    # --- Spektrale Features (Helligkeit / Schärfe)
+    spec_centroid = librosa.feature.spectral_centroid(S=S, sr=sr)
+    spec_bandwidth = librosa.feature.spectral_bandwidth(S=S, sr=sr)
+    rolloff = librosa.feature.spectral_rolloff(S=S, sr=sr)
+    flatness = librosa.feature.spectral_flatness(S=S)
+
+    # --- Rhythmus & Energie
+    rms = librosa.feature.rms(S=S)
     zcr = librosa.feature.zero_crossing_rate(y)
-    rms = librosa.feature.rms(y=y)
-    chroma = librosa.feature.chroma_stft(y=y, sr=sr)
-    spec_bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr)
-    rolloff = librosa.feature.spectral_rolloff(y=y, sr=sr)
-    flatness = librosa.feature.spectral_flatness(y=y)
+
     tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
 
+    # --- Harmonie (Tonart / Akkorde)
+    chroma = librosa.feature.chroma_stft(S=S, sr=sr)
+
+    # -------------------------------------------------
+    # 4) Aggregation (feste Feature-Länge)
+    # -------------------------------------------------
     features = {}
 
-    # MFCCs: Mean & Std
+    # MFCCs
     for i in range(13):
         features[f'mfcc_{i+1}_mean'] = mfcc[i].mean()
         features[f'mfcc_{i+1}_std'] = mfcc[i].std()
+        features[f'mfcc_delta_{i+1}_mean'] = mfcc_delta[i].mean()
 
-    # Weitere Features
+    # Spektrale Features
     features['spectral_centroid_mean'] = spec_centroid.mean()
-    features['spectral_centroid_std'] = spec_centroid.std()
     features['spectral_bandwidth_mean'] = spec_bandwidth.mean()
-    features['spectral_bandwidth_std'] = spec_bandwidth.std()
     features['rolloff_mean'] = rolloff.mean()
-    features['rolloff_std'] = rolloff.std()
     features['flatness_mean'] = flatness.mean()
-    features['flatness_std'] = flatness.std()
-    features['zcr_mean'] = zcr.mean()
-    features['zcr_std'] = zcr.std()
+
+    # Energie & Rhythmus
     features['rms_mean'] = rms.mean()
     features['rms_std'] = rms.std()
-
-    # Chroma: Mean & Std pro Tonklasse
-    for i in range(chroma.shape[0]):
-        features[f'chroma_{i+1}_mean'] = chroma[i].mean()
-        features[f'chroma_{i+1}_std'] = chroma[i].std()
-
-    # Tempo
+    features['zcr_mean'] = zcr.mean()
     features['tempo'] = tempo
 
+    # Chroma (nur Mittelwerte, keine Std)
+    for i in range(12):
+        features[f'chroma_{i+1}_mean'] = chroma[i].mean()
+
     return features
+
 
 
 # Excel-Datei einlesen
@@ -109,7 +146,7 @@ ranked_songs_xlsx = pd.read_excel(ranked_songs_dir)
 # Mapping aus der Excel-Tabelle erstellen
 track_table = dict(zip(ranked_songs_xlsx['Track Title'], zip(ranked_songs_xlsx['Artist'], ranked_songs_xlsx['Bewertung'])))
 # Dateinamen anpassen
-#rename_files(os.listdir(audio_dir), track_table)
+rename_files(os.listdir(audio_dir), track_table)
 
 #features extrahieren
 rows = []
