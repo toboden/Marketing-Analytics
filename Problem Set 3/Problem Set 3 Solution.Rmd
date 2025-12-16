@@ -333,7 +333,7 @@ cor(simulator_data[condition_features], simulator_data[target])
 
 To isolate vehicle performance, $Lap Time$ is regressed on $Lap Distance$, and the resulting residuals are retained as the $Adjusted Lap Time$.
 The regression indicates that $Lap Distance$ explains over $99\%$ of the variance ($R^2 > 0.99$).
-The remaining residual standard deviation of $0.67$ seconds implies that the variance attributable to car setup and noise---and consequently the optimization potential---is marginal.
+The remaining residual standard deviation of $0.67$ seconds implies that the variance attributable to car setup and noise, and consequently the optimization potential, is marginal.
 
 ```{r}
 #distance adjust lap time
@@ -414,9 +414,34 @@ Consequently, we rely on the Lasso algorithm to systematically identify the rema
 
 ### Modelling and Interpretation
 
-The feature space is expanded via a polynomial transformation up to degree 3.
+The feature space is expanded via a polynomial transformation up to degree 3 to capture complex non-linear dependencies.
 This encompasses univariate terms up to $x_j^3$, asymmetric pairwise interactions (e.g., $x_i^2 x_j$), and linear three-way interactions ($x_i x_j x_k$).
-$Lap Distance$ is retained in the design matrix; while its linear influence was eliminated via residualization, its inclusion allows the Lasso algorithm to probe for potential high-order interactions with other track conditions.
+
+The full regression specification is defined in scalar notation as:
+
+$$\hat{y} = \beta_0 + \sum_{j=1}^{p} \left( \beta_j x_j + \beta_{jj} x_j^2 + \beta_{jjj} x_j^3 \right) + \sum_{j < k} \beta_{jk} x_j x_k + \sum_{j \neq k} \gamma_{jk} x_j^2 x_k + \sum_{j < k < l} \delta_{jkl} x_j x_k x_l$$
+
+Equivalently, in compact matrix notation, let $\mathbf{x}_i \in \mathbb{R}^p$ denote the vector of original features for the $i$-th observation.
+We define a basis expansion function $\Phi: \mathbb{R}^p \rightarrow \mathbb{R}^d$ that maps the original features into the high-dimensional feature space.
+The model can then be written as:
+
+$$\mathbf{y} = \mathbf{\Phi} \boldsymbol{\beta} + \boldsymbol{\varepsilon}$$
+
+Where: \* $\mathbf{y} \in \mathbb{R}^n$ is the vector of adjusted lap times.
+\* $\mathbf{\Phi} \in \mathbb{R}^{n \times d}$ is the expanded design matrix with rows $\Phi(\mathbf{x}_i)^T$.
+\* $\boldsymbol{\beta} \in \mathbb{R}^d$ is the vector of coefficients.
+\* $\boldsymbol{\varepsilon} \in \mathbb{R}^n$ is the vector of error terms.
+
+The dimensionality $d$ of the expanded feature space is composed of the intercept, linear terms, higher-order polynomials, and interaction terms.
+Formally, $d$ is the sum of the cardinalities of these sets:
+
+$$d = 1 + \underbrace{3p}_{\text{Poly (1-3)}} + \underbrace{\binom{p}{2}}_{\text{Pairs}} + \underbrace{p(p-1)}_{\text{Asym. Pairs}} + \underbrace{\binom{p}{3}}_{\text{Triplets}}$$
+
+To estimate the sparse parameter vector $\boldsymbol{\beta}$ and select the relevant features, we solve the Lasso optimization problem:
+
+$$\hat{\boldsymbol{\beta}} = \underset{\boldsymbol{\beta}}{\arg\min} \left( \frac{1}{2n} ||\mathbf{y} - \mathbf{\Phi} \boldsymbol{\beta}||_2^2 + \lambda ||\boldsymbol{\beta}||_1 \right)$$
+
+where $||\cdot||_2$ denotes the Euclidean norm, $||\cdot||_1$ is the $\ell_1$-norm inducing sparsity, and $\lambda$ is the regularization parameter determined using the Bayesian Information Criterion (BIC).
 
 ```{r, echo=FALSE}
 explode_matrix <- function(data, features, verbose = TRUE) { # NEUES ARGUMENT
@@ -719,28 +744,39 @@ Crucially, every retained variable involves at least one controllable car featur
 We subsequently rank these predictors by feature importance.
 
 ```{r}
+model_feats <- names(coef(final_clean))[-1]
+feature_sds <- apply(final_df[model_feats], 2, sd)
+
 importance <- data.frame(
-  Feature = names(coef(final_clean)),
-  Coefficient = coef(final_clean),
-  Importance = abs(coef(final_clean))
+  Coefficient = coef(final_clean)[-1],
+  SD = feature_sds
 ) %>%
-  filter(Feature != "(Intercept)") %>% 
+  mutate(
+    # Standardized Impact = |Beta| * StDev
+    # This makes features with different scales (e.g., x vs x^3) comparable
+    Importance = abs(Coefficient * SD)
+  ) %>%
   arrange(desc(Importance)) %>%
   mutate(
     Share = Importance / sum(Importance),
     Cumulative = cumsum(Importance) / sum(Importance)
-  ) %>% 
-  select(-Feature)
-    
+  )
 
-cat("---", nrow(importance),"Overall Drivers (Standardized Impact) ---\n")
+cat("---", nrow(importance), "Overall Drivers (Standardized Impact) ---\n")
 print(head(importance, 10))
 ```
 
-The top three predictors dominate the model, accounting for over $97\%$ of the total feature importance.
-Positive coefficients for $Differential$ and $Brake Balance$ indicate that increasing these parameters correlates with slower adjusted lap times.
-Furthermore, the significant $Engine \times Lap Distance$ interaction suggests that the sensitivity of performance to engine settings scales with track length.
-It is crucial to note that ranking importance solely by coefficient magnitude has limitations; polynomial terms with smaller coefficients may still exert significant influence due to variable scaling.
+An analysis of the standardized feature importance reveals that the predictive model is primarily driven by vehicle configuration parameters rather than isolated track conditions.
+The top ten most influential features consist exclusively of car parameters or their interactions with track variables, indicating that internal vehicle calibration supersedes static environmental factors in determining performance variability.
+
+The $Differential$ exhibits the highest standardized impact with a positive linear coefficient, initially suggesting a baseline penalty for higher differential locking values.
+Crucially, however, this effect is non-linear: multiple interaction terms involving the quadratic differential (e.g., $Brake.Balance \times `Differential^2$ and $Front.Wing \times Differential^2$) carry negative coefficients.
+This counter-effect implies a concave optimization surface, where the theoretical penalty of a high differential is mitigated or reversed when strictly coordinated with specific brake and aerodynamic settings.
+
+Furthermore, the $Engine$ parameter demonstrates distinct context-dependency.
+The interaction $Engine \times Lap.Distance$ presents a positive coefficient, implying a performance detriment on longer tracks---potentially attributable to unobserved factors such as fuel weight or efficiency constraints in the simulation physics.
+Conversely, the interaction $Inclines \times Engine^2$ is negative, confirming that higher engine output yields a net reduction in lap time specifically in high-load scenarios, such as steep ascents.
+Finally, the prominence of the $Front.Wing \times Rear.Wing^2$ interaction (negative coefficient) underscores the critical importance of aerodynamic balance, indicating that downforce components must be tuned in concert rather than in isolation to maximize speed.
 
 Finally, the calibrated model is deployed to determine the optimal vehicle configuration for the France circuit.
 
@@ -839,7 +875,8 @@ if (optimize){
 
 ```
 
-The optimization yielded boundary solutions for five of the six parameters, selecting either the range minimum or maximum.
-$Suspension$ was the sole feature to exhibit an interior optimum, indicating a convex trade-off.
-Paradoxically, although $Brake Balance$, $Differential$, and $Engine$ initially displayed positive coefficients (implying a detrimental effect on speed), the algorithm maximized these settings.
-This suggests that complex interaction effects and higher-order polynomial terms dominate the linear penalties at the upper bounds, effectively inverting the relationship to minimize lap time.
+The optimization results indicate that the objective function is monotonic for most parameters within the valid range, leading to boundary solutions for five out of six variables. Specifically, $Rear Wing$, $Front Wing$, $Engin$, $Brake Balance$, and $Differential$ converged to their respective lower or upper constraints, implying that the optimal configuration lies at the edges of the permissible design space. Only $Suspension$ ($x \approx 104$) exhibited an interior optimum, suggesting a convex trade-off between stiffness and mechanical grip.
+
+A notable finding is the maximization of $Differential$, and $Engine$ to their upper bounds (500). This appears counter-intuitive given their positive linear coefficients, which theoretically penalize lap time. However, this result confirms the dominance of the non-linear structure identified in the model: strong negative interaction effects and polynomial terms (e.g., $Brake.Balance \times Differential^2$) effectively invert the baseline penalty at high values, creating a net performance gain that outweighs the linear costs. Conversely, the minimization of aerodynamic components ($x=1$) suggests a strategy prioritizing drag reduction over downforce for the specific conditions of the target track.
+
+The predicted value of $-1.9132$ represents the adjusted residual time, indicating that this optimized configuration is expected to complete the lap approximately 1.91 seconds faster than the baseline average predicted solely by the track's length.
