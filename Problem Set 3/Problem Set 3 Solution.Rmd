@@ -834,7 +834,7 @@ if (run_loop){
   write.csv(stability_results, 'Problem Set 3/stability_results.csv')
 } else {
   cat("Load stability_resulty.csc")
-  stability_results = read.csv('Problem Set 3/stability_results.csv')
+  stability_results = read.csv('stability_results.csv')
   
 }
 ```
@@ -1087,7 +1087,7 @@ predict_lap_time_wrapper <- function(x) {
   X_df <- as.data.frame(as.matrix(X_matrix))
   colnames(X_df) <- make.names(colnames(X_df))
   
-  prediction <- predict(model_clean, newdata = X_df)
+  prediction <- predict(final_ols, newdata = X_df)
   
   return(as.numeric(prediction))
 }
@@ -1110,7 +1110,7 @@ if (optimize){
     upper = rep(500, 6),       # Maximum allowed value
     control = list(
       fnscale = 1, 
-      maxit = 500, 
+      maxit = 1000, 
       trace = 6,        
       REPORT = 1        
     ) 
@@ -1124,7 +1124,7 @@ if (optimize){
   cat("\nPredicted Adjusted Time:", round(opt_result$value, 4), "\n")
 }else{
   
-  best_setup = c(1,500,1,500,500,104)
+  best_setup = c(500,500,500,500,500,10)
   best_value = predict_lap_time_wrapper(best_setup)
   names(best_setup) <- c("Rear Wing", "Engine", "Front Wing", "Brake Balance", "Differential", "Suspension")
   
@@ -1137,8 +1137,8 @@ if (optimize){
 
 ```
 
-The optimization results indicate that the objective function is monotonic for most parameters within the valid range, leading to boundary solutions for five out of six variables. Specifically, $Rear Wing$, $Front Wing$, $Engin$, $Brake Balance$, and $Differential$ converged to their respective lower or upper constraints, implying that the optimal configuration lies at the edges of the permissible design space. Only $Suspension$ ($x \approx 104$) exhibited an interior optimum, suggesting a convex trade-off between stiffness and mechanical grip.
+The updated optimization results indicate a convergence towards a high-downforce, high-power configuration. Remarkably, five out of six actionable parameters—`Rear Wing`, `Engine`, `Front Wing`, `Brake Balance`, and `Differential`—were maximized to their upper boundary constraints ($x=500$). `Suspension` remains the sole variable exhibiting a distinct, near-lower-bound optimum ($x \approx 10$).
 
-A notable finding is the maximization of $Differential$, and $Engine$ to their upper bounds (500). This appears counter-intuitive given their positive linear coefficients, which theoretically penalize lap time. However, this result confirms the dominance of the non-linear structure identified in the model: strong negative interaction effects and polynomial terms (e.g., $Brake.Balance \times Differential^2$) effectively invert the baseline penalty at high values, creating a net performance gain that outweighs the linear costs. Conversely, the minimization of aerodynamic components ($x=1$) suggests a strategy prioritizing drag reduction over downforce for the specific conditions of the target track.
+This uniform maximization contradicts standard linear intuition, where trade-offs (e.g., Drag vs. Speed) typically force compromise solutions. Instead, this result strongly validates the previously identified interaction structure: terms such as `Front.Wing` $\times$ `Rear.Wing`$^2$ or `Inclines` $\times$ `Engine`$^2$ appear to generate cooperative non-linear gains. The model suggests that the penalty of high drag (Wings) or high differential locking is effectively overcompensated by the synergistic benefits of running a fully maximized setup, with `Suspension` providing the necessary mechanical counterbalance at the lower end of the spectrum.
 
-The predicted value of $-1.9132$ represents the adjusted residual time, indicating that this optimized configuration is expected to complete the lap approximately 1.91 seconds faster than the baseline average predicted solely by the track's length.
+The predicted adjusted time of $-1.1608$ indicates that this specific high-load configuration is expected to outperform the distance-based baseline by approximately 1.16 seconds, suggesting that maximizing vehicle parameters yields a significant performance advantage on the French circuit.
