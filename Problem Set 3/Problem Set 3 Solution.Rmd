@@ -45,7 +45,7 @@ knitr::opts_chunk$set(
 # The feature extraction is commented out for better performance -> uncomment for replication!
 ##############################
 library(reticulate)
-use_virtualenv('path_to_venv', required = TRUE)
+use_virtualenv('path_to_env', required = TRUE)
 ```
 
 
@@ -57,7 +57,7 @@ import openpyxl
 import os
 import unicodedata
 
-audio_dir = 'path_to_audio_dir'
+audio_dir = 'path_to_song_files'
 audio_features_dir = '../data/audio_features.xlsx'
 ranked_songs_dir = '../data/Songs mit Ranking_100 Songs.xlsx'
 
@@ -113,7 +113,7 @@ ranked_songs_xlsx = pd.read_excel(ranked_songs_dir)
 # Mapping aus der Excel-Tabelle erstellen
 track_table = dict(zip(ranked_songs_xlsx['Track Title'], zip(ranked_songs_xlsx['Artist'], ranked_songs_xlsx['Bewertung'])))
 # Dateinamen anpassen
-rename_files(os.listdir(audio_dir), track_table)
+#rename_files(os.listdir(audio_dir), track_table) # Uncomment when running model!
 ```
 ### Data preparation
 
@@ -204,7 +204,7 @@ def extract_features(file_path):
 
 
 
-#features extrahieren
+#features extrahieren # Uncomment when running model
 rows = []
 #for file in os.listdir(audio_dir):
 #    if file.endswith('.wav'):
@@ -341,7 +341,7 @@ fit_path <- gamlr(x_train, y_train)   # Gaussian loss default
 ```{r, echo=FALSE}
 plot(fit_path)
 ```
-**Figure 1:** *Lasso coefficient paths for the extracted audio features as a function of* $\log(\lambda)$. *Each curve shows how one feature’s coefficient is shrunk towards zero as regularization increases (moving to the right). The dashed vertical line marks the AICc-selected value of* $\lambda$ *(segment* `seg18`, $\lambda \approx 0.163$*), at which only a small subset of predictors remains non-zero ($\mathrm{df}=6$ including the intercept). The numbers on top indicate the number of active (non-zero) coefficients along the regularization path.*
+**\mbox{Figure~1:}** *Lasso coefficient paths for the extracted audio features as a function of* $\log(\lambda)$. *Each curve shows how one feature’s coefficient is shrunk towards zero as regularization increases (moving to the right). The dashed vertical line marks the AICc-selected value of* $\lambda$ *(segment* `seg18`, $\lambda \approx 0.163$*), at which only a small subset of predictors remains non-zero ($\mathrm{df}=6$ including the intercept). The numbers on top indicate the number of active (non-zero) coefficients along the regularization path.*
 
 ```{r, include=FALSE}
 s <- summary(fit_path)
@@ -431,10 +431,10 @@ cv <- cv.gamlr(x_train, y_train)
 ```
 
 ```{r, echo=FALSE}
-# Optional:
+# optional
 plot(cv)
 ```
-**Figure 2:** *K-fold cross-validation (CV) curve for the Lasso model.* The points show the mean squared prediction error (MSE) across folds for each value of $\log(\lambda)$, with vertical bars indicating $\pm 1$ standard error. The dotted vertical lines mark $\lambda_{\min}$ (minimum CV error) and $\lambda_{1se}$ (largest $\lambda$ within one standard error of the minimum). Numbers at the top indicate the number of active (non-zero) coefficients at each $\lambda$.
+**\mbox{Figure~2:}** *K-fold cross-validation (CV) curve for the Lasso model.* The points show the mean squared prediction error (MSE) across folds for each value of $\log(\lambda)$, with vertical bars indicating $\pm 1$ standard error. The dotted vertical lines mark $\lambda_{\min}$ (minimum CV error) and $\lambda_{1se}$ (largest $\lambda$ within one standard error of the minimum). Numbers at the top indicate the number of active (non-zero) coefficients at each $\lambda$.
 
 ```{r, include=FALSE}
 i_min <- cv$seg.min
@@ -538,6 +538,7 @@ Across both AICc-selection and CV-($\lambda_{\min}$), the model consistently sel
 
 
 #Task 2
+
 
 ### Exploratory Data Analysis
 
@@ -689,7 +690,7 @@ plot_2d_scatter <- function(data, x_var, y_var, color_var = NULL, trendline = FA
     r2_lin  <- round(summary(m_lin)$r.squared, 3)
     r2_quad <- round(summary(m_quad)$r.squared, 3)
     
-    r2_info <- paste0("\nLinear R² (Red): ", r2_lin, " | Quadratic R² (Blue): ", r2_quad)
+    r2_info <- paste0("\nLinear R² (Red): ", r2_lin, " | Quadratic R² (Green): ", r2_quad)
     
     # Linien zum Plot hinzufügen
     p <- p + 
@@ -819,7 +820,7 @@ Exceptions include the structural variables $Lap Distance$ and $Temperature$, wh
 
 #### Bivariate Exploration
 
-We continiue, by screening the dataset for pronounced correlations between variables.
+We continue, by screening the dataset for pronounced correlations between variables.
 
 ```{r}
 #check for correlations between features
