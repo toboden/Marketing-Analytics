@@ -40,7 +40,7 @@ knitr::opts_chunk$set(
 # song data: to save storage in GitHub we did not upload the songdata. Therefore,
 # please download the data and use your own filepath to the data. 
 
-# --> Add absolute paths in line 38 (to venv), 50 (where your song files are),
+# --> Add absolute paths in line 48 (to venv), 56 (where your song files are),
 
 # The feature extraction is commented out for better performance -> uncomment for replication!
 ##############################
@@ -57,7 +57,7 @@ import openpyxl
 import os
 import unicodedata
 
-audio_dir = '/Users/philippgrunenberg/Downloads/download'
+audio_dir = 'path_to_audio_dir'
 audio_features_dir = '../data/audio_features.xlsx'
 ranked_songs_dir = '../data/Songs mit Ranking_100 Songs.xlsx'
 
@@ -102,8 +102,8 @@ def rename_files(file_list, track_table):
           print(f'Error: could not rename {match} to {new_name}')
           
             
-    print(f'renamed {renamed} files.')
-    print(f'did not rename {len(file_list)} files: ')
+    #print(f'renamed {renamed} files.')
+    #print(f'did not rename {len(file_list)} files: ')
     for file in file_list:
       print(file)
 ```
@@ -118,11 +118,11 @@ rename_files(os.listdir(audio_dir), track_table)
 ### Data preparation
 
 Before starting with the feature extraction we need to prepare the data.
-For this we to match each entry of ranked-songs Excel to a song file. Then the song file is renamed consistently and unambiguously. The goal is to create uniform, machine-readable filenames that encode artist name, track title, and rating value, while being robust to variations in spelling, special characters, and filename conventions. 
+For this we match each entry of the ranked-songs Excel to a song file. Then the song file is renamed consistently and unambiguously. The goal is to create uniform, machine-readable filenames that encode artist name, track title, and rating value, while being robust to variations in spelling, special characters, and filename conventions. 
 
 First, textual normalization is applied to both track titles and artist names. This is done by removing information that is only present in one data format by cutting off the string at the first occurrence of certain special characters: "(", "?", or "/". This decision reflects the assumption that content following these characters often contains remix names, featured artists, or live shows that are not consistently represented across data sources. After truncation, Unicode normalization (NFKD) is used to decompose accented characters, which are then converted to plain ASCII by discarding non-ASCII components. This step ensures that diacritics and special characters do not prevent successful string matching across files originating from different systems or encodings. Finally, leading and trailing whitespace is removed and all text is converted to lowercase to make subsequent comparisons case-insensitive.
 
-Then, we match each entry from the Excel-based ranking table to an existing audio file. For each track, the code first tries to find a match based on the cleaned track title, checking whether the cleaned title is a substring of a cleaned filename. This substring-based matching allows for flexible alignment even if filenames contain additional tokens such as version numbers or formatting differences. If no match is found using the title, the code falls back to matching by artist name, again using the cleaned and normalized form. When matching by artist it could be possible that the wrong data is matched. Therefore we print the matches (when using artist) to manually check if the matching was correct. This makes the code not applicable to any dataset, but only to this one. If neither strategy succeeds, the track is explicitly reported as not found.
+Then, we match each entry from the Excel to an existing audio file. For each track, the code first tries to find a match based on the cleaned track title, checking whether the cleaned title is a substring of a cleaned filename. This substring-based matching allows for flexible alignment even if filenames contain additional tokens such as version numbers or formatting differences. If no match is found using the title, the code falls back to matching by artist name, again using the cleaned and normalized form. If matching by artist happens, it is possible that the wrong data is matched. Therefore we print the matches to manually check if the matching was correct. This makes the code not applicable to any dataset, but only to this one. If neither strategy succeeds, the track is explicitly reported as not found.
 
 Once a match is identified, the file is renamed according to "artist_songName_rating.wav" while using the normalized strings. For the file with no rating an "x" is used instead of the rating. 
 
@@ -275,7 +275,7 @@ All selected coefficients are positive. Within the linear model, this implies th
 Applying the AICc-selected Lasso model (segment **`seg18`**, $\lambda \approx 0.163$) to the unrated 101st song yields a predicted rating of $\hat{y} = 2.498992 \approx 2.50$ stars. Since ratings are defined on a 1–5 scale, we optionally clip predictions to the valid range $[1,5]$; here, the prediction already lies within this interval and remains unchanged.
 
 
-```{r, include = False}
+```{r, include = FALSE}
 library(readxl)
 library(gamlr)
 library(stringr)
