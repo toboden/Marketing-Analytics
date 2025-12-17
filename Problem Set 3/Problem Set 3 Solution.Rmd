@@ -226,7 +226,7 @@ In contrast to the other features RMS reflects the perceived intensity and not h
 
 Chroma features are retained in a reduced form by using only their mean values. Chroma encodes harmonic and tonal information, which influences emotional response and musical preference. However, standard deviation adds relatively little information for rating prediction while increasing dimensionality.
 
-```{r, echo=FALSE}
+```{r, include=FALSE}
 # Benötigte Pakete
 library(readxl)
 library(gamlr)
@@ -274,7 +274,305 @@ cat("Gerundet auf Sterne-Bewertung:", round(value))
 
 ```
 
+### LASSO
 
+After extracting acoustic features for each song, we estimate a predictive model for the song ratings. Since we work with a relatively large set of potentially correlated audio features, we use **Lasso regression** as our main modeling approach. Lasso is a regularized linear regression that adds an **L1 penalty** to the loss function, which shrinks coefficients towards zero and can set some coefficients exactly to zero. This is beneficial in our setting because it (i) reduces the risk of overfitting and (ii) performs **automatic feature selection**, yielding a more interpretable model.
+
+A key modeling decision is the choice of the regularization parameter (\lambda), which controls the strength of shrinkage. We therefore estimate the model along a **regularization path** and select (\lambda) using two approaches discussed in the lecture: **(1) AICc-based selection** and **(2) K-fold cross-validation**. In the following, we document the results for Approach 1 (AICc); Approach 2 is presented afterwards and both approaches are compared.
+
+---
+
+### Approach 1: Lasso with AICc-based model selection
+
+We fit the Lasso across a grid of (\lambda) values and select the model that minimizes the **corrected Akaike Information Criterion (AICc)**. An information criterion balances model fit and model complexity. We use **AICc rather than AIC** because AIC can be optimistic in finite samples, whereas AICc includes a small-sample correction and is therefore more conservative—an important consideration given that we only have **100 rated songs** for training.
+
+#### AICc selection result
+
+For each segment on the regularization path, we compute AICc and choose the model with the smallest value. The minimum is achieved at **segment `seg18`**, corresponding to
+[
+\lambda = 0.162886,\quad \text{df}=6,\quad \text{AICc}=2.338800,\quad R^2=0.152070.
+]
+The AICc profile drops when moving away from the most heavily regularized (nearly empty) model and reaches its minimum at this moderately sparse specification. For smaller (\lambda) (more complex models), AICc increases again, indicating that additional predictors do not compensate for the higher complexity penalty. Hence, AICc favors a parsimonious model.
+
+#### Selected features and coefficients
+
+The AICc-selected model contains an intercept and **five non-zero feature coefficients** (df = 6 includes the intercept). The non-zero coefficients are:
+
+* **Intercept:** (1.36117)
+* **mfcc_2_std:** (0.01982)
+* **mfcc_delta_6_mean:** (22.98834)
+* **mfcc_8_std:** (0.01276)
+* **mfcc_delta_12_mean:** (34.84351)
+* **mfcc_delta_13_mean:** (24.71623)
+
+All selected coefficients are positive. Within the linear model, this implies that higher values of these MFCC-derived descriptors are associated with higher predicted ratings. Coefficient magnitudes should be interpreted with care because features can be on different scales; nevertheless, the signs and the set of selected predictors clearly indicate which acoustic dimensions the model uses. Among the selected predictors, **mfcc_delta_12_mean** has the largest coefficient, suggesting that variation in this delta MFCC component contributes most strongly to the linear predictor under the AICc-selected specification.
+
+#### Prediction for the unknown song
+
+Applying the AICc-selected Lasso model (segment **`seg18`**, (\lambda \approx 0.163)) to the unrated 101st song yields a predicted rating of
+[
+\hat{y} = 2.498992 \approx 2.50 \text{ stars}.
+]
+Since ratings are defined on a 1–5 scale, we optionally clip predictions to the valid range ([1,5]); here, the prediction already lies within this interval and remains unchanged.
+
+
+
+```{r, include = False}
+library(readxl)
+library(gamlr)
+library(stringr)
+library(dplyr)
+
+# -------------------------------------------------------------------
+# 0) Load feature table
+# -------------------------------------------------------------------
+df <- read_excel("../data/audio_features.xlsx")
+
+song <- df[[1]]          
+X <- df[, -1]            
+
+# Quick sanity checks (helpful for debugging/reporting)
+cat("Rows (songs):", nrow(df), "\n")
+cat("Columns (incl. song id):", ncol(df), "\n")
+
+# -------------------------------------------------------------------
+# 1) Data cleaning / preprocessing
+#    - tempo column is sometimes stored as a string like "[114.84375]"
+#    - Excel import may convert numeric columns to character -> enforce numeric
+# -------------------------------------------------------------------
+if ("tempo" %in% names(X)) {
+  X$tempo <- as.numeric(gsub("\\[|\\]", "", as.character(X$tempo)))
+}
+
+# Force all features to numeric (robust against Excel import quirks)
+X <- as.data.frame(lapply(X, function(col) as.numeric(as.character(col))))
+
+# -------------------------------------------------------------------
+# 2) Target construction: extract ratings y from filename
+#    Filenames follow: "..._<rating>.wav" or "..._x.wav" (unknown rating)
+# -------------------------------------------------------------------
+rating_str <- str_match(song, "_([0-9]+(?:\\.[0-9]+)?)\\.wav$")[, 2]
+y <- as.numeric(rating_str)
+y[str_detect(song, "_x\\.wav$")] <- NA  # ensure the unknown song is NA
+
+cat("Train songs (rated):", sum(!is.na(y)), "\n")
+cat("Test songs (unrated):", sum(is.na(y)), "\n")
+
+# Expect exactly one unrated song (the 101st track)
+stopifnot(sum(is.na(y)) == 1)
+
+# -------------------------------------------------------------------
+# 3) Train/test split
+# -------------------------------------------------------------------
+train_idx <- which(!is.na(y))
+test_idx  <- which(is.na(y))
+
+x_train <- as.matrix(X[train_idx, , drop=FALSE])
+y_train <- y[train_idx]
+x_test  <- as.matrix(X[test_idx,  , drop=FALSE])
+```
+
+```{r, echo=FALSE}
+# ---------------------------------------------------------------
+# Approach A: Lasso entlang des Regularisierungspfads + AICc-Wahl
+# ---------------------------------------------------------------
+
+fit_path <- gamlr(x_train, y_train)   # Gaussian loss default
+
+# Optional (nur wenn Sie den Pfad wirklich sehen wollen):
+plot(fit_path)
+
+s <- summary(fit_path)
+
+idx_aicc    <- which.min(s$aicc)
+lambda_aicc <- s$lambda[idx_aicc]
+
+# Predictions (als einfacher Numeric-Vektor)
+pred_aicc <- drop(predict(fit_path, newdata = x_test, lambda = lambda_aicc))
+
+# Koeffizienten am gewählten lambda
+b_mat <- coef(fit_path, lambda = lambda_aicc)   # (p+1) x 1 (sparse)
+b_vec <- drop(b_mat)
+names(b_vec) <- rownames(b_mat)
+
+# Ausgewählte Features (ohne Intercept)
+selected_aicc <- setdiff(names(b_vec)[b_vec != 0], "(Intercept)")
+k_aicc <- length(selected_aicc)
+
+# Nicht-null Koeffizienten (ohne Intercept)
+b_nonzero <- b_vec[selected_aicc]
+
+# (Optional) nach Betrag sortieren, um Wichtigkeit schnell zu sehen:
+# b_nonzero <- b_nonzero[order(abs(b_nonzero), decreasing = TRUE)]
+
+list(
+  lambda_aicc   = lambda_aicc,
+  pred_aicc     = pred_aicc,
+  k_aicc        = k_aicc,
+  selected_aicc = selected_aicc,
+  b_nonzero     = b_nonzero
+)
+```
+
+
+### Approach 2: K-fold cross-validation with (\lambda_{\min}) and 1-SE rule
+
+As a second model selection strategy, we apply **K-fold cross-validation (CV)** to choose the regularization strength (\lambda). CV estimates out-of-sample prediction error by repeatedly training the model on subsets of the data and evaluating it on held-out folds. We report two standard choices:
+
+* **(\lambda_{\min})**: the (\lambda) that yields the **lowest average CV error** (best predictive performance under CV).
+* **(\lambda_{1se})** (1-SE rule): the **largest** (\lambda) whose CV error is still within **one standard error** of the minimum. This rule typically selects a **simpler** model with similar expected predictive performance and improved interpretability.
+
+#### CV selection result
+
+Cross-validation selects
+[
+\lambda_{\min} = 0.2476
+\quad\text{and}\quad
+\lambda_{1se} = 0.3592.
+]
+As expected, (\lambda_{1se}) is larger (stronger regularization), leading to a substantially more parsimonious model.
+
+#### Selected features and coefficients
+
+At **(\lambda_{\min})**, the model retains an intercept and **three** non-zero feature coefficients (**4** non-zero coefficients in total). The selected predictors are:
+
+* **Intercept:** (1.6890)
+* **mfcc_2_std:** (0.0147)
+* **mfcc_delta_6_mean:** (2.2131)
+* **mfcc_delta_12_mean:** (5.4652)
+
+Thus, the CV-optimal model relies on a small subset of MFCC-based descriptors, again indicating that spectral/timbral characteristics are most informative for the rating signal in this linear setup.
+
+In contrast, the **1-SE rule** yields a maximally sparse solution: at **(\lambda_{1se})** the model keeps **only the intercept** (no active feature coefficients). This reflects strong shrinkage and suggests that, under the 1-SE criterion, the additional predictors do not improve expected predictive performance enough to justify the added complexity.
+
+#### Prediction for the unknown song
+
+Applying the cross-validated models to the unrated song gives:
+
+* **CV (\lambda_{\min}):** (\hat{y} = 2.3466 \approx 2.35) stars
+* **CV (\lambda_{1se}):** (\hat{y} = 2.17) stars
+
+The 1-SE prediction equals the intercept-only estimate, i.e., it corresponds to predicting a constant rating for all songs. Both predictions lie within the valid 1–5 rating range, so clipping is not required.
+
+#### Interpretation and comparison
+
+Overall, CV with (\lambda_{\min}) produces a **sparse but non-trivial** model (three features), whereas the 1-SE rule prioritizes **simplicity and stability**, resulting in an intercept-only baseline. This illustrates the practical trade-off between (i) maximizing estimated predictive accuracy ((\lambda_{\min})) and (ii) selecting a more conservative, interpretable model with minimal risk of overfitting ((\lambda_{1se})).
+
+```{r, include=FALSE}
+# -------------------------------------------------------------------
+# Approach B: K-fold cross-validation + 1-SE rule (für dein cv-Objekt)
+# -------------------------------------------------------------------
+set.seed(1)
+cv <- cv.gamlr(x_train, y_train)
+```
+
+```{r, echo=FALSE}
+# Optional:
+plot(cv)
+```
+
+```{r, include=FALSE}
+i_min <- cv$seg.min
+i_1se <- cv$seg.1se
+
+lambda_min <- cv$lambda.min
+lambda_1se <- cv$lambda.1se
+
+# Predictions (bei gamlr: newx verwenden)
+pred_cv_min <- drop(predict(cv$gamlr, newdata = x_test, select = i_min))
+pred_cv_1se <- drop(predict(cv$gamlr, newdata = x_test, select = i_1se))
+
+# Koeffizienten -> benannter Vektor
+coef_to_vec <- function(b_mat) {
+  v <- drop(b_mat)
+  names(v) <- rownames(b_mat)
+  v
+}
+
+b_min_vec <- coef_to_vec(coef(cv$gamlr, select = i_min))
+b_1se_vec <- coef_to_vec(coef(cv$gamlr, select = i_1se))
+
+# Intercept-Name in deinem Output: "intercept"
+intercept_names <- c("(Intercept)", "intercept")
+
+selected_min_all <- names(b_min_vec)[b_min_vec != 0]
+selected_1se_all <- names(b_1se_vec)[b_1se_vec != 0]
+
+selected_min_feat <- setdiff(selected_min_all, intercept_names)
+selected_1se_feat <- setdiff(selected_1se_all, intercept_names)
+
+cv_summary <- list(
+  lambda_min        = lambda_min,
+  lambda_1se        = lambda_1se,
+  pred_cv_min       = pred_cv_min,
+  pred_cv_1se       = pred_cv_1se,
+  k_min_total       = length(selected_min_all),   # inkl. Intercept
+  k_1se_total       = length(selected_1se_all),   # inkl. Intercept
+  k_min_features    = length(selected_min_feat),  # ohne Intercept
+  k_1se_features    = length(selected_1se_feat),  # ohne Intercept
+  selected_min      = selected_min_all,
+  selected_1se      = selected_1se_all,
+  b_min_nonzero     = b_min_vec[selected_min_all],
+  b_1se_nonzero     = b_1se_vec[selected_1se_all]
+)
+
+cv_summary
+
+```
+
+## Limitations and potential improvements
+
+### Limitations
+
+1. **Very small sample size and noisy target.**
+   We only have 100 labeled songs and a single subjective rating per song. Individual star ratings are inherently noisy (mood, context, familiarity), which makes the signal-to-noise ratio low. This is also reflected by the fact that cross-validation with the 1-SE rule selects an intercept-only model, indicating that the predictive signal in the current feature set is weak relative to the noise.
+
+2. **Rating scale is bounded and ordinal, but modeled as continuous Gaussian.**
+   We treat the 1–5 star ratings as a continuous outcome in a linear regression. In reality, the scale is **bounded** and arguably **ordinal**. This can yield predictions outside ([1,5]) (even if it did not happen here) and the linear loss does not reflect that “distance” between stars may not be perceived uniformly.
+
+3. **Strong modeling assumptions: linearity and additivity.**
+   Lasso in a linear model assumes that effects are additive and linear in the extracted features. Musical preferences can be highly **nonlinear** (e.g., liking high tempo only when timbre is “soft”, or liking brightness only for specific harmonic content), and interactions are not captured by the current specification.
+
+4. **Feature representation is heavily aggregated and may miss structure.**
+   We summarize each track mostly by means/standard deviations. This discards information about **song structure** (verse/chorus changes), **drops**, **build-ups**, **rhythmic patterns**, and **long-range dynamics**, which can strongly shape preference.
+
+5. **Feature interpretability is limited (MFCCs).**
+   MFCC-based features are effective for audio characterization, but individual MFCC indices are not directly interpretable as “bass”, “brightness”, etc. Hence, conclusions about *why* the person likes something remain tentative.
+
+---
+
+### Potential improvements
+
+1. **Stability and robustness of selected features.**
+   Lasso feature selection can be unstable under correlated predictors. A good improvement is to perform **stability selection / bootstrap**: re-fit the model many times on resampled data and report how frequently each feature is selected. This directly addresses the question whether the “chosen features” are robust or just artifacts of one sample split.
+
+2. **Better treatment of the rating scale.**
+   Options include:
+
+   * **Clipping** predictions to ([1,5]) systematically (simple fix).
+   * Modeling ratings as **ordinal** (ordered logit/probit with regularization), or as **classification** (e.g., 5 classes) if the goal is the star category rather than a real-valued score.
+
+3. **Nonlinearities and interactions.**
+   Still keeping the “regularized modeling” idea, one could:
+
+   * add **interaction terms** (e.g., tempo × brightness proxies) and let Lasso select among them, or
+   * switch to models that capture nonlinearities (e.g., kernel methods or tree-based models) as a robustness check—while keeping Lasso as the mandated baseline.
+
+
+---
+
+## What can we learn about the individual’s preferences from the selected features?
+
+Across both AICc-selection and CV-(\lambda_{\min}), the model consistently selects **MFCC-derived features**, especially **MFCC standard deviations** and **delta-MFCC means**. Interpreted cautiously, this suggests:
+
+1. **Preference signal seems driven by timbral texture and timbral dynamics**, not by tempo or harmony.
+   The model did *not* robustly select tempo, RMS, or chroma features. That indicates that—within this linear and aggregated setup—differences in *“how the song sounds”* (spectral envelope/texture) are more predictive than *“how fast it is”* or *“which harmonies it uses”*.
+
+2. **Positive coefficients on delta-MFCC features hint at liking “movement” in sound.**
+   Delta MFCCs capture **changes in timbre over time** (on the short-time scale). Positive weights can be read as: songs with more evolving texture/articulation (e.g., clearer transients, more modulation, less static sound) tend to receive higher ratings—*in the model’s linear approximation*.
+
+3. **However, the preference interpretation is not fully reliable yet.**
+   Because (i) MFCC components are only indirectly interpretable, (ii) features are correlated, and (iii) selection can be unstable with (n=100), we should treat these as **hypotheses** about taste rather than firm psychological conclusions. A stability-selection analysis would tell us whether “MFCC deltas” are consistently selected and thus represent a genuine preference dimension.
 
 
 #Task 2
