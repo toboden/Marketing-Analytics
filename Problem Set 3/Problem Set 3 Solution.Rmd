@@ -1045,7 +1045,7 @@ Finally, the calibrated model is deployed to determine the optimal vehicle confi
 ### Optimization
 
 Vehicle parameters are optimized while treating track features as fixed constants specific to the France circuit.
-We employ the L-BFGS algorithm, a quasi-Newton method designed for unconstrained non-linear optimization tasks.
+We employ the L-BFGS algorithm, a quasi-Newton method designed for non-linear optimization tasks.
 
 ```{r, echo=FALSE}
 france_conditions <- data.frame(
@@ -1087,7 +1087,7 @@ predict_lap_time_wrapper <- function(x) {
   X_df <- as.data.frame(as.matrix(X_matrix))
   colnames(X_df) <- make.names(colnames(X_df))
   
-  prediction <- predict(final_ols, newdata = X_df)
+  prediction <- predict(final_clean, newdata = X_df)
   
   return(as.numeric(prediction))
 }
