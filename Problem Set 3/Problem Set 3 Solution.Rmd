@@ -848,10 +848,8 @@ An extremely high correlation exceeding $0.99$ is noted but deferred for later a
 While we observe numerous high correlations, none involve $Lap Time$; instead and all include at least one car feature.
 Therefore, the interpretation regarding the influence on $Lap Time$ is uninteresting, but it reveals that assumptions concerning the interplay between conditions and car features were already established during the simulation.
 
-```
-An examination of correlations between the target, $Lap Time$, and car features reveals only minor associations, with $Engine$ displaying the largest absolute coefficient.
+<!-- An examination of correlations between the target, $Lap Time$, and car features reveals only minor associations, with $Engine$ displaying the largest absolute coefficient.  -->
 
-```
 
 ```{r, echo=FALSE}
 cor(simulator_data[car_features], simulator_data[target])
@@ -887,9 +885,8 @@ Specifically, $Engine$ and $Differential$ exhibit clear positive associations wi
 ```{r, echo=FALSE}
 cor(simulator_data[car_features], simulator_data['lap_time_adjusted'])
 ```
-```
-Spearman rank correlations were computed to capture general monotonic dependencies, extending the analysis beyond linear associations.
-```
+
+<!-- Spearman rank correlations were computed to capture general monotonic dependencies, extending the analysis beyond linear associations. -->
 
 ```{r, echo=FALSE}
 cor(simulator_data[setdiff(condition_features, "Lap Distance")], simulator_data['lap_time_adjusted'], method='spearman')
@@ -898,10 +895,8 @@ cor(simulator_data[setdiff(condition_features, "Lap Distance")], simulator_data[
 ```{r, echo=FALSE}
 cor(simulator_data[car_features], simulator_data['lap_time_adjusted'], method='spearman')
 ```
-```
-While coefficients for condition features remain largely unchanged, those for $Engine$ and $Differential$ increase significantly, providing evidence of non-linear monotonic relationships.
-```
 
+<!-- While coefficients for condition features remain largely unchanged, those for $Engine$ and $Differential$ increase significantly, providing evidence of non-linear monotonic relationships. -->
 Scatter plots are utilized to further investigate the relationships involving $Engine$ and $Differential$.
 
 ```{r}
