@@ -1,0 +1,1232 @@
+---
+title: "Problem Set III Solution"
+author: 
+  - "Tobias Bodentien"
+  - "Philipp Grunenberg"
+  - "Alexander Haas"
+  - "Osama Warshagha"
+date: "`r format(Sys.Date(), '%d-%m-%Y')`"
+
+output:
+  pdf_document:
+    latex_engine: xelatex
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.height = 4     # Höhe in Inches
+)
+```
+
+
+#Task 1
+
+### Data preparation
+
+Before starting with the feature extraction we need to prepare the data.
+For this we match each entry of the ranked-songs Excel to a song file. Then the song file is renamed consistently and unambiguously. The goal is to create uniform, machine-readable filenames that encode artist name, track title, and rating value, while being robust to variations in spelling, special characters, and filename conventions. 
+
+First, textual normalization is applied to both track titles and artist names. This is done by removing information that is only present in one data format by cutting off the string at the first occurrence of certain special characters: "(", "?", or "/". This decision reflects the assumption that content following these characters often contains remix names, featured artists, or live shows that are not consistently represented across data sources. After truncation, Unicode normalization (NFKD) is used to decompose accented characters, which are then converted to plain ASCII by discarding non-ASCII components. This step ensures that diacritics and special characters do not prevent successful string matching across files originating from different systems or encodings. Finally, leading and trailing whitespace is removed and all text is converted to lowercase to make subsequent comparisons case-insensitive.
+
+Then, we match each entry from the Excel to an existing audio file. For each track, the code first tries to find a match based on the cleaned track title, checking whether the cleaned title is a substring of a cleaned filename. This substring-based matching allows for flexible alignment even if filenames contain additional tokens such as version numbers or formatting differences. If no match is found using the title, the code falls back to matching by artist name, again using the cleaned and normalized form. If matching by artist happens, it is possible that the wrong data is matched. Therefore we print the matches to manually check if the matching was correct. This makes the code not applicable to any dataset, but only to this one. If neither strategy succeeds, the track is explicitly reported as not found.
+
+Once a match is identified, the file is renamed according to "artist_songName_rating.wav" while using the normalized strings. For the file with no rating an "x" is used instead of the rating. 
+
+
+### Feature extraction
+The goal is to predict a subjective star rating assigned by a person to a song. In practice, listeners tend to judge music based on timbre, energy, rhythm, harmony, and dynamics, not on individual frames or raw waveforms. For this reason, the feature pipeline is designed to extract robust, perceptually meaningful features and to aggregate them over time.
+
+Preprocessing: All audio is resampled to a fixed sample rate and converted to mono to ensure comparability across songs and to avoid technical differences influencing the rating prediction. Stereo information rarely adds value for subjective ratings, while inconsistent sampling rates can bias spectral features. 
+Loudness normalization is applied to prevent differences in recording level from dominating features such as RMS energy, MFCCs, or spectral descriptors. Human listeners do not rate songs linearly by loudness, so this normalization helps align the features with perceptual judgments.
+Removing silence is also important. Intros and outros often contain quiet or silent segments that do not contribute to how a song is perceived. Trimming silence ensures that extracted features reflect the musical content itself and is supposed to improve the reliability of tempo, energy, and timbral features.
+
+Features:
+MFCCs are included because they capture timbre and overall sound character, which strongly influence how pleasing or well-produced a song feels. They are a well-established and robust representation of perceptual sound qualities. In addition to static MFCCs, delta MFCCs are used to capture temporal changes in timbre, which relate to perceived dynamics and variation. Songs with evolving textures are often rated differently from static or monotonous ones.
+
+Spectral features such as spectral centroid, bandwidth, rolloff, and flatness are included to describe brightness, sharpness, noisiness, and frequency distribution. These properties correlate with genre preferences, and perceived aggressiveness or softness, all of which can strongly affect subjective ratings. 
+
+In contrast to the other features RMS reflects the perceived intensity and not how something feels like. Zero-crossing rate provides a measure of the texture (soft <-> rough). Tempo captures an important emotional dimension, distinguishing calm tracks from energetic or danceable ones.
+
+Chroma features are retained in a reduced form by using only their mean values. Chroma encodes harmonic and tonal information, which influences emotional response and musical preference. However, standard deviation adds relatively little information for rating prediction while increasing dimensionality.
+
+### LASSO
+
+After extracting acoustic features for each song, we estimate a predictive model for the song ratings. Since we work with a relatively large set of potentially correlated audio features, we use **Lasso regression** as our main modeling approach. Lasso is a regularized linear regression that adds an **L1 penalty** to the loss function, which shrinks coefficients towards zero and can set some coefficients exactly to zero. This is beneficial in our setting because it (i) reduces the risk of overfitting and (ii) performs **automatic feature selection**, yielding a more interpretable model.
+
+A key modeling decision is the choice of the regularization parameter $\lambda$, which controls the strength of shrinkage. We therefore estimate the model along a **regularization path** and select $\lambda$ using two approaches discussed in the lecture: **(1) AICc-based selection** and **(2) K-fold cross-validation**. In the following, we document the results for Approach 1 (AICc); Approach 2 is presented afterwards and both approaches are compared.
+
+#### Approach 1: Lasso with AICc-based model selection
+
+We fit the Lasso across a grid of $\lambda$ values and select the model that minimizes the **corrected Akaike Information Criterion (AICc)**. An information criterion balances model fit and model complexity. We use **AICc rather than AIC** because AIC can be optimistic in finite samples, whereas AICc includes a small-sample correction and is therefore more conservative—an important consideration given that we only have **100 rated songs** for training.
+
+**AICc selection result**
+
+For each segment on the regularization path, we compute AICc and choose the model with the smallest value. The minimum is achieved at **segment `seg18`**, corresponding to
+
+$$
+\lambda = 0.162886,\quad \mathrm{df}=6,\quad \mathrm{AICc}=2.338800,\quad R^2=0.152070.
+$$
+
+The AICc profile drops when moving away from the most heavily regularized (nearly empty) model and reaches its minimum at this moderately sparse specification. For smaller $\lambda$ (more complex models), AICc increases again, indicating that additional predictors do not compensate for the higher complexity penalty. Hence, AICc favors a parsimonious model.
+
+**Figure 1** visualizes the Lasso regularization path, showing the estimated coefficients as a function of $\log(\lambda)$. For large $\lambda$ (right side), the penalty is strong and essentially all coefficients are shrunk to zero, corresponding to a very simple (nearly intercept-only) model. Moving left (smaller $\lambda$) reduces shrinkage and more predictors enter the model, as reflected by the increasing number of active coefficients shown above the plot. The dashed vertical line highlights the AICc-optimal $\lambda$ (segment `seg18`, $\lambda \approx 0.163$), which lies in a moderately sparse region of the path: only a few MFCC-based coefficients remain non-zero, while many others are already shrunk to zero. This illustrates why AICc favors a parsimonious specification—additional predictors become active for smaller $\lambda$, but the implied increase in model complexity is not sufficiently compensated by improved fit.
+
+**Selected features and coefficients**
+
+The AICc-selected model contains an intercept and **five non-zero feature coefficients** ($\mathrm{df}=6$ includes the intercept). The non-zero coefficients are:
+
+* **Intercept:** $(1.36117)$
+* **mfcc_2_std:** $(0.01982)$
+* **mfcc_delta_6_mean:** $(22.98834)$
+* **mfcc_8_std:** $(0.01276)$
+* **mfcc_delta_12_mean:** $(34.84351)$
+* **mfcc_delta_13_mean:** $(24.71623)$
+
+All selected coefficients are positive. Within the linear model, this implies that higher values of these MFCC-derived descriptors are associated with higher predicted ratings. Coefficient magnitudes should be interpreted with care because features can be on different scales; nevertheless, the signs and the set of selected predictors clearly indicate which acoustic dimensions the model uses. Among the selected predictors, **mfcc_delta_12_mean** has the largest coefficient, suggesting that variation in this delta MFCC component contributes most strongly to the linear predictor under the AICc-selected specification.
+
+**Prediction for the unknown song**
+
+Applying the AICc-selected Lasso model (segment **`seg18`**, $\lambda \approx 0.163$) to the unrated 101st song yields a predicted rating of $\hat{y} = 2.498992 \approx 2.50$ stars. Since ratings are defined on a 1–5 scale, we optionally clip predictions to the valid range $[1,5]$; here, the prediction already lies within this interval and remains unchanged.
+
+
+```{r, include = FALSE}
+library(readxl)
+library(gamlr)
+library(stringr)
+library(dplyr)
+
+# -------------------------------------------------------------------
+# 0) Load feature table
+# -------------------------------------------------------------------
+df <- read_excel("../data/audio_features.xlsx")
+
+song <- df[[1]]          
+X <- df[, -1]            
+
+# Quick sanity checks (helpful for debugging/reporting)
+cat("Rows (songs):", nrow(df), "\n")
+cat("Columns (incl. song id):", ncol(df), "\n")
+
+# -------------------------------------------------------------------
+# 1) Data cleaning / preprocessing
+#    - tempo column is sometimes stored as a string like "[114.84375]"
+#    - Excel import may convert numeric columns to character -> enforce numeric
+# -------------------------------------------------------------------
+if ("tempo" %in% names(X)) {
+  X$tempo <- as.numeric(gsub("\\[|\\]", "", as.character(X$tempo)))
+}
+
+# Force all features to numeric (robust against Excel import quirks)
+X <- as.data.frame(lapply(X, function(col) as.numeric(as.character(col))))
+
+# -------------------------------------------------------------------
+# 2) Target construction: extract ratings y from filename
+#    Filenames follow: "..._<rating>.wav" or "..._x.wav" (unknown rating)
+# -------------------------------------------------------------------
+rating_str <- str_match(song, "_([0-9]+(?:\\.[0-9]+)?)\\.wav$")[, 2]
+y <- as.numeric(rating_str)
+y[str_detect(song, "_x\\.wav$")] <- NA  # ensure the unknown song is NA
+
+cat("Train songs (rated):", sum(!is.na(y)), "\n")
+cat("Test songs (unrated):", sum(is.na(y)), "\n")
+
+# Expect exactly one unrated song (the 101st track)
+stopifnot(sum(is.na(y)) == 1)
+
+# -------------------------------------------------------------------
+# 3) Train/test split
+# -------------------------------------------------------------------
+train_idx <- which(!is.na(y))
+test_idx  <- which(is.na(y))
+
+x_train <- as.matrix(X[train_idx, , drop=FALSE])
+y_train <- y[train_idx]
+x_test  <- as.matrix(X[test_idx,  , drop=FALSE])
+```
+
+```{r, include=FALSE}
+# ---------------------------------------------------------------
+# Approach A: Lasso entlang des Regularisierungspfads + AICc-Wahl
+# ---------------------------------------------------------------
+
+fit_path <- gamlr(x_train, y_train)   # Gaussian loss default
+```
+
+```{r, echo=FALSE}
+plot(fit_path)
+```
+**\mbox{Figure~1:}** *Lasso coefficient paths for the extracted audio features as a function of* $\log(\lambda)$. *Each curve shows how one feature’s coefficient is shrunk towards zero as regularization increases (moving to the right). The dashed vertical line marks the AICc-selected value of* $\lambda$ *(segment* `seg18`, $\lambda \approx 0.163$*), at which only a small subset of predictors remains non-zero ($\mathrm{df}=6$ including the intercept). The numbers on top indicate the number of active (non-zero) coefficients along the regularization path.*
+
+```{r, include=FALSE}
+s <- summary(fit_path)
+
+idx_aicc    <- which.min(s$aicc)
+lambda_aicc <- s$lambda[idx_aicc]
+
+# Predictions (als einfacher Numeric-Vektor)
+pred_aicc <- drop(predict(fit_path, newdata = x_test, lambda = lambda_aicc))
+
+# Koeffizienten am gewählten lambda
+b_mat <- coef(fit_path, lambda = lambda_aicc)   # (p+1) x 1 (sparse)
+b_vec <- drop(b_mat)
+names(b_vec) <- rownames(b_mat)
+
+# Ausgewählte Features (ohne Intercept)
+selected_aicc <- setdiff(names(b_vec)[b_vec != 0], "(Intercept)")
+k_aicc <- length(selected_aicc)
+
+# Nicht-null Koeffizienten (ohne Intercept)
+b_nonzero <- b_vec[selected_aicc]
+
+# (Optional) nach Betrag sortieren, um Wichtigkeit schnell zu sehen:
+# b_nonzero <- b_nonzero[order(abs(b_nonzero), decreasing = TRUE)]
+
+list(
+  lambda_aicc   = lambda_aicc,
+  pred_aicc     = pred_aicc,
+  k_aicc        = k_aicc,
+  selected_aicc = selected_aicc,
+  b_nonzero     = b_nonzero
+)
+```
+
+#### Approach 2: K-fold cross-validation with $\lambda_{\min}$ and 1-SE rule
+
+As a second model selection strategy, we apply **K-fold cross-validation (CV)** to choose the regularization strength $\lambda$. CV estimates out-of-sample prediction error by repeatedly training the model on subsets of the data and evaluating it on held-out folds. We report two standard choices:
+
+* **$\lambda_{\min}$**: the $\lambda$ that yields the **lowest average CV error** (best predictive performance under CV).
+* **$\lambda_{1se}$** (1-SE rule): the **largest** $\lambda$ whose CV error is still within **one standard error** of the minimum. This rule typically selects a **simpler** model with similar expected predictive performance and improved interpretability.
+
+**CV selection result**
+
+Cross-validation selects
+
+$$
+\lambda_{\min} = 0.2476
+\quad\text{and}\quad
+\lambda_{1se} = 0.3592.
+$$
+
+As expected, $\lambda_{1se}$ is larger (stronger regularization), leading to a substantially more parsimonious model. **Figure 2** visualizes this trade-off: the CV error curve is relatively flat around its minimum, so moving from $\lambda_{\min}$ to the larger $\lambda_{1se}$ increases regularization while keeping the expected prediction error within one standard error. The numbers at the top of Figure 2 also show that the model becomes much sparser as $\lambda$ increases, reflecting stronger shrinkage and fewer active coefficients.
+
+**Selected features and coefficients**
+
+At **$\lambda_{\min}$**, the model retains an intercept and **three** non-zero feature coefficients (**4** non-zero coefficients in total). The selected predictors are:
+
+* **Intercept:** $(1.6890)$
+* **mfcc_2_std:** $(0.0147)$
+* **mfcc_delta_6_mean:** $(2.2131)$
+* **mfcc_delta_12_mean:** $(5.4652)$
+
+Thus, the CV-optimal model relies on a small subset of MFCC-based descriptors, again indicating that spectral/timbral characteristics are most informative for the rating signal in this linear setup.
+
+In contrast, the **1-SE rule** yields a maximally sparse solution: at **$\lambda_{1se}$** the model keeps **only the intercept** (no active feature coefficients). This reflects strong shrinkage and suggests that, under the 1-SE criterion, the additional predictors do not improve expected predictive performance enough to justify the added complexity.
+
+**Prediction for the unknown song**
+
+Applying the cross-validated models to the unrated song gives:
+
+* **CV ($\lambda_{\min}$):** $\hat{y} = 2.3466 \approx 2.35$ stars
+* **CV ($\lambda_{1se}$):** $\hat{y} = 2.17$ stars
+
+The 1-SE prediction equals the intercept-only estimate, i.e., it corresponds to predicting a constant rating for all songs. Both predictions lie within the valid $1$–$5$ rating range, so clipping is not required.
+
+**Interpretation and comparison**
+
+Overall, CV with $\lambda_{\min}$ produces a **sparse but non-trivial** model (three features), whereas the 1-SE rule prioritizes **simplicity and stability**, resulting in an intercept-only baseline. This illustrates the practical trade-off between (i) maximizing estimated predictive accuracy ($\lambda_{\min}$) and (ii) selecting a more conservative, interpretable model with minimal risk of overfitting ($\lambda_{1se}$).
+
+
+```{r, include=FALSE}
+# -------------------------------------------------------------------
+# Approach B: K-fold cross-validation + 1-SE rule (für dein cv-Objekt)
+# -------------------------------------------------------------------
+set.seed(1)
+cv <- cv.gamlr(x_train, y_train)
+```
+
+```{r, echo=FALSE}
+# optional
+plot(cv)
+```
+**\mbox{Figure~2:}** *K-fold cross-validation (CV) curve for the Lasso model.* The points show the mean squared prediction error (MSE) across folds for each value of $\log(\lambda)$, with vertical bars indicating $\pm 1$ standard error. The dotted vertical lines mark $\lambda_{\min}$ (minimum CV error) and $\lambda_{1se}$ (largest $\lambda$ within one standard error of the minimum). Numbers at the top indicate the number of active (non-zero) coefficients at each $\lambda$.
+
+```{r, include=FALSE}
+i_min <- cv$seg.min
+i_1se <- cv$seg.1se
+
+lambda_min <- cv$lambda.min
+lambda_1se <- cv$lambda.1se
+
+# Predictions (bei gamlr: newx verwenden)
+pred_cv_min <- drop(predict(cv$gamlr, newdata = x_test, select = i_min))
+pred_cv_1se <- drop(predict(cv$gamlr, newdata = x_test, select = i_1se))
+
+# Koeffizienten -> benannter Vektor
+coef_to_vec <- function(b_mat) {
+  v <- drop(b_mat)
+  names(v) <- rownames(b_mat)
+  v
+}
+
+b_min_vec <- coef_to_vec(coef(cv$gamlr, select = i_min))
+b_1se_vec <- coef_to_vec(coef(cv$gamlr, select = i_1se))
+
+# Intercept-Name in deinem Output: "intercept"
+intercept_names <- c("(Intercept)", "intercept")
+
+selected_min_all <- names(b_min_vec)[b_min_vec != 0]
+selected_1se_all <- names(b_1se_vec)[b_1se_vec != 0]
+
+selected_min_feat <- setdiff(selected_min_all, intercept_names)
+selected_1se_feat <- setdiff(selected_1se_all, intercept_names)
+
+cv_summary <- list(
+  lambda_min        = lambda_min,
+  lambda_1se        = lambda_1se,
+  pred_cv_min       = pred_cv_min,
+  pred_cv_1se       = pred_cv_1se,
+  k_min_total       = length(selected_min_all),   # inkl. Intercept
+  k_1se_total       = length(selected_1se_all),   # inkl. Intercept
+  k_min_features    = length(selected_min_feat),  # ohne Intercept
+  k_1se_features    = length(selected_1se_feat),  # ohne Intercept
+  selected_min      = selected_min_all,
+  selected_1se      = selected_1se_all,
+  b_min_nonzero     = b_min_vec[selected_min_all],
+  b_1se_nonzero     = b_1se_vec[selected_1se_all]
+)
+
+cv_summary
+
+```
+
+## Limitations and potential improvements
+
+### Limitations
+
+1. **Very small sample size and noisy target.**
+   We only have 100 labeled songs and a single subjective rating per song. Individual star ratings are inherently noisy (mood, context, familiarity), which makes the signal-to-noise ratio low. This is also reflected by the fact that cross-validation with the 1-SE rule selects an intercept-only model, indicating that the predictive signal in the current feature set is weak relative to the noise.
+
+2. **Rating scale is bounded and ordinal, but modeled as continuous Gaussian.**
+   We treat the 1–5 star ratings as a continuous outcome in a linear regression. In reality, the scale is **bounded** and arguably **ordinal**. This can yield predictions outside ([1,5]) (even if it did not happen here) and the linear loss does not reflect that “distance” between stars may not be perceived uniformly.
+
+3. **Strong modeling assumptions: linearity and additivity.**
+   Lasso in a linear model assumes that effects are additive and linear in the extracted features. Musical preferences can be highly **nonlinear** (e.g., liking high tempo only when timbre is “soft”, or liking brightness only for specific harmonic content), and interactions are not captured by the current specification.
+
+4. **Feature representation is heavily aggregated and may miss structure.**
+   We summarize each track mostly by means/standard deviations. This discards information about **song structure** (verse/chorus changes), **drops**, **build-ups**, **rhythmic patterns**, and **long-range dynamics**, which can strongly shape preference.
+
+5. **Feature interpretability is limited (MFCCs).**
+   MFCC-based features are effective for audio characterization, but individual MFCC indices are not directly interpretable as “bass”, “brightness”, etc. Hence, conclusions about *why* the person likes something remain tentative.
+
+
+### Potential improvements
+
+1. **Stability and robustness of selected features.**
+   Lasso feature selection can be unstable under correlated predictors. A good improvement is to perform **stability selection / bootstrap**: re-fit the model many times on resampled data and report how frequently each feature is selected. This directly addresses the question whether the “chosen features” are robust or just artifacts of one sample split.
+
+2. **Better treatment of the rating scale.**
+   Options include:
+
+   * **Clipping** predictions to ([1,5]) systematically (simple fix).
+   * Modeling ratings as **ordinal** (ordered logit/probit with regularization), or as **classification** (e.g., 5 classes) if the goal is the star category rather than a real-valued score.
+
+3. **Nonlinearities and interactions.**
+   Still keeping the “regularized modeling” idea, one could:
+
+   * add **interaction terms** (e.g., tempo × brightness proxies) and let Lasso select among them, or
+   * switch to models that capture nonlinearities (e.g., kernel methods or tree-based models) as a robustness check—while keeping Lasso as the mandated baseline.
+
+
+## What can we learn about the individual’s preferences from the selected features?
+
+Across both AICc-selection and CV-($\lambda_{\min}$), the model consistently selects **MFCC-derived features**, especially **MFCC standard deviations** and **delta-MFCC means**. Interpreted cautiously, this suggests:
+
+1. **Preference signal seems driven by timbral texture and timbral dynamics**, not by tempo or harmony.
+   The model did *not* robustly select tempo, RMS, or chroma features. That indicates that—within this linear and aggregated setup—differences in *“how the song sounds”* (spectral envelope/texture) are more predictive than *“how fast it is”* or *“which harmonies it uses”*.
+
+2. **Positive coefficients on delta-MFCC features hint at liking “movement” in sound.**
+   Delta MFCCs capture **changes in timbre over time** (on the short-time scale). Positive weights can be read as: songs with more evolving texture/articulation (e.g., clearer transients, more modulation, less static sound) tend to receive higher ratings—*in the model’s linear approximation*.
+
+3. **However, the preference interpretation is not fully reliable yet.**
+   Because (i) MFCC components are only indirectly interpretable, (ii) features are correlated, and (iii) selection can be unstable with (n=100), we should treat these as **hypotheses** about taste rather than firm psychological conclusions. A stability-selection analysis would tell us whether “MFCC deltas” are consistently selected and thus represent a genuine preference dimension.
+
+
+#Task 2
+
+
+### Exploratory Data Analysis
+
+#### Univariate Exploration
+
+```{r, echo = FALSE}
+library(dplyr)
+library(readr)
+library(tidyr)
+library(ggplot2)
+
+#load the data
+simulator_data <- read_csv("../data/simulator_data.csv")
+
+target = c("Lap Time")
+car_features <- c(
+  "Rear Wing", 
+  "Engine", 
+  "Front Wing", 
+  "Brake Balance", 
+  "Differential", 
+  "Suspension"
+)
+condition_features <- c(
+  "Lap Distance", 
+  "Cornering", 
+  "Inclines", 
+  "Camber",       
+  "Grip",         
+  "Wind (Avg. Speed)", 
+  "Temperature", 
+  "Humidity", 
+  "Air Density", 
+  "Air Pressure", 
+  "Wind (Gusts)", 
+  "Altitude", 
+  "Roughness",    
+  "Width"
+)
+
+#check for NA
+simulator_data %>%
+  summarise(across(everything(), ~ sum(is.na(.)))) %>%
+  pivot_longer(everything(), names_to = "Spalte", values_to = "Anzahl_NAs") %>%
+  filter(Anzahl_NAs > 0)
+
+#View summary statistics
+#summary(simulator_data)
+
+#check for hidden categorical variables
+possible_categoricals <- simulator_data %>%
+  summarise(across(everything(), n_distinct)) %>%
+  pivot_longer(everything(), names_to = "Variable", values_to = "Unique_Values") %>%
+  filter(Unique_Values < 100) %>% # Zeige nur Spalten mit wenigen Ausprägungen
+  arrange(Unique_Values)
+
+#print(possible_categoricals)
+```
+
+Variables were categorized into track conditions (exogenous) and car features (actionable).
+The dataset exhibits no missing values.
+All variables fall within expected bounds, conditions range within $[1, 100]$ (excluding $Lap Distance$ and $Temperature$) and features within $[1, 500]$ rendering outlier removal and imputation unnecessary.
+$Lap Distance$ contains 23 distinct values identifying the simulated tracks, while the 41 unique $Temperature$ observations reflect realistic meteorological variance.
+
+```{r, echo = FALSE}
+# theme for plots
+theme_fontsize <- theme(
+  plot.title = element_text(size = 14),
+  plot.subtitle = element_text(size = 10),
+  axis.title = element_text(size = 12),
+  axis.text = element_text(size = 11),
+  legend.text = element_text(size = 11),
+)
+
+
+create_histogram <- function(data, column) {
+  
+  column_mean <- mean(data[[column]], na.rm = TRUE)
+  
+  ggplot(data, aes(x = .data[[column]])) + 
+    
+    geom_histogram(aes(y = after_stat(density)), 
+                   bins = 40, 
+                   fill = "#69b3a2",   
+                   color = "white",    
+                   alpha = 0.7) +      
+    
+    geom_density(color = "#404080", linewidth = 1, fill="#404080", alpha=0.1) +
+    
+    geom_vline(xintercept = column_mean, 
+               color = "darkred", linetype = "dashed", linewidth = 1) +
+    
+    annotate("text", x = column_mean, y = 0.01, 
+             label = paste("Mean:", round(column_mean, 2)), 
+             color = "darkred", angle = 90, vjust = -1, hjust = 0) +
+    
+    labs(title = paste("Distribution of", column),
+         subtitle = "Histogram and Kernel Density Estimate",
+         x = column,
+         y = "Density") +
+    
+    theme_minimal() + 
+    theme_fontsize
+}
+
+
+plot_2d_scatter <- function(data, x_var, y_var, color_var = NULL, trendline = FALSE, sample_rate = 1.0) {
+  
+  # 1. Downsampling
+  if (sample_rate < 1.0 && sample_rate > 0) {
+    n_keep <- floor(nrow(data) * sample_rate)
+    data <- data[sample(nrow(data), n_keep), ]
+    sample_note <- paste0(" (Sampled: ", sample_rate * 100, "%)")
+  } else {
+    sample_note <- ""
+  }
+  
+  # 2. Basis-Plot
+  p <- ggplot(data, aes(x = .data[[x_var]], y = .data[[y_var]]))
+  
+  # 3. Punkte
+  if (!is.null(color_var)) {
+    p <- p + geom_point(aes(color = .data[[color_var]]), alpha = 0.8, size = 2.5) +
+      labs(color = color_var)
+    
+    if (is.numeric(data[[color_var]])) {
+      p <- p + scale_color_viridis_c(option = "magma", end = 0.9)
+    } else {
+      p <- p + scale_color_brewer(palette = "Dark2")
+    }
+  } else {
+    p <- p + geom_point(color = "#2E86C1", alpha = 0.7, size = 2.5)
+  }
+  
+  # 4. Trendlinien & R2 (HIER WAR DER FEHLER)
+  r2_info <- ""
+  
+  if (trendline) {
+    # WICHTIG: Backticks (`) einfügen, damit Leerzeichen kein Problem sind
+    # paste0 statt paste, um Lücken zu vermeiden
+    f_lin  <- as.formula(paste0("`", y_var, "` ~ `", x_var, "`"))
+    f_quad <- as.formula(paste0("`", y_var, "` ~ poly(`", x_var, "`, 2)"))
+    
+    # Fits berechnen
+    m_lin  <- lm(f_lin, data = data)
+    m_quad <- lm(f_quad, data = data)
+    
+    # R2 extrahieren
+    r2_lin  <- round(summary(m_lin)$r.squared, 3)
+    r2_quad <- round(summary(m_quad)$r.squared, 3)
+    
+    r2_info <- paste0("\nLinear R² (Red): ", r2_lin, " | Quadratic R² (Green): ", r2_quad)
+    
+    # Linien zum Plot hinzufügen
+    p <- p + 
+      geom_smooth(method = "lm", formula = y ~ x, 
+                  color = "#D95F02", size = 1, se = FALSE) +
+      geom_smooth(method = "lm", formula = y ~ poly(x, 2), 
+                  color = "#1B9E77", size = 1, se = FALSE)
+  }
+  
+  # 5. Styling
+  if (!is.null(color_var)) {
+    sub_text <- paste0("Colored by: ", color_var, sample_note, r2_info)
+  } else if (sample_note != "" || r2_info != "") {
+    sub_text <- paste0("Data randomly downsampled", sample_note, r2_info)
+  } else {
+    sub_text <- NULL
+  }
+  
+  p <- p + 
+    labs(
+      title = paste(x_var, "vs.", y_var),
+      subtitle = sub_text,
+      x = x_var,
+      y = y_var
+    ) +
+    theme_minimal(base_size = 12) +
+    theme(
+      plot.title = element_text(face = "bold", size = 16, color = "#333333"),
+      plot.subtitle = element_text(size = 11, color = "#444444"),
+      axis.title = element_text(face = "bold"),
+      legend.position = "right",
+      panel.grid.minor = element_blank()
+    )
+  
+  return(p)
+}
+
+plot_interaction <- function(data, x_var, interact_var, target = "lap_time_adjusted") {
+  
+  # 1. Daten vorbereiten
+  # Wir schneiden die Interaktions-Variable in 3 Teile (Quantile)
+  plot_data <- data %>%
+    select(.data[[x_var]], .data[[interact_var]], .data[[target]]) %>%
+    mutate(
+      Group = cut_number(.data[[interact_var]], n = 3, 
+                         labels = c("Low", "Medium", "High"))
+    )
+  
+  # 2. Plotten
+  ggplot(plot_data, aes(x = .data[[x_var]], y = .data[[target]], color = Group)) +
+    
+    # Punkte (leicht transparent, damit man die Masse sieht)
+    geom_point(alpha = 0.3, size = 1) +
+    
+    # Trendlinien (Linear) - Das ist der Beweis!
+    # se = FALSE macht den Plot sauberer
+    geom_smooth(method = "lm", se = FALSE, size = 1.5) +
+    
+    # Styling
+    scale_color_manual(values = c("Low" = "#E74C3C",    # Rot
+                                  "Medium" = "#F1C40F", # Gelb
+                                  "High" = "#2E86C1")) + # Blau
+    
+    labs(title = paste("Interaction:", x_var, "x", interact_var),
+         subtitle = paste("Effect of", x_var, "on Time, split by", interact_var),
+         x = x_var,
+         y = paste(target, "(Residuals)"),
+         color = paste(interact_var, "Level")) +
+    
+    theme_minimal() +
+    theme(plot.title = element_text(face="bold"),
+          legend.position = "bottom")
+}
+```
+
+An analysis of feature distributions reveals a marked overrepresentation of boundary values within car features.
+For all variables, at least 10% of observations are located at the minimum or maximum limits.
+$Engine$ displays the strongest skew, with 38% of values concentrated at the lower bound.
+
+```{r, echo=FALSE}
+#Check Extrem Vale Share of Car Features
+check_extremes_frame = simulator_data %>%
+  select(all_of(car_features)) %>%
+  pivot_longer(everything(), names_to = "Feature", values_to = "Value") %>%
+  group_by(Feature) %>%
+  summarise(
+    Min = min(Value, na.rm = TRUE),
+    Max = max(Value, na.rm = TRUE),
+    Min_Share = mean(Value == min(Value, na.rm = TRUE)),
+    Max_Share = mean(Value == max(Value, na.rm = TRUE))
+  ) %>%
+  arrange(desc(Min_Share + Max_Share)) %>%
+  mutate(
+    Min_Pct = paste0(round(Min_Share * 100, 1), "%"),
+    Max_Pct = paste0(round(Max_Share * 100, 1), "%")
+  ) %>%
+  select(Feature, Min, Max, Min_Pct, Max_Pct)
+```
+
+```{r}
+print(check_extremes_frame)
+```
+
+
+The $Engine$ histogram visually demonstrates this boundary saturation, exhibiting the most severe overrepresentation among all features.
+
+```{r, fig.width=7, fig.height=3}
+create_histogram(simulator_data, "Engine")
+```
+
+Condition features predominantly exhibit quasi-uniform distributions characterized by substantial noise and intermittent local spikes.
+
+```{r, fig.width=7, fig.height=3, fig.keep='last'}
+create_histogram(simulator_data, "Air Pressure")
+create_histogram(simulator_data, "Cornering")
+```
+
+```{r}
+#test track features for unifomity
+check_uniform <- function(x) {
+  c(
+    KS_p = ks.test(x, "punif", min(x), max(x))$p.value,
+    X2_p = chisq.test(table(cut(x, breaks = 20)))$p.value
+  )
+}
+
+sapply(simulator_data[condition_features], check_uniform)
+```
+
+Kolmogorov-Smirnov and $\chi^2$ tests fail to reject the null hypothesis of uniformity for most condition features.
+Exceptions include the structural variables $Lap Distance$ and $Temperature$, which are clearly non-uniform distributed as expected and $Air Pressure$, where deviation is likely driven by noise artifacts rather than non-uniform underlying data generation.
+
+#### Bivariate Exploration
+
+We continue, by screening the dataset for pronounced correlations between variables.
+
+```{r, echo=FALSE}
+#check for correlations between features
+cor_matrix <- cor(select_if(simulator_data, is.numeric))
+
+cor_matrix[upper.tri(cor_matrix, diag = TRUE)] <- NA
+
+sorted_correlations <- as.data.frame(as.table(cor_matrix)) %>%
+  na.omit() %>% 
+  rename(Var1 = Var1, Var2 = Var2, Correlation = Freq) %>%
+  arrange(desc(abs(Correlation))) 
+```
+
+```{r}
+print(head(sorted_correlations, 5))
+```
+
+
+An extremely high correlation exceeding $0.99$ is noted but deferred for later analysis.
+While we observe numerous high correlations, none involve $Lap Time$; instead and all include at least one car feature.
+Therefore, the interpretation regarding the influence on $Lap Time$ is uninteresting, but it reveals that assumptions concerning the interplay between conditions and car features were already established during the simulation.
+
+<!-- An examination of correlations between the target, $Lap Time$, and car features reveals only minor associations, with $Engine$ displaying the largest absolute coefficient.  -->
+
+
+```{r, echo=FALSE}
+cor(simulator_data[car_features], simulator_data[target])
+```
+
+The correlation between $Lap Time$ and $Lap Distance$ is axiomatic, as $Lap Time = \frac{Lap Distance}{Average Velocity}$.
+Since remaining features influence velocity rather than distance, directly modeling raw $Lap Time$ is methodologically unsound.
+
+```{r}
+cor(simulator_data[condition_features], simulator_data[target])
+```
+
+To isolate vehicle performance, $Lap Time$ is regressed on $Lap Distance$, and the resulting residuals are retained as the $Adjusted Lap Time$.
+The regression indicates that $Lap Distance$ explains over $99\%$ of the variance ($R^2 > 0.99$).
+The remaining residual standard deviation of $0.67$ seconds implies that the variance attributable to car setup and noise, and consequently the optimization potential, is marginal.
+
+```{r, echo=FALSE}
+model_distance <- lm(`Lap Time` ~ `Lap Distance`, data = simulator_data)
+simulator_data$lap_time_adjusted <- residuals(model_distance)
+#summary(model_distance)
+```
+
+Assessing correlations with $Adjusted Lap Time$ reveals discernible dependencies.
+Notably, $Grip$ exhibits a correlation of $0.12$, implying that higher grip levels are associated with increased (slower) lap times.
+
+```{r}
+cor(simulator_data[setdiff(condition_features, "Lap Distance")], simulator_data['lap_time_adjusted'])
+```
+
+Dependencies involving car features are more pronounced.
+Specifically, $Engine$ and $Differential$ exhibit clear positive associations with the target, indicating that higher parameter settings correlate with slower lap times.
+
+```{r, echo=FALSE}
+cor(simulator_data[car_features], simulator_data['lap_time_adjusted'])
+```
+
+<!-- Spearman rank correlations were computed to capture general monotonic dependencies, extending the analysis beyond linear associations. -->
+
+```{r, echo=FALSE}
+#cor(simulator_data[setdiff(condition_features, "Lap Distance")], simulator_data['lap_time_adjusted'], method='spearman')
+```
+
+```{r, echo=FALSE}
+#cor(simulator_data[car_features], simulator_data['lap_time_adjusted'], method='spearman')
+```
+
+<!-- While coefficients for condition features remain largely unchanged, those for $Engine$ and $Differential$ increase significantly, providing evidence of non-linear monotonic relationships. -->
+Scatter plots are utilized to further investigate the relationships involving $Engine$ and $Differential$.
+
+```{r, fig.width=7, fig.height=3}
+plot_2d_scatter(simulator_data, "Engine", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
+```
+
+Consistent with the histograms, observations cluster densely at the lower bounds.
+Although the general trend is positive, a linear model proves insufficient.
+A quadratic regression also yields a superior fit (higher $R^2$) compared to a logarithmic transformation, better capturing the non-linear structure of the data distribution.
+
+```{r, echo=FALSE}
+logged_Engine = simulator_data %>% mutate(
+  Engine =log(Engine)
+)
+#plot_2d_scatter(logged_Engine, "Engine", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
+```
+
+```{r, fig.width=7, fig.height=3}
+plot_2d_scatter(simulator_data, "Differential", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
+```
+
+Visual inspection of $Differential$ suggests a quadratic relationship with saturation.
+The observed positive correlations for $Engine$ and $Differential$ are counterintuitive, as superior mechanical components should theoretically decrease lap times.
+This paradox suggests the presence of interaction effects, necessitating further multivariate investigation.
+
+We investigate the hypothesis that the impact of $Engine$ is conditional upon track $Grip$.
+Theoretically, high engine output may induce detrimental wheel spin in low-grip environments, while proving advantageous on high-traction tracks.
+
+```{r, fig.width=7, fig.height=3}
+plot_interaction(simulator_data, "Engine", "Grip")
+```
+
+Graphical analysis corroborates this interaction: the detrimental impact of increased $Engine$ capacity diminishes as $Grip$ rises, validating the hypothesis.
+Subsequently, we examine whether track $Cornering$ modulates the influence of the $Differential$, hypothesizing that high-cornering circuits require frequent shifting, thereby amplifying the utility of the component.
+
+```{r, fig.width=7, fig.height=3}
+plot_interaction(simulator_data, "Differential", "Cornering")
+```
+
+The data supports this hypothesis: the adverse impact of larger $Differential$ settings mitigates and eventually vanishes, as track $Cornering$ intensity increases.
+These patterns substantiate the inclusion of interaction terms in the model.
+We conclude the visual inspection here and rely on the Lasso algorithm to systematically identify the remaining relevant interactions.
+
+### Modelling and Interpretation
+
+The feature space is expanded via a polynomial transformation up to degree 3 to capture complex non-linear dependencies.
+This encompasses univariate terms up to $x_j^3$, asymmetric pairwise interactions (e.g., $x_i^2 x_j$), and linear three-way interactions ($x_i x_j x_k$).
+
+The full regression specification is defined in scalar notation as:
+
+$$\hat{y} = \beta_0 + \sum_{j=1}^{p} \left( \beta_j x_j + \beta_{jj} x_j^2 + \beta_{jjj} x_j^3 \right) + \sum_{j < k} \beta_{jk} x_j x_k + \sum_{j \neq k} \gamma_{jk} x_j^2 x_k + \sum_{j < k < l} \delta_{jkl} x_j x_k x_l$$
+
+Equivalently, in compact matrix notation, let $\mathbf{x}_i \in \mathbb{R}^p$ denote the vector of original features for the $i$-th observation.
+We define a basis expansion function $\Phi: \mathbb{R}^p \rightarrow \mathbb{R}^d$ that maps the original features into the high-dimensional feature space.
+The model can then be written as:
+
+$$\mathbf{y} = \mathbf{\Phi} \boldsymbol{\beta} + \boldsymbol{\varepsilon}$$
+
+Where: \* $\mathbf{y} \in \mathbb{R}^n$ is the vector of adjusted lap times.
+\* $\mathbf{\Phi} \in \mathbb{R}^{n \times d}$ is the expanded design matrix with rows $\Phi(\mathbf{x}_i)^T$.
+\* $\boldsymbol{\beta} \in \mathbb{R}^d$ is the vector of coefficients.
+\* $\boldsymbol{\varepsilon} \in \mathbb{R}^n$ is the vector of error terms.
+
+The dimensionality $d$ of the expanded feature space is composed of the intercept, linear terms, higher-order polynomials, and interaction terms.
+Formally, $d$ is the sum of the cardinalities of these sets:
+
+$$d = 1 + \underbrace{3p}_{\text{Poly (1-3)}} + \underbrace{\binom{p}{2}}_{\text{Pairs}} + \underbrace{p(p-1)}_{\text{Asym. Pairs}} + \underbrace{\binom{p}{3}}_{\text{Triplets}}$$
+
+To estimate the sparse parameter vector $\boldsymbol{\beta}$ and select the relevant features, we solve the Lasso optimization problem:
+
+$$\hat{\boldsymbol{\beta}} = \underset{\boldsymbol{\beta}}{\arg\min} \left( \frac{1}{2n} ||\mathbf{y} - \mathbf{\Phi} \boldsymbol{\beta}||_2^2 + \lambda ||\boldsymbol{\beta}||_1 \right)$$
+
+where $||\cdot||_2$ denotes the Euclidean norm, $||\cdot||_1$ is the $\ell_1$-norm inducing sparsity, and $\lambda$ is the regularization parameter determined using the Bayesian Information Criterion (BIC).
+
+```{r, echo=FALSE}
+explode_matrix <- function(data, features, verbose = TRUE) { # NEUES ARGUMENT
+  
+  if(verbose) cat("--- START: Matrix Construction ---\n")
+  
+  # 1. Base Matrix
+  X_base <- data %>%
+    select(all_of(features)) %>%
+    mutate(across(where(is.character), as.factor)) %>%
+    as.matrix() %>% 
+    Matrix(sparse = TRUE)
+  
+  # 2. Polynomials
+  if(verbose) cat("[1/3] Polynomials...\n")
+  # ... (Dein Polynom Code wie vorher) ...
+  # Hier verkürzt dargestellt, nutze deinen vollen Code!
+  cont_feats <- features # Vereinfacht
+  X_cont <- X_base[, cont_feats, drop = FALSE]
+  X_p2 <- X_cont^2; colnames(X_p2) <- paste0(colnames(X_cont), "_p2")
+  X_p3 <- X_cont^3; colnames(X_p3) <- paste0(colnames(X_cont), "_p3")
+  X_pool <- cbind(X_base, X_p2, X_p3)
+  rm(X_base, X_cont, X_p2, X_p3); gc()
+  
+  # 3. Interactions
+  if(verbose) cat("[2/3] Interactions...\n")
+  
+  interaction_parts <- list()
+  n_cols <- ncol(X_pool)
+  col_names <- colnames(X_pool)
+  
+  # Grade bestimmen (Hilfslogik)
+  is_p2 <- grepl("_p2$", col_names); is_p3 <- grepl("_p3$", col_names)
+  degrees <- ifelse(is_p3, 3, ifelse(is_p2, 2, 1))
+  
+  for(i in 1:(n_cols-1)) {
+    vec_i <- X_pool[, i]
+    target_idx <- (i + 1):n_cols
+    
+    # Filter Maske (Degree <= 3)
+    mask_degree <- (degrees[i] + degrees[target_idx]) <= 3
+    valid_targets <- target_idx[mask_degree]
+    
+    if(length(valid_targets) == 0) next
+    
+    X_target <- X_pool[, valid_targets, drop=FALSE]
+    X_inter  <- X_target * vec_i
+    colnames(X_inter) <- paste0(col_names[i], ":", colnames(X_target))
+    interaction_parts[[i]] <- X_inter
+  }
+  
+  # 4. Assembly
+  if(verbose) cat("[3/3] Assembly...\n")
+  
+  if(length(interaction_parts) > 0) {
+    X_final <- cbind(X_pool, do.call(cbind, interaction_parts))
+  } else {
+    X_final <- X_pool
+  }
+  
+  if(verbose) cat("--- DONE ---\n")
+  return(X_final)
+}
+
+all_features <- c(car_features, condition_features)
+```
+
+```{r}
+#prepate training data
+y <- simulator_data$lap_time_adjusted
+X <- explode_matrix(simulator_data, all_features)
+```
+
+Given the high multicollinearity exacerbated by the feature expansion, standard Lasso selection proved unstable, while AIC minimization favored over-parameterized models.
+Consequently, we implemented a stability selection protocol comprising 50 Lasso iterations on random $80\%$ subsamples.
+Model selection relied on the Bayesian Information Criterion (BIC) to enforce stricter sparsity.
+Only features selected in $\ge 70\%$ of iterations were retained to ensure a robust, parsimonious, and actionable predictor set.
+
+```{r, echo=FALSE}
+# --- Setup ---
+run_loop = FALSE
+num_runs <- 50
+n_rows <- nrow(X) # X is the output from explode_matrix
+y <- simulator_data$lap_time_adjusted # Target is residualized lap time
+set.seed(123)
+
+# Pre-calculate random split indices for reproducibility
+train_idx_list <- replicate(num_runs, sample(n_rows, floor(0.8 * n_rows)), simplify = FALSE)
+stability_log <- list()
+
+cat("Starting Stability Selection Loop...\n")
+
+
+
+if (run_loop){
+  # --- Stability Loop ---
+  for(i in 1:num_runs){
+    
+    # Get current split data
+    idx <- train_idx_list[[i]]
+    X_train <- X[idx, ]; y_train <- y[idx]
+    
+    # Train Lasso (AICc optimized)
+    cat("Training Model", i)
+    model_gamlr <- gamlr(X_train, y_train, nlambda = 1000, lmr = 1e-4, verb = FALSE)
+    
+    # Select best model using BIC (stricter than AICc)
+    bic_values <- model_gamlr$deviance + log(model_gamlr$nobs) * model_gamlr$df
+    best_idx <- which.min(bic_values)
+    
+    # Extract non-zero coefficients (excluding intercept)
+    coefs <- coef(model_gamlr, select = best_idx)
+    active_feats <- rownames(coefs)[as.vector(coefs) != 0]
+    stability_log[[i]] <- setdiff(active_feats, "intercept")
+    
+    cat(".")
+  }
+  cat("\nDone!\n")
+  
+  stability_results <- unlist(stability_log) %>%
+    table() %>%
+    as.data.frame() %>%
+    rename(Feature = ".", Count = Freq) %>%
+    mutate(Probability = Count / num_runs) %>%
+    arrange(desc(Probability))
+  
+  
+  write.csv(stability_results, 'Problem Set 3/stability_results.csv')
+} else { #Load results for knittig
+  cat("Load stability_resulty.csc")
+  stability_results = read.csv('stability_results.csv')
+  
+}
+stable_drivers <- stability_results %>% filter(Probability >= 0.7)
+```
+
+```{r}
+print(head(stable_drivers, 7))
+```
+
+The consistent selection of only seven features across all 50 iterations highlights the instability of the expanded feature space.
+To illustrate the variable selection dynamics, the coefficient path of the final iteration is visualized.
+
+```{r, echo=FALSE}
+plot_lasso <- function(summary_frame, best_df_aic, best_df_bic) {
+  plot_data <- summary_frame %>%
+  select(df, aicc, bic, r2) %>%
+  pivot_longer(cols = c("aicc", "bic", "r2"), 
+               names_to = "Metric", 
+               values_to = "Value") %>%
+  mutate(Metric = factor(Metric, levels = c("aicc", "bic", "r2")))
+  
+  # Abhängigkeit sicherstellen
+  if (!require("ggplot2")) install.packages("ggplot2")
+  library(ggplot2)
+  
+  # Plot erstellen
+  p <- ggplot(plot_data, aes(x = df, y = Value)) +
+    # Hauptlinien
+    geom_line(size = 0.8, color = "grey30") +
+    geom_point(aes(color = Metric), size = 1.2) +
+    
+    # Vertikale Linien für die Gewinner (AICc rot, BIC blau)
+    geom_vline(xintercept = best_df_aic, color = "red", linetype = "dashed") +
+    geom_vline(xintercept = best_df_bic, color = "blue", linetype = "dashed") +
+    
+    # Text-Label für die Minima
+    annotate("text", x = best_df_bic, y = Inf, label = "BIC Best", 
+             vjust = 2, hjust = 1.1, color = "blue", size = 3) +
+    
+    # Faceting
+    facet_wrap(~Metric, scales = "free_y", ncol = 1, 
+               labeller = as_labeller(c(aicc = "AICc (Information)", 
+                                        bic = "BIC (Stricter)", 
+                                        r2 = "R-Squared"))) +
+    
+    # Styling
+    scale_color_manual(values = c("red", "blue", "green4")) +
+    labs(title = "Model Complexity vs. Performance",
+         subtitle = paste0("Optimal Variables: AICc = ", best_df_aic, " | BIC = ", best_df_bic),
+         x = "Degrees of Freedom (Anzahl Variablen)",
+         y = "Wert") +
+    theme_minimal() +
+    theme(legend.position = "none", 
+          strip.text = element_text(face = "bold", size = 10))
+  
+  return(p)
+}
+
+if(run_loop){
+  #plot last training run
+  summary_frame = summary(model_gamlr)
+  summary_frame$bic = bic_values
+  
+  #plot the training
+  plot_data <- summary_frame %>%
+    select(df, aicc, bic, r2) %>%
+    pivot_longer(cols = c("aicc", "bic", "r2"), 
+                 names_to = "Metric", 
+                 values_to = "Value") %>%
+    mutate(Metric = factor(Metric, levels = c("aicc", "bic", "r2")))
+  
+  best_df_aic <- summary_frame$df[which.min(summary_frame$aicc)]
+  best_df_bic <- summary_frame$df[which.min(summary_frame$bic)]
+  write.csv(summary_frame, 'Problem Set 3/summary_frame.csv')
+}
+```
+
+```{r, fig.width=7, fig.height=3}
+summary_frame = read.csv("summary_frame.csv")
+best_df_aic <- summary_frame$df[which.min(summary_frame$aicc)]
+best_df_bic <- summary_frame$df[which.min(summary_frame$bic)]
+plot_lasso(summary_frame, best_df_aic, best_df_bic)
+```
+
+The AIC exhibits asymptotic behavior rather than a distinct minimum, favoring excessive parameterization.
+Conversely, the BIC displays a convex profile with a clear global minimum, driven by its stricter complexity penalty.
+The resulting 27 features represent a parsimonious subset, ensuring the model remains interpretable and actionable.
+
+To derive the final specification, features meeting the $70\%$ stability threshold were subjected to backward elimination.
+
+```{r, echo=FALSE}
+backward_selection_p <- function(model, sig_level = 0.1) {
+  
+  current_model <- model
+  
+  while(TRUE) {
+    # 1. Tabelle der p-Werte holen
+    coef_table <- summary(current_model)$coefficients
+    p_values <- coef_table[, 4]
+    
+    # Intercept ignorieren (nie löschen!)
+    if("(Intercept)" %in% names(p_values)) {
+      p_values <- p_values[names(p_values) != "(Intercept)"]
+    }
+    
+    # 2. Das schlechteste Feature finden
+    max_p <- max(p_values)
+    worst_feature <- names(p_values)[which.max(p_values)]
+    
+    # 3. Abbruchbedingung: Wenn alle signifikant sind -> Fertig
+    if(max_p < sig_level) {
+      break
+    }
+    
+    # 4. Rauswurf & Update
+    # Wir nutzen update(), um das Modell ohne dieses Feature neu zu rechnen
+    # " . ~ . - Feature" heißt: Gleiche Formel, aber minus das Feature
+    cat("Entferne:", worst_feature, "(p =", round(max_p, 4), ")\n")
+    current_model <- update(current_model, as.formula(paste(". ~ . -", "`", worst_feature, "`", sep="")))
+  }
+  
+  return(current_model)
+}
+
+get_metrics <- function(actual, predicted, set_name = "Set") {
+  residuals <- actual - predicted
+  
+  mse <- mean(residuals^2)
+  mae <- mean(abs(residuals))
+  
+  # R2 manuell berechnen (für Testdaten ist das sicherer als summary())
+  tss <- sum((actual - mean(actual))^2) # Total Sum of Squares
+  rss <- sum(residuals^2)               # Residual Sum of Squares
+  r2  <- 1 - (rss / tss)
+  
+  return(data.frame(
+    Set = set_name,
+    R2  = round(r2, 5),
+    MSE = round(mse, 5),
+    MAE = round(mae, 5),
+    RMSE = round(sqrt(mse), 5)
+  ))
+}
+```
+
+```{r, echo=FALSE}
+# Prepare final dataset using only stable features (full data)
+final_features <- as.character(stable_drivers$Feature)
+X_final_stable <- X[, final_features, drop = FALSE]
+
+final_df <- data.frame(
+  lap_time_adjusted = y, 
+  as.matrix(X_final_stable)
+)
+
+# Fit OLS and refine with backward selection
+final_ols <- lm(lap_time_adjusted ~ ., data = final_df)
+final_clean <- backward_selection_p(final_ols, sig_level = 0.05)
+```
+
+```{r}
+#summary(final_clean)
+```
+
+The final model retains 23 predictors excluding the intercept, explaining $26.7\%$ of the variance ($R^2 = 0.267$).
+Given the inherent noise, this indicates robust signal extraction rather than overfitting.
+Notably, the selection process discarded all cubic terms and third-order interactions.
+Crucially, every retained variable involves at least one controllable car feature, ensuring full actionability for the optimization.
+We subsequently rank these predictors by feature importance.
+
+```{r, echo=FALSE}
+model_feats <- names(coef(final_clean))[-1]
+feature_sds <- apply(final_df[model_feats], 2, sd)
+
+importance <- data.frame(
+  Coefficient = coef(final_clean)[-1],
+  SD = feature_sds
+) %>%
+  mutate(
+    # Standardized Impact = |Beta| * StDev
+    # This makes features with different scales (e.g., x vs x^3) comparable
+    Importance = abs(Coefficient * SD)
+  ) %>%
+  arrange(desc(Importance)) %>%
+  mutate(
+    Share = Importance / sum(Importance),
+    #Cumulative = cumsum(Importance) / sum(Importance)
+  )
+
+```
+
+```{r}
+cat("---", nrow(importance), "Overall Drivers (Standardized Impact) ---\n")
+print(head(importance, 10))
+```
+
+Standardized feature importance reveals that internal vehicle calibration supersedes static environmental factors, as the top ten drivers consist exclusively of car parameters or their interactions. The $Differential$ exhibits the highest impact; its positive linear baseline is counteracted by negative quadratic interactions (e.g., with $Brake.Balance$), implying a non-linear optimization surface where penalties are mitigated through coordinated tuning. $Engine$ performance proves context-dependent, showing potential detriments on longer tracks ($Engine \times Lap.Distance$) but significant gains in high-load scenarios ($Inclines \times Engine^2$). Finally, the $Front.Wing \times Rear.Wing^2$ interaction highlights the necessity of tuning downforce components in concert to ensure aerodynamic balance.
+
+Finally, the calibrated model is deployed to determine the optimal vehicle configuration for the France circuit.
+
+### Optimization
+
+Vehicle parameters are optimized while treating track features as fixed constants specific to the France circuit.
+We employ the L-BFGS algorithm, a quasi-Newton method designed for non-linear optimization tasks.
+
+```{r, echo=FALSE}
+france_conditions <- data.frame(
+  "Lap Distance"      = 3.3, 
+  "Cornering"         = 98,
+  "Inclines"          = 73,
+  "Camber"            = 13,
+  "Grip"              = 18,   
+  "Wind (Avg. Speed)" = 48,
+  "Temperature"       = 39,   
+  "Humidity"          = 74,
+  "Air Density"       = 14,   
+  "Air Pressure"      = 41,
+  "Wind (Gusts)"      = 77,
+  "Altitude"          = 15,
+  "Roughness"         = 74,   
+  "Width"             = 8,    
+  check.names = FALSE
+)
+
+
+
+predict_lap_time_wrapper <- function(x) {
+  
+  current_car <- data.frame(
+    "Rear Wing"     = x[1],
+    "Engine"        = x[2],
+    "Front Wing"    = x[3],
+    "Brake Balance" = x[4],
+    "Differential"  = x[5],
+    "Suspension"    = x[6],
+    check.names = FALSE
+  )
+  
+  full_data <- bind_cols(current_car, france_conditions)
+  
+  X_matrix <- explode_matrix(full_data, all_features, verbose=FALSE)
+  
+  X_df <- as.data.frame(as.matrix(X_matrix))
+  colnames(X_df) <- make.names(colnames(X_df))
+  
+  prediction <- predict(final_clean, newdata = X_df)
+  
+  return(as.numeric(prediction))
+}
+
+```
+
+```{r, echo=FALSE}
+start_params <- c(250, 250, 250, 250, 250, 250)
+
+cat("Starting L-BFGS-B Optimization...\n")
+
+optimize = FALSE #we set this to FALSE for knitting the document. Otherwise the optiization would take too long
+
+if (optimize){
+  opt_result <- optim(
+    par = start_params, 
+    fn = predict_lap_time_wrapper, 
+    method = "L-BFGS-B",       # Handles box constraints (1-500) natively
+    lower = rep(1, 6),         # Minimum allowed value
+    upper = rep(500, 6),       # Maximum allowed value
+    control = list(
+      fnscale = 1, 
+      maxit = 1000, 
+      trace = 6,        
+      REPORT = 1        
+    ) 
+  )
+  
+  best_setup <- round(opt_result$par) # Round ONLY at the very end for the report
+  names(best_setup) <- c("Rear Wing", "Engine", "Front Wing", "Brake Balance", "Differential", "Suspension")
+  
+  cat("\n=== OPTIMAL SETUP (France) ===\n")
+  print(best_setup)
+  cat("\nPredicted Adjusted Time:", round(opt_result$value, 4), "\n")
+}else{
+  
+  best_setup = c(500,500,500,500,500,10)
+  best_value = predict_lap_time_wrapper(best_setup)
+  names(best_setup) <- c("Rear Wing", "Engine", "Front Wing", "Brake Balance", "Differential", "Suspension")
+  
+  cat("\n=== OPTIMAL SETUP (France) ===\n")
+  print(best_setup)
+  cat("\nPredicted Adjusted Time:", round(best_value, 4), "\n")
+  
+}
+
+```
+
+```{r}
+best_setup = c(500,500,500,500,500,10)
+  best_value = predict_lap_time_wrapper(best_setup)
+  names(best_setup) <- c("Rear Wing", "Engine", "Front Wing", "Brake Balance", "Differential", "Suspension")
+  
+  cat("\n=== OPTIMAL SETUP (France) ===\n")
+  print(best_setup)
+  cat("\nPredicted Adjusted Time:", round(best_value, 4), "\n")
+```
+
+The updated optimization results indicate a convergence towards a high-downforce, high-power configuration. Remarkably, five out of six actionable parameters—$Rear Wing$, $Engine$, $Front Wing$, $Brake Balance$, and $Differential$—were maximized to their upper boundary constraints ($x=500$). `Suspension` remains the sole variable exhibiting a distinct, near-lower-bound optimum ($x \approx 10$).
+
+<!-- This uniform maximization contradicts standard linear intuition, where trade-offs (e.g., Drag vs. Speed) typically force compromise solutions. Instead, this result strongly validates the previously identified interaction structure: terms such as `Front.Wing` $\times$ `Rear.Wing`$^2$ or `Inclines` $\times$ `Engine`$^2$ appear to generate cooperative non-linear gains. The model suggests that the penalty of high drag (Wings) or high differential locking is effectively overcompensated by the synergistic benefits of running a fully maximized setup, with $Suspension$ providing the necessary mechanical counterbalance at the lower end of the spectrum. -->
+
+The predicted adjusted time of $-1.1608$ indicates that this specific configuration is expected to outperform the distance-based baseline by approximately 1.16 seconds.
