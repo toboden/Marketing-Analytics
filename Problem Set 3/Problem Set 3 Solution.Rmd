@@ -797,13 +797,13 @@ print(check_extremes_frame)
 
 The $Engine$ histogram visually demonstrates this boundary saturation, exhibiting the most severe overrepresentation among all features.
 
-```{r}
+```{r, fig.width=7, fig.height=3}
 create_histogram(simulator_data, "Engine")
 ```
 
 Condition features predominantly exhibit quasi-uniform distributions characterized by substantial noise and intermittent local spikes.
 
-```{r}
+```{r, fig.width=7, fig.height=3, fig.keep='last'}
 create_histogram(simulator_data, "Air Pressure")
 create_histogram(simulator_data, "Cornering")
 ```
@@ -899,7 +899,7 @@ cor(simulator_data[car_features], simulator_data['lap_time_adjusted'], method='s
 <!-- While coefficients for condition features remain largely unchanged, those for $Engine$ and $Differential$ increase significantly, providing evidence of non-linear monotonic relationships. -->
 Scatter plots are utilized to further investigate the relationships involving $Engine$ and $Differential$.
 
-```{r}
+```{r, fig.width=7, fig.height=3}
 plot_2d_scatter(simulator_data, "Engine", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
 ```
 
@@ -914,7 +914,7 @@ logged_Engine = simulator_data %>% mutate(
 plot_2d_scatter(logged_Engine, "Engine", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
 ```
 
-```{r}
+```{r, fig.width=7, fig.height=3}
 plot_2d_scatter(simulator_data, "Differential", "lap_time_adjusted", sample_rate = 0.3, trendline=TRUE)
 ```
 
@@ -925,14 +925,14 @@ This paradox suggests the presence of interaction effects, necessitating further
 We investigate the hypothesis that the impact of $Engine$ is conditional upon track $Grip$.
 Theoretically, high engine output may induce detrimental wheel spin in low-grip environments, while proving advantageous on high-traction tracks.
 
-```{r}
+```{r, fig.width=7, fig.height=3}
 plot_interaction(simulator_data, "Engine", "Grip")
 ```
 
 Graphical analysis corroborates this interaction: the detrimental impact of increased $Engine$ capacity diminishes as $Grip$ rises, validating the hypothesis.
 Subsequently, we examine whether track $Cornering$ modulates the influence of the $Differential$, hypothesizing that high-cornering circuits require frequent shifting, thereby amplifying the utility of the component.
 
-```{r}
+```{r, fig.width=7, fig.height=3}
 plot_interaction(simulator_data, "Differential", "Cornering")
 ```
 
@@ -1178,7 +1178,7 @@ if(run_loop){
 }
 ```
 
-```{r}
+```{r, fig.width=7, fig.height=3}
 summary_frame = read.csv("summary_frame.csv")
 best_df_aic <- summary_frame$df[which.min(summary_frame$aicc)]
 best_df_bic <- summary_frame$df[which.min(summary_frame$bic)]
@@ -1407,6 +1407,6 @@ best_setup = c(500,500,500,500,500,10)
 
 The updated optimization results indicate a convergence towards a high-downforce, high-power configuration. Remarkably, five out of six actionable parameters—$Rear Wing$, $Engine$, $Front Wing$, $Brake Balance$, and $Differential$—were maximized to their upper boundary constraints ($x=500$). `Suspension` remains the sole variable exhibiting a distinct, near-lower-bound optimum ($x \approx 10$).
 
-This uniform maximization contradicts standard linear intuition, where trade-offs (e.g., Drag vs. Speed) typically force compromise solutions. Instead, this result strongly validates the previously identified interaction structure: terms such as `Front.Wing` $\times$ `Rear.Wing`$^2$ or `Inclines` $\times$ `Engine`$^2$ appear to generate cooperative non-linear gains. The model suggests that the penalty of high drag (Wings) or high differential locking is effectively overcompensated by the synergistic benefits of running a fully maximized setup, with `Suspension` providing the necessary mechanical counterbalance at the lower end of the spectrum.
+<!-- This uniform maximization contradicts standard linear intuition, where trade-offs (e.g., Drag vs. Speed) typically force compromise solutions. Instead, this result strongly validates the previously identified interaction structure: terms such as `Front.Wing` $\times$ `Rear.Wing`$^2$ or `Inclines` $\times$ `Engine`$^2$ appear to generate cooperative non-linear gains. The model suggests that the penalty of high drag (Wings) or high differential locking is effectively overcompensated by the synergistic benefits of running a fully maximized setup, with $Suspension$ providing the necessary mechanical counterbalance at the lower end of the spectrum. -->
 
-The predicted adjusted time of $-1.1608$ indicates that this specific high-load configuration is expected to outperform the distance-based baseline by approximately 1.16 seconds, suggesting that maximizing vehicle parameters yields a significant performance advantage on the French circuit.
+The predicted adjusted time of $-1.1608$ indicates that this specific configuration is expected to outperform the distance-based baseline by approximately 1.16 seconds.
