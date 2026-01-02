@@ -1,0 +1,115 @@
+---
+title: "Problem Set IV Solution"
+author: 
+  - "Tobias Bodentien"
+  - "Philipp Grunenberg"
+  - "Alexander Haas"
+  - "Osama Warshagha"
+date: "`r format(Sys.Date(), '%d-%m-%Y')`"
+
+output:
+  pdf_document:
+    latex_engine: xelatex
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+#Task 1
+
+In this task we design an reduced experimental design to study the impact of different car setup parameters and strategy-related factors.
+As seen in the last problem set we have several variables. Some of those variables are predetermined and track specific. Since they do not vary within the practice or the race and are fixed we cannot include them in the experimental design.
+The setup variables can be influenced by the racing team. Those are "Rear Wing", "Front Wing", "Engine", "Brake Balance", "Differential" and "Suspension". In this problem set we additionally have strategy relevant variables. We can now choose how many pitstops we do and when we do them, tyres and fuel load. 
+Since we do not have any previous data on the strategy relevant variables it is important to learn about the influences of those on the lap time and overall race time. It is of significant importance to find out how durable the tyres are and how they influence the lap time. The same applies to fuel load. It is also important to do some pit stops to estimate how much time is lost per pit stop. Since the pit stops are determined by tyre changes we do not explicitly include them as a factor in the experimental design as we learn about them indirectly. The fuel load will decrease during the practice. Therefore we do not include it explicitly as a factor in the experimental design and just fuel up the car to the maximum after every tyre change.
+
+The LASSO results of the previous problem set indicate that lap time is strongly influenced by several car setup parameters and their interactions with track and environmental conditions. Every retained variable involves at least one controllable car feature. In particular, brake balance, differential, engine, and front and rear wing settings appear repeatedly with sizable coefficients, suggesting that drivetrain and aerodynamic configuration are key performance drivers. 
+Therefore, we choose all setup variables as strong drivers of performance.
+
+From the previous problem set we know that the relationship between car setup variables and lap times is  non-linear. While a two-level design can only identify general trends, the inclusion of a medium value allows the model to capture curvature and diminishing returns, which are critical for identifying the "sweet spot" in a complex mechanical system. This third level provides the mathematical basis for a quadratic regression, enabling the detection of optimal settings that may lie between the extreme boundaries of the design space. By accounting for these non-linear effects, the design better reflects the physical trade-offs inherent in vehicle dynamics, such as the balance between front wing and rear wing.
+
+Regarding the tyres we expect that a softer compound results in faster lap times but higher degradation. For the qualifying the super-soft tyre therefore makes sense. It is still important to use the other three tyres to learn when it makes sense to use a softer tyre with an additional pit stop as opposed to a harder tyre.
+The resulting factors that we believe influence the lap time are:
+\begin{itemize}
+\item Rear Wing: 10 / 250 / 500
+\item Front Wing: 10 / 250 / 500
+\item Engine: 10 / 250 / 500
+\item Brake Balance: 10 / 250 / 500
+\item Differential: 10 / 250 / 500
+\item Suspension: 10 / 250 / 500
+\item Tyre: super-soft / soft / medium / hard
+\end{itemize}
+
+From the Team Analytics Website we get the following information from Gunnar:
+"One thing we did was to debunk the myth that setup should be changed according to fuel load or the tyres."
+This implies that setup factors can be optimized independently of tyres and fuel load. And strategy factors can be evaluated holding setup fixed. This allows us to separate the experiment into two phases.
+
+In the first phase we estimate the main effects of the six setup variables, holding tyre compound and fuel strategy constant. We use D-optimality to come up with an experimental design, which maximizes the precision of the car setup coefficients while minimizing the number of experimental runs required to capture non-linear effects.
+```{r, echo=FALSE}
+library(AlgDesign)
+
+setup_candidates <- expand.grid(
+  RearWing     = c(10, 250, 500),
+  FrontWing    = c(10, 250, 500),
+  Engine       = c(10, 250, 500),
+  BrakeBalance = c(10, 250, 500),
+  Differential = c(10, 250, 500),
+  Suspension   = c(10, 250, 500)
+)
+
+phase1_model <- ~ RearWing + I(RearWing^2) +
+                  FrontWing + I(FrontWing^2) +
+                  Engine + I(Engine^2) +
+                  BrakeBalance + I(BrakeBalance^2) +
+                  Differential + I(Differential^2) +
+                  Suspension + I(Suspension^2)
+
+set.seed(123)
+
+phase1_design <- optFederov(
+  frm       = phase1_model,
+  data      = setup_candidates,
+  nTrials   = 104,      # reduced number of practice laps
+  criterion = "D"
+)
+
+# D-criterion and efficiency
+#phase1_design$D
+#phase1_design$Dea
+
+# The actual experimental plan
+phase1_plan <- phase1_design$design
+#cor(phase1_plan)
+#print(phase1_plan)
+
+
+```
+The resulting design achieves a D-efficiency of 57.9% and maintains low correlations (maximum of 0.15) between the factors, ensuring that the influence of each individual parameter can be statistically isolated during analysis. Consequently, this approach maximizes the information gathered about the vehicle's performance while significantly minimizing the total number of practice laps required for testing.
+
+In the second phase the setup is fixed and we compare tyre compounds to understand lap time and degradation trade-offs as well as implicit pit stop costs.
+Because the number of strategy factors is small and the factor levels are few, a small full factorial design is feasible and preferred, as it allows unbiased and transparent comparison of all tyre compounds without confounding. This full factorial design ensures that differences in lap time and degradation across tyre types can be directly attributed to the tyre choice, providing a clear basis for race strategy decisions.
+
+```{r, echo=FALSE}
+fixed_setup <- data.frame(
+  RearWing     = 500,
+  FrontWing    = 500,
+  Engine       = 500,
+  BrakeBalance = 500,
+  Differential = 500,
+  Suspension   = 10
+)
+laps_per_tyre <- 4
+
+strategy_factors <- expand.grid(
+  Tyre = factor(c("super_soft", "soft", "medium", "hard")),
+  Lap = 1:laps_per_tyre
+)
+
+phase2_design <- cbind(
+  fixed_setup[rep(1, nrow(strategy_factors)), ],
+  strategy_factors
+)
+
+#print(phase2_design)
+
+```
+
