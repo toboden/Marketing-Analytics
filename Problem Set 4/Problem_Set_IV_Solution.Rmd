@@ -43,7 +43,7 @@ From the Team Analytics Website we get the following information from Gunnar:
 "One thing we did was to debunk the myth that setup should be changed according to fuel load or the tyres."
 This implies that setup factors can be optimized independently of tyres and fuel load. And strategy factors can be evaluated holding setup fixed. This allows us to separate the experiment into two phases.
 
-In the first phase we estimate the main effects of the six setup variables, holding tyre compound and fuel strategy constant. We use D-optimality to come up with an experimental design, which maximizes the precision of the car setup coefficients while minimizing the number of experimental runs required to capture non-linear effects.
+In the first phase we estimate the main effects of the six setup variables, holding tyre compound and fuel strategy constant. As a full factorial design is not feasible (3^6=729) we use D-optimality to come up with an experimental design, which maximizes the precision of the car setup coefficients given a limited amount of experimental runs (104 = 120 - 16 laps for phase 2).
 ```{r, echo=FALSE}
 library(AlgDesign)
 
@@ -83,7 +83,7 @@ phase1_plan <- phase1_design$design
 
 
 ```
-The resulting design achieves a D-efficiency of 57.9% and maintains low correlations (maximum of 0.15) between the factors, ensuring that the influence of each individual parameter can be statistically isolated during analysis. Consequently, this approach maximizes the information gathered about the vehicle's performance while significantly minimizing the total number of practice laps required for testing.
+The resulting design achieves a D-efficiency of 57.9% and maintains low correlations (maximum of 0.15) between the factors, ensuring that the influence of each individual parameter can be statistically isolated during analysis. Consequently, this approach maximizes the information gathered about the vehicle's performance while significantly minimizing the total number of practice laps required for testing when compared to a full factorial design.
 
 In the second phase the setup is fixed and we compare tyre compounds to understand lap time and degradation trade-offs as well as implicit pit stop costs.
 Because the number of strategy factors is small and the factor levels are few, a small full factorial design is feasible and preferred, as it allows unbiased and transparent comparison of all tyre compounds without confounding. This full factorial design ensures that differences in lap time and degradation across tyre types can be directly attributed to the tyre choice, providing a clear basis for race strategy decisions.
