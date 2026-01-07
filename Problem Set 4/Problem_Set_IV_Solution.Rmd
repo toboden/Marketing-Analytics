@@ -86,6 +86,7 @@ max_abs_corr <- max(abs(off_diag_elements))
 
 
 ```
+
 The resulting design achieves a solid D-efficiency of 42,1% and maintains low correlations between the factors with the larges absolute correlation being 0,16. This ensures that the influence of each individual parameter can be statistically isolated during analysis. Consequently, this approach maximizes the information gathered about the vehicle's performance while significantly minimizing the total number of practice laps required for testing when compared to a full factorial design.
 
 In the second phase the setup is fixed and we compare tyre compounds to understand lap time and degradation trade-offs as well as implicit pit stop costs.
@@ -131,4 +132,35 @@ table(phase2_design$Tyre)
 head(phase2_design)
 
 ```
+1. Experiment: 25 Laps, Hart, mit 120 Fuel
+--> Reifen degradiert linear
+--> Fuel level linear abnehmend
+--> Einfluss von Fuel auf Laptime scheint größer zu sein von Reifen (da Rundenzeit sinkt)
 
+2. Experiment: 2 Laps, Soft, 5 Fuel
+--> Fuel level linear abnehmend, egal welcher Reifen drauf ist
+--> Reifen degration höher für weichen Reifen
+
+Idee: Wenn Fuel und Reifen unabhängig von einander degradieren, können wir mehrere Stints mit einer Runde fahren, um immer mit neuem Reifen zu starten (diesen also konstant halten). So können wir, wenn wir den Fuel ändern, den Einfluss von Fuel auf die Rundenzeit ermitteln.
+
+3. Experiment: 5 Stints a 1 Runde, Soft, Fuel 100/80/60/40/20, weil 120 haben wir ja schon.
+
+Um zu prüfen, ob das Fuel Level mit unterschiedlichen Reifen einen Einfluss auf die Rundenzeit hat, machen wir das dritte Experiment nochmal mit dem harten Reifen.
+
+
+4. Experiment: 5 Stints a 1 Runde, Hart, Fuel 100/80/60/40/20, weil 120 haben wir ja schon
+
+Dann müssen wir nur noch die unterschiedlichen Reifen testen.
+4. Experiment: 15 Runden, Soft, Fuel 120
+
+5. Experiment: 3 Runden, Medium, Fuel 120
+
+Frage: Müssen wir dieses Experiment für alle Reifen durchführen?
+Frage: Können wir den Fehler, der auf die Rundenzeit addiert wird abschätzen?
+
+
+Erkenntnisse:
+Reifen degradiert linear, aber unterschiedlich für Reifenmischung
+Fuel level linear abnehmend, egal welcher Reifen drauf ist
+Super soft lässt sich nicht fahren, wahrscheinlich weil es zu warm ist
+Pitstops können in der Practice nicht simuliert werden (es kann nicht mit zu wenig Sprit gestartet werden)
