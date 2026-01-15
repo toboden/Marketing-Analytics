@@ -233,7 +233,9 @@ Anzahl der pulls je Runde
 4 1 1 1 2 4
 
 
-ergebnisse über pfeilchart? 7 -- eliminate A2 --> 6 -- eliminate A4 --> usw
+ergebnisse über pfeilchart? 
+
+7 -- eliminate A3 --> 6 -- eliminate A4 --> usw
 
 
 
@@ -244,11 +246,68 @@ ergebnisse über pfeilchart? 7 -- eliminate A2 --> 6 -- eliminate A4 --> usw
 
 2. Bestimmung der Strategie
 
-Nachdem nun das Setup AX als bestes unter den 7 möglichen ausgewählt wurde, werden zunächst auf diesem Setup je Compound zwei Runde gefahren. Dies ermöglichst es die Konstanten für die lineare Abnahme der Reifen und Fuel je Runde zu bestimmen und damit ein geeignetes Set an Strategieen festzulegen. 
+Nachdem nun das Setup A1 als bestes unter den 7 möglichen ausgewählt wurde, sind noch 63 Trainingsrunden verfügbar. Um die linearen konstanten für fuel abnahme und reifenverschleiß je compound zu bestimmen, werden drei weitere Runden benötigt (für extrasoft, soft, medium). Anhand diesen Konstanten kann im Folgenden ein  geeignetes Set an Strategien für den England GP festgelegt werden. 
 
-Man erhält dabei für die fuelabnahme je Runde einen Wert von z=XX. Die compounds degradieren mit w_soft = xx, w_medium = xx und w_hard = xx. Der super softe Reifen wird für die Strategie ausgeschlossen, da er mit hoher Wahrscheinlichkeit auf die lange Renndistanu keinen entscheidenden Vorteil bringt.
+Man erhält dabei für die fuelabnahme je Runde einen Wert von z=3,23. Die compounds degradieren mit  w_extrasoft = 12,67, w_soft = 5,51, w_medium = 4,46 und w_hard = 3.67 pro Runde. Da der maximale Fuelload 120 ist und z kleiner als alle compound degradation constanten, ist fuel nie der limitierende faktor für die länge eines stints.
 
-Mit dieser Information und der Annahme linear abnehmender Fuel und Compound Werte (Vergleich Frankreich GP), werden nun die Arme für den Strategie-Bandit festgelet. Die grundlegende Erkenntnis aus den vorherigen Rennen dabei ist, dass es von großem Vorteil ist mit niedrigen Fuel werten zu fahren.
+Mit dieser Information und der Annahme linear abnehmender Fuel und Compound Werte (Vergleich Frankreich GP), werden nun die Arme für den Strategie-Bandit festgelet. Die grundlegende Erkenntnis aus den vorherigen Rennen dabei ist, dass es von großem Vorteil ist mit niedrigen Fuel werten zu fahren. Um die Auswahl der Arme zu erleichtern werden als variablen für die verschiedenen Arme auschließlich die riefenmischug und die anzahl der stops zugelassen. jede strategie beinhaltet also nur eine reifenmischung und verteilt dabei die Runden pro stint möglichst gleichmäßig auf die 63 Rennrunden auf. Jeder Stint wird mit der minimal möglichen betankung gestartet. Aus den sich daraus ergebenden fahrbaren Strategien, werden folgende ausgewählt:
+
+| Arm | Compound | w_comp | b | L1 | L2 | L3 | L4 | L5 |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| A1 | hard   | 3.67 | 2 | 21 | 21 | 21 |  - |  - |
+| A2 | medium | 4.46 | 3 | 16 | 16 | 16 | 15 |  - |
+| A3 | soft   | 5.51 | 3 | 16 | 16 | 16 | 15 |  - |
+| A4 | soft   | 5.51 | 4 | 13 | 13 | 13 | 12 | 12 |
 
 
+
+Im nächsten Schritt muss sowohl der Multi-Armed-Bandit Algorithmus als auch die Zielfunktion anhand derer die Arme bewertet werden festgelegt werden. Das Hauptproblem hierbei ist es, einen möglichst unbiaseden Schätzer für die Rundenzeit für einen Stint zu erhalten. Da keine anderen Modelle wie Regression verwendet werden dürden, ist unser Vorgehen foldendes:
+Es handelt sich auch wie in der Suche nach dem Setup um ein Best-Arm-Identification problem. Hier wird jedoch nicht der SF-Algorithmus verwendet, sondern die extrem simple Uniform allocation strategie (vgl ...). Dabei wird die Anzahl der Pulls auf die Arme gleich verteilt. Da es von entscheidender Bedeutung ist einen bestmöglichen Estimate für die Stintlänge und damit für die Rennzeit der aktuell betrachteten STrategie zu erhalten, wird jeder Arm (also die vier STrategien) nur ein mal gezogen. Weiterhin ist es wichtig, dass die Schätzungen der Stintzeit alle möglichst vergleichbar sind und ein möglichst geringer Bias durch die Scshätzung induziert wird. Für zwei stops ergeben sich 21 Runden pro Stint, für drei stops 16 usw.. Da nur noch 60 Runden verfügbar sind wird folgendes Schema für die stinlänge beim Ziehen der Arme verwendet.
+
+
+Der minimal fuel load für die Simulation wird so berechnet:
+Let \(b\) denote the number of pitstops and \(L(b)\) be the target stint length.
+For per-lap fuel consumption \(z=3.23\), the minimal fuel load is
+\[
+F(z,b) \;=\; \left\lceil L(b)\,z \right\rceil
+\;=\; \left\lceil \left\lceil \frac{63}{b+1}\right\rceil \, z \right\rceil .
+\]
+
+Für die verschiedenen Arme ergeben sich folgende werte:
+
+| Arm | A1 | A2 | A3 | A4 |
+|---|---:|---:|---:|---:|
+| Compound | hard | medium | soft | soft |
+| Target stint length \(L(b)\) | 21 | 16 | 16 | 13 |
+| Simulated stint length | 19 | 15 | 15 | 11 |
+| Minimal fuel load \(F(z,b)\) | 68 | 52 | 52 | 42 |
+
+Aus diesen Stints werden schließlich die average laptimes als basis für den reward des bandits verwendet. Die genaue Zielfunktion ist schließlich eine Schätzung der Gesamtrennzeit, wobei wie in Analytics-GP vermerkt 30 seconds pro pitstop verbucht werden:
+\[
+\widehat{\mathrm{RaceTime}}_{A_i}^{\mathrm{sim}}(b)
+\;=\;
+63\,\bar{y}_{\mathrm{sim}}
+\;+\; 30\,b \, .
+\]
+
+Die recommendation für den output des best arms ist auch hier wieder das arithmetische mittel, was in diesem trivialen Fall mit einer Ziehung aus einer beobachtung besteht.
+
+
+
+
+
+
+
+
+
+Es ist ein Bandit-Setting (du ziehst Arme, bekommst Rewards, willst am Ende den besten Arm empfehlen).
+
+Die „uniform allocation“ ist ein nicht-adaptiver Bandit-Algorithmus: die Pulls werden vorab festgelegt (jeder Arm 
+≈
+𝑛
+/
+𝐾
+≈n/K mal), unabhängig von den beobachteten Rewards.
+
+In der Literatur läuft das oft unter uniform exploration / round-robin / equal allocation und gehört eher zur pure exploration / best-arm identification-Ecke (du willst primär den besten Arm finden), nicht zur klassischen „minimiere kumulatives Regret“-Ecke.
 

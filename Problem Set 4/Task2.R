@@ -113,12 +113,12 @@ paste0("Eliminated arm: ", phase_1$eliminated)
 
 
 ## first pull - phase 2---------------------------------------------------------
-a1 <- c(0)
-a2 <- c(0)
-a4 <- c(0)
-a5 <- c(0)
-a6 <- c(0)
-a7 <- c(0)
+a1 <- c(108.99364735)
+a2 <- c(112.30769925)
+a4 <- c(112.11569925)
+a5 <- c(110.16719925)
+a6 <- c(109.03556495)
+a7 <- c(111.71514735)
 
 
 pull2 <- list(A1 = a1, A2 = a2, A4 = a4, A5 = a5, A6 = a6, A7 = a7)
@@ -135,13 +135,13 @@ paste0("Eliminated arm: ", phase_2$eliminated)
 
 
 ## first pull - phase 3---------------------------------------------------------
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
+a1 <- c(108.24064735)
+a4 <- c(111.07869925)
+a5 <- c(109.45319925)
+a6 <- c(109.94656495)
+a7 <- c(110.04114735)
 
-pull3 <- list(Ax = ax, Ax = ax, Ax = ax, Ax = ax, Ax = ax)
+pull3 <- list(A1 = a1, A4 = a4, A5 = a5, A6 = a6, A7 = a7)
 
 arms <- append_pulls(phase_2$arms, pull3)
 
@@ -155,13 +155,13 @@ paste0("Eliminated arm: ", phase_3$eliminated)
 
 
 ## first pull - phase 4---------------------------------------------------------
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
+a1 <- c(109.97264735)
+a5 <- c(110.21219925)
+a6 <- c(110.01156495)
+a7 <- c(110.28614735)
 
 
-pull4 <- list(Ax = ax, Ax = ax, Ax = ax, Ax = ax)
+pull4 <- list(A1 = a1, A5 = a5, A6 = a6, A7 = a7)
 
 arms <- append_pulls(phase_3$arms, pull4)
 
@@ -175,12 +175,12 @@ paste0("Eliminated arm: ", phase_4$eliminated)
 
 
 ## first pull - phase 5---------------------------------------------------------
-ax <- c(0, 0)
-ax <- c(0, 0)
-ax <- c(0, 0)
+a1 <- c(108.57064735, 108.90064735)
+a5 <- c(110.70919925, 110.92019925)
+a6 <- c(108.80356495, 110.11456495)
 
 
-pull5 <- list(Ax = ax, Ax = ax, Ax = ax)
+pull5 <- list(A1 = a1, A5 = a5, A6 = a6)
 
 arms <- append_pulls(phase_4$arms, pull5)
 
@@ -194,11 +194,11 @@ paste0("Eliminated arm: ", phase_5$eliminated)
 
 
 ## first pull - phase 6---------------------------------------------------------
-ax <- c(0, 0, 0, 0)
-ax <- c(0, 0, 0, 0)
+a1 <- c(109.10764735, 108.14064735, 109.72064735, 109.83464735)
+a6 <- c(109.02056495, 109.01656495, 109.48856495, 110.60456495)
 
 
-pull6 <- list(Ax = ax, Ax = ax)
+pull6 <- list(A1 = a1, A6 = a6)
 
 arms <- append_pulls(phase_5$arms, pull6)
 
@@ -231,29 +231,109 @@ paste0("Selected arm: ", names(phase_6$arms[1]), " - Lap-time: ", phase_6$means[
 
 
 
+############## Strategie
+
+z = 120 - 116.77089672593
+w_extrasoft <- 100 - 87.329884303744
+w_soft <- 100 - 94.489656748349
+w_medium <- 100 - 95.542888870211
+w_hard <- 100 - 96.326579937969
 
 
 
+split_laps <- function(b, n = 63) {
+  
+  S <- b + 1
+  
+  stopifnot(length(S) == 1, is.numeric(S), S >= 1, S == as.integer(S))
+  stopifnot(is.numeric(n), n >= 1, n == as.integer(n))
+  
+  q <- n %/% S
+  r <- n %% S
+  
+  sizes <- c(rep(q + 1, r), rep(q, S - r))
+  names(sizes) <- paste0("part", seq_len(S))
+  return(sizes)
+}
+
+# get the partition of race laps for b pit stops
+max(split_laps(2))
+split_laps(3)
+split_laps(4)
 
 
 
+minimalFuelLoad <- function(w, b, z = 3.22910327407){
+  
+  # maximum number of laps per stint
+  laps <- max(split_laps(b))
+  
+  minimal_load <- c()
+  
+  if(laps*w > 100){
+    stop("Stint length not possible due to tire degradation!")
+  } else if (laps*z > 120){
+    stop("Stint length not possible due to fuel consumption!")
+  } else{
+    # minimal fuel load
+    minimal_load <- ceiling(laps * z)
+  }
+  
+  minimal_load
+}
+
+### 1 stop -------------------------------
+## one stop strategy with hard
+#minimalFuelLoad(w_hard, 1) # => not possible
+
+
+### 2 stop -------------------------------
+## two stop strategy with hard
+minimalFuelLoad(w_hard, 2) # => 68
+
+## two stop strategy with medium
+#minimalFuelLoad(w_medium, 2) # => 68
+
+## two stop strategy with soft
+#minimalFuelLoad(w_soft, 2) # => not possible
+
+
+### 3 stop ------------------------------
+## three stop strategy with medium
+minimalFuelLoad(w_medium, 3) # => 52
+
+## three stop strategy with soft
+minimalFuelLoad(w_soft, 3) # => 52
+
+## three stop strategy with extrasoft
+#minimalFuelLoad(w_extrasoft, 3) # => not possible
+
+
+### 4 stop ------------------------------
+## four stop strategy with medium
+#minimalFuelLoad(w_medium, 4) # => 42
+
+## four stop strategy with soft
+minimalFuelLoad(w_soft, 4) # => 42
+
+## four stop strategy with extrasoft
+#minimalFuelLoad(w_extrasoft, 4) # => not possible
 
 
 
+K_strategy <- 4
+stint_length_per_draw <- 4
+n_strategy <- floor(60/stint_length_per_draw)
+
+draws_per_arm <- floor(n_strategy/K_strategy)
+draws_per_arm
 
 
 
+##
 
 
-
-
-
-
-
-
-
-
-
+get_draws_per_phase(K_strategy,n_strategy)
 
 
 
