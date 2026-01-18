@@ -10,12 +10,14 @@ date: "`r format(Sys.Date(), '%d-%m-%Y')`"
 output:
   pdf_document:
     latex_engine: xelatex
+    citation_package: biblatex
+bibliography: references.bib
 editor_options: 
   markdown: 
     wrap: sentence
 ---
 
-#Task 1
+# Task 1
 
 In this task we design an reduced experimental design to study the impact of different car setup parameters and strategy-related factors.
 As seen in the last problem set we have several variables. Some of those variables are predetermined and track specific. Since they do not vary within the practice or the race and are fixed we cannot include them in the experimental design.
@@ -184,7 +186,7 @@ Aus den verschiedenen Setup- und Strategieparametern gemeinsame Tupel zu bilden,
 Dass nur sehr wenige Übungsrunden zu Verfügung stehen hat nicht nur Auswirkung auf die Menge der möglichen Tupel, die verglichen werden, sondern auch auf die Wahl, welcher MAB Algorithmus verwendet wird.
 Hier jetzt über epsilon greedy, ucb und thompson sprechen. Thompson zitieren für den Fall dass nur wenige Pulls zur Verfügung stehen kann sich Thompson schnell auf eine option einschießen, die für das vorliegende problem suboptimal ist. Für das Setting wie es hier gegeben ist bieten sich algorithmen an, die einen starken Fokus auf exploration legen oder ausschließlich explorieren. 
 
-1. Bestimmung des Setup
+## 1. Bestimmung des Setup
 Aufgrund der limitierten Anzahl an Übungsrunden besteht ein Trade-off zwischen der Anzahl der Bandit-Arme (d. h. Setup-Parameter-Tupeln) und der Anzahl an Übungsrunden pro Arm. Wenn zu viele verschiedene Tupel erkundet werden, entfallen auf jeden Arm zu wenige Übungsrunden, sodass die Performance-Schätzungen stark verrauscht und damit wenig aussagekräftig sind. Die Setup-Tupel werden im Folgenden so gewählt, dass eine möglichst breite Abdeckung des Parameterraums unter Berücksichtigung der Streckencharakteristik erzielt wird.
 
 
@@ -244,7 +246,7 @@ ergebnisse über pfeilchart?
 
 
 
-2. Bestimmung der Strategie
+## 2. Bestimmung der Strategie
 
 Nachdem nun das Setup A1 als bestes unter den 7 möglichen ausgewählt wurde, sind noch 63 Trainingsrunden verfügbar. Um die linearen konstanten für fuel abnahme und reifenverschleiß je compound zu bestimmen, werden drei weitere Runden benötigt (für extrasoft, soft, medium). Anhand diesen Konstanten kann im Folgenden ein  geeignetes Set an Strategien für den England GP festgelegt werden. 
 
@@ -294,7 +296,7 @@ Die recommendation für den output des best arms ist auch hier wieder das arithm
 
 
 
-
+\parencite{audibert}
 
 
 
@@ -311,3 +313,10 @@ Die „uniform allocation“ ist ein nicht-adaptiver Bandit-Algorithmus: die Pul
 
 In der Literatur läuft das oft unter uniform exploration / round-robin / equal allocation und gehört eher zur pure exploration / best-arm identification-Ecke (du willst primär den besten Arm finden), nicht zur klassischen „minimiere kumulatives Regret“-Ecke.
 
+
+
+
+
+
+
+# References

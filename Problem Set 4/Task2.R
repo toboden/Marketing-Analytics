@@ -231,7 +231,9 @@ paste0("Selected arm: ", names(phase_6$arms[1]), " - Lap-time: ", phase_6$means[
 
 
 
-############## Strategie
+## -----------------------------------------------------------------------------
+## Strategy: Uniform allocation bandit implementation 
+## -----------------------------------------------------------------------------
 
 z = 120 - 116.77089672593
 w_extrasoft <- 100 - 87.329884303744
@@ -261,8 +263,7 @@ max(split_laps(2))
 split_laps(3)
 split_laps(4)
 
-
-
+# function for the minimal fuel load
 minimalFuelLoad <- function(w, b, z = 3.22910327407){
   
   # maximum number of laps per stint
@@ -321,12 +322,7 @@ minimalFuelLoad(w_soft, 4) # => 42
 
 
 
-K_strategy <- 4
-stint_length_per_draw <- 4
-n_strategy <- floor(60/stint_length_per_draw)
 
-draws_per_arm <- floor(n_strategy/K_strategy)
-draws_per_arm
 
 
 
@@ -341,246 +337,192 @@ get_draws_per_phase(K_strategy,n_strategy)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ------------------------------------------------------------------------------
-
-
-
-# lilst to store arms, means, eliminated arms
-history_setup <- setNames(vector("list", (K_setup-1)), paste0("phase", 1:(K_setup-1)))
-
-
-
-## first pull - phase 1---------------------------------------------------------
-a1 <- c(0, 0, 0, 0)
-a2 <- c(0, 0, 0, 0)
-a3 <- c(0, 0, 0, 0)
-a4 <- c(0, 0, 0, 0)
-a5 <- c(0, 0, 0, 0)
-a6 <- c(0, 0, 0, 0)
-a7 <- c(0, 0, 0, 0)
-
-
-# list for laptimes of each arm
-arms <- list(
-  A1 = a1,
-  A2 = a2,
-  A3 = a3,
-  A4 = a4,
-  A5 = a5,
-  A6 = a6,
-  A7 = a7
+racetime_estimate <- function(Arm_pull, b){
+  
+  mean_laptime_per_stint <- mean(Arm_pull)
+  
+  approx_racetime <- 63 * mean_laptime_per_stint + 30*b
+  
+  return(approx_racetime)
+  
+}
+
+
+
+
+
+A1_pull1 <- c(104.53867935,
+        104.23007473332,
+        104.50847011665,
+        103.91286549997,
+        104.6492608833,
+        102.99565626662,
+        103.53205164995,
+        102.06944703327,
+        103.62484241659,
+        101.97723779992,
+        103.07463318324,
+        101.25302856657,
+        102.21642394989,
+        101.04781933322,
+        101.99221471654,
+        101.51261009986,
+        101.37100548319,
+        100.13340086651,
+        100.07579624984
 )
 
-phase_1 <- eliminate_worst(arms)
-
-history_setup[["phase1"]] <- phase_1
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_1$eliminated)
+A2_pull1 <- c(102.23264835,
+        102.98804373332,
+        101.92843911665,
+        101.74483449997,
+        101.4772298833,
+        101.64062526662,
+        101.95802064995,
+        101.19441603327,
+        100.39981141659,
+        100.67120679992,
+        100.26260218324,
+        101.03799756657,
+        100.99639294989,
+        99.827788333216,
+        98.58618371654
+)
 
 
-## first pull - phase 2---------------------------------------------------------
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
+A3_pull1 <- c(103.34569485,
+        102.82009023332,
+        102.21448561665,
+        102.87988099997,
+        101.4152763833,
+        100.63867176662,
+        100.62406714995,
+        100.51946253327,
+        100.91785791659,
+        99.616253299919,
+        99.852648683243,
+        99.139044066567,
+        99.479439449892,
+        98.853834833216,
+        98.20123021654
+)
 
 
-pull2 <- list(Ax = ax, Ax = ax, Ax = ax, Ax = ax, Ax = ax, Ax = ax)
-
-arms <- append_pulls(phase_1$arms, pull2)
-
-phase_2 <- eliminate_worst(arms)
-
-history_setup[["phase2"]] <- phase_2
-
-
-# eliminated arm
-paste0("Eliminated arm: ", phase_2$eliminated)
-
-
-## first pull - phase 3---------------------------------------------------------
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-
-pull3 <- list(Ax = ax, Ax = ax, Ax = ax, Ax = ax, Ax = ax)
-
-arms <- append_pulls(phase_2$arms, pull3)
-
-phase_3 <- eliminate_worst(arms)
-
-history_setup[["phase3"]] <- phase_3
+A4_pull1 <- c(101.3563549,
+        102.0097502,
+        102.1841456,
+        101.002541,
+        101.2419364,
+        99.93833177,
+        99.55772715,
+        100.3431225,
+        99.64451792,
+        99.6919133,
+        99.36530868
+)
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_3$eliminated)
+
+# compute race time estimates
+racetime_est <- c(
+  A1 = racetime_estimate(A1_pull1, 2),
+  A2 = racetime_estimate(A2_pull1, 3),
+  A3 = racetime_estimate(A3_pull1, 3),
+  A4 = racetime_estimate(A4_pull1, 4)
+)
+
+# Arm with the smallest racetime estimate
+best_arm <- names(which.min(racetime_est))
+paste0("Best Arm: ", best_arm,". Racetime: ", racetime_est[[best_arm]])
 
 
-## first pull - phase 4---------------------------------------------------------
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
 
 
-pull4 <- list(Ax = ax, Ax = ax, Ax = ax, Ax = ax)
-
-arms <- append_pulls(phase_3$arms, pull4)
-
-phase_4 <- eliminate_worst(arms)
-
-history_setup[["phase4"]] <- phase_4
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_4$eliminated)
 
 
-## first pull - phase 5---------------------------------------------------------
-ax <- c(0, 0)
-ax <- c(0, 0)
-ax <- c(0, 0)
 
 
-pull5 <- list(Ax = ax, Ax = ax, Ax = ax)
-
-arms <- append_pulls(phase_4$arms, pull5)
-
-phase_5 <- eliminate_worst(arms)
-
-history_setup[["phase5"]] <- phase_5
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_5$eliminated)
 
 
-## first pull - phase 6---------------------------------------------------------
-ax <- c(0, 0, 0, 0)
-ax <- c(0, 0, 0, 0)
 
 
-pull6 <- list(Ax = ax, Ax = ax)
-
-arms <- append_pulls(phase_5$arms, pull6)
-
-phase_6 <- eliminate_worst(arms)
-
-history_setup[["phase6"]] <- phase_6
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_6$eliminated)
 
-# selected arm and lap time
-paste0("Selected arm: ", names(phase_6$arms[1]), " - Lap-time: ", phase_6$means[names(phase_6$arms[1])])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
