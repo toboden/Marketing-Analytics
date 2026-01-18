@@ -21,16 +21,16 @@ editor_options:
 
 In this task we design an reduced experimental design to study the impact of different car setup parameters and strategy-related factors.
 As seen in the last problem set we have several variables. Some of those variables are predetermined and track specific. Since they do not vary within the practice or the race and are fixed we cannot include them in the experimental design.
-The setup variables can be influenced by the racing team. Those are "Rear Wing", "Front Wing", "Engine", "Brake Balance", "Differential" and "Suspension". In this problem set we additionally have strategy relevant variables. We can now choose how many pitstops we do and when we do them, tyres and fuel load. 
-Since we do not have any previous data on the strategy relevant variables it is important to learn about the influences of those on the lap time and overall race time. It is of significant importance to find out how durable the tyres are and how they influence the lap time. The same applies to fuel load. It is also important to do some pit stops to estimate how much time is lost per pit stop. Since the pit stops are determined by tyre changes we do not explicitly include them as a factor in the experimental design as we learn about them indirectly. The fuel load will decrease during the practice. Therefore we do not include it explicitly as a factor in the experimental design and just fuel up the car to the maximum after every tyre change.
+The setup variables however can be influenced by the racing team. In this problem set we additionally have strategy relevant variables. We can now choose tire compound, fuel load and how many pitstops we do and when we do them. 
+Since we do not have any previous data on the strategy relevant variables it is important to learn about the influences of those on the lap time and overall race time. It is of significant importance to find out how durable the tires are and how they influence the lap time. The same applies to fuel load. It is also important to do some pit stops to estimate how much time is lost per pit stop. Since the pit stops are determined by tire changes we do not explicitly include them as a factor in the experimental design as we learn about them indirectly. The fuel load will decrease during the practice. Therefore we do not include it explicitly as a factor in the experimental design and just fuel up the car to the maximum after every tire change.
 
 The LASSO results of the previous problem set indicate that lap time is strongly influenced by several car setup parameters and their interactions with track and environmental conditions. Every retained variable involves at least one controllable car feature. In particular, brake balance, differential, engine, and front and rear wing settings appear repeatedly with sizable coefficients, suggesting that drivetrain and aerodynamic configuration are key performance drivers. 
 Therefore, we choose all setup variables as strong drivers of performance.
 
-From the previous problem set we know that the relationship between car setup variables and lap times is  non-linear. While a two-level design can only identify general trends, the inclusion of a medium value allows the model to capture curvature and diminishing returns, which are critical for identifying the "sweet spot" in a complex mechanical system. 
+From the previous problem set we know that the relationship between car setup variables and lap times is non-linear. While a two-level design can only identify general trends, the inclusion of a medium value allows the model to capture curvature and diminishing returns, which are critical for identifying the "sweet spot" in a complex mechanical system. 
 However, a three-level design may oversimplify the complex physical interactions of racecar dynamics. A response surface with only three points assumes a symmetric curvature, which risks missing the true optimum if the performance curve is skewed or asymptotic. By extending the design to five levels, we gain the resolution necessary to capture higher-order non-linearities and subtle changes in vehicle behavior. This finer granularity is critical for distinguishing between a broad performance plateau and a narrow, sensitive peak, ensuring that the final optimal setting is precise rather than just an approximation between two extremes.
 
-Regarding the tyres we expect that a softer compound results in faster lap times but higher degradation. For the qualifying the super-soft tyre therefore makes sense. It is still important to use the other three tyres to learn when it makes sense to use a softer tyre with an additional pit stop as opposed to a harder tyre.
+Regarding the tyres we expect that a softer compound results in faster lap times but higher degradation. For the qualifying the extra-soft compound therefore makes sense. It is still important to use the other three compounds to learn when it makes sense to use a softer tire with an additional pit stop as opposed to a harder tire.
 The resulting factors that we believe influence the lap time are:
 \begin{itemize} 
 \item Rear Wing: 10 / 130 / 250 / 370 / 500 
@@ -39,13 +39,13 @@ The resulting factors that we believe influence the lap time are:
 \item Brake Balance: 10 / 130 / 250 / 370 / 500 
 \item Differential: 10 / 130 / 250 / 370 / 500 
 \item Suspension: 10 / 130 / 250 / 370 / 500 
-\item Tyre: super-soft / soft / medium / hard \end{itemize}
+\item Tire: super-soft / soft / medium / hard \end{itemize}
 
 From the Team Analytics Website we get the following information from Gunnar:
 "One thing we did was to debunk the myth that setup should be changed according to fuel load or the tyres."
-This implies that setup factors can be optimized independently of tyres and fuel load. And strategy factors can be evaluated holding setup fixed. This allows us to separate the experiment into two phases.
+This implies that setup factors can be optimized independently of tires and fuel load. And strategy factors can be evaluated holding setup fixed. This allows us to separate the experiment into two phases.
 
-In the first phase we estimate the main effects of the six setup variables, holding tyre compound and fuel strategy constant. As a full factorial design is not feasible we use D-optimality to come up with an experimental design, which maximizes the precision of the car setup coefficients given a limited amount of experimental runs (70=120- 50 laps for phase 2).
+In the first phase we estimate the main effects of the six setup variables, holding tire compound and fuel strategy constant. As a full factorial design is not feasible we use D-optimality to come up with an experimental design, which maximizes the precision of the car setup coefficients given a limited amount of experimental runs (70=120- 50 laps for phase 2).
 ```{r, echo=FALSE}
 library(AlgDesign)
 levels_5 <- c(10, 130, 250, 370, 500)
@@ -89,10 +89,10 @@ max_abs_corr <- max(abs(off_diag_elements))
 
 ```
 
-The resulting design achieves a solid D-efficiency of 42,1% and maintains low correlations between the factors with the larges absolute correlation being 0,16. This ensures that the influence of each individual parameter can be statistically isolated during analysis. Consequently, this approach maximizes the information gathered about the vehicle's performance while significantly minimizing the total number of practice laps required for testing when compared to a full factorial design.
+The resulting design achieves a solid D-efficiency of 42,1% and maintains low correlations between the factors with the largest absolute correlation being 0,16. This ensures that the influence of each individual parameter can be statistically isolated during analysis. Consequently, this approach maximizes the information gathered about the vehicle's performance while significantly minimizing the total number of practice laps required for testing when compared to a full factorial design.
 
-In the second phase the setup is fixed and we compare tyre compounds to understand lap time and degradation trade-offs as well as implicit pit stop costs.
-Because the number of strategy factors is small and the factor levels are few, a full factorial design is feasible and preferred, as it allows unbiased and transparent comparison of all tyre compounds without confounding. This full factorial design ensures that differences in lap time and degradation across tyre types can be directly attributed to the tyre choice, providing a clear basis for race strategy decisions. We assume that softer tyre compounds degrade faster but achieve shorter lap times than harder compounds. To efficiently learn about degradation behavior under a limited lap budget, we run longer stints on the extreme compounds (super-soft and hard), which are expected to bracket the degradation patterns of the intermediate compounds. Shorter stints on the soft and medium tyres are still included to directly observe their performance levels, while the longer stints on the extremes improve identification of degradation dynamics. Therefore we decide to run 15 laps on the super-soft, 25 laps on the hard tyre and 5 laps on the soft and medium tyre each.
+In the second phase the setup is fixed and we compare tire compounds to understand lap time and degradation trade-offs as well as implicit pit stop costs.
+Because the number of strategy factors is small and the factor levels are few, a full factorial design is feasible and preferred, as it allows unbiased and transparent comparison of all tire compounds without confounding. This full factorial design ensures that differences in lap time and degradation across tire types can be directly attributed to the tire choice, providing a clear basis for race strategy decisions. We assume that softer tire compounds degrade faster but achieve shorter lap times than harder compounds. To efficiently learn about degradation behavior under a limited lap budget, we run longer stints on the extreme compounds (super-soft and hard), which are expected to bracket the degradation patterns of the intermediate compounds. Shorter stints on the soft and medium tires are still included to directly observe their performance levels, while the longer stints on the extremes improve identification of degradation dynamics. Therefore we decide to run 15 laps on the super-soft, 25 laps on the hard tire and 5 laps on the soft and medium tire each.
 
 ```{r, echo=FALSE}
 # Fixed setup from Phase 1 optimum
@@ -131,49 +131,37 @@ phase2_design <- cbind(
 
 # Inspect design
 table(phase2_design$Tyre)
-head(phase2_design)
+#head(phase2_design)
 
 ```
-1. Experiment: 25 Laps, Hart, mit 120 Fuel
---> Reifen degradiert linear
---> Fuel level linear abnehmend
---> Einfluss von Fuel auf Laptime scheint größer zu sein von Reifen (da Rundenzeit sinkt)
 
-2. Experiment: 2 Laps, Soft, 5 Fuel
---> Fuel level linear abnehmend, egal welcher Reifen drauf ist
---> Reifen degration höher für weichen Reifen
+Initial testing with the 25-lap stint on Hard tires with a 120L fuel load revealed that both tire degradation and fuel consumption follow a linear trend. Interestingly, the data suggested that fuel weight has a more significant impact on lap times than tire wear, as lap times consistently decreased as the fuel load lightened and the tyres degraded.
 
-Idee: Wenn Fuel und Reifen unabhängig von einander degradieren, können wir mehrere Stints mit einer Runde fahren, um immer mit neuem Reifen zu starten (diesen also konstant halten). So können wir, wenn wir den Fuel ändern, den Einfluss von Fuel auf die Rundenzeit ermitteln.
+We discovered that the Super-Soft compound could not be utilized, probably due to high ambient temperatures.
 
-3. Experiment: 5 Stints a 1 Runde, Soft, Fuel 100/80/60/40/20, weil 120 haben wir ja schon.
+**Based on those findings, we have refined our approach** to focus more on the influence of fuel. 
 
-Um zu prüfen, ob das Fuel Level mit unterschiedlichen Reifen einen Einfluss auf die Rundenzeit hat, machen wir das dritte Experiment nochmal mit dem harten Reifen.
+Testing during a 2-lap stint on Soft tires confirmed that fuel consumption remains linear regardless of the compound, while the degradation rate is significantly higher for softer tires.
 
+Given that fuel and tire degradation operate independently, we adopted a "single-lap stint" strategy to isolate variables. By running multiple one-lap stints, we can hold the tire condition constant (fresh tires every time) to precisely measure the influence of fuel load on performance. Consequently, we conducted stints with fuel levels of 100, 80, 60, 40, and 20 liters. Repeating this process for both Soft and Hard tires allowed us to verify if the fuel-to-performance relationship remains consistent across different grip levels.
 
-4. Experiment: 5 Stints a 1 Runde, Hart, Fuel 100/80/60/40/20, weil 120 haben wir ja schon
+To finalize the tire data, we dedicated a longer stint to the Soft (15 laps) and a short stint to Medium (3 laps) compounds to map their specific linear degradation coefficients.
 
-Dann müssen wir nur noch die unterschiedlichen Reifen testen.
-4. Experiment: 15 Runden, Soft, Fuel 120
+*Critical Evaluation of the Design*
 
-5. Experiment: 3 Runden, Medium, Fuel 120
+The experimental design was structured to balance statistical rigor with the practical constraints of a 120-lap simulation budget. While the approach successfully isolated key performance drivers, it involved risks regarding error variance and sample distribution.
 
-Frage: Müssen wir dieses Experiment für alle Reifen durchführen?
-Frage: Können wir den Fehler, der auf die Rundenzeit addiert wird abschätzen?
+Decoupling based on Domain Expertise: By following Gunnar’s insight, we successfully decoupled the car setup from the strategy variables. This allowed for a two-phase approach that reduced the complexity of the design space, preventing the "curse of dimensionality" that would have occurred in a combined experiment.
 
+D-Optimality Efficiency: Using a D-optimal design for 6 factors at 5 levels was a sophisticated choice. It allowed us to test a large "search space" (over 15,000 possible combinations) in just 70 laps while keeping the correlation between factors low (<0.16).
 
-Erkenntnisse:
-Reifen degradiert linear, aber unterschiedlich für Reifenmischung
-Fuel level linear abnehmend, egal welcher Reifen drauf ist
-Super soft lässt sich nicht fahren, wahrscheinlich weil es zu warm ist
-Pitstops können in der Practice nicht simuliert werden (es kann nicht mit zu wenig Sprit gestartet werden)
+Variable Isolation: The decision to switch to 1-lap stints to isolate fuel effects was a good way to estimate the benefit of less fuel on lap times. 
 
+Range Bracketing: Running longer stints on the Hard and Soft tires while keeping the Medium stint short was a quick way to learn about the degradation without wasting too much of the 120-lap budget.
 
+D-Optimality Design (Phase 1): Utilizing one lap per setup is statistically efficient but risky. This approach makes the results highly sensitive to "noise" or random errors in a single lap. While increasing the number of laps per setup would improve reliability, it would significantly degrade the D-Efficiency (Dea), requiring more practice time than available.
 
-
-
-
-
-
+Full Factorial Design (Phase 2): This is highly effective for a small number of configurations (e.g., the three viable tire compounds). However, because of the fuel experiments the resolution for the Medium tire remains limited. The 3-lap stint was too short to provide a robust statistical baseline compared to the 15-lap and 25-lap stints used for other compounds. This creates an unbalanced model that might be very accurate for long stints on the hard tire but inaccurate for stints on the soft and medium tire.
 
 
 # Task 2
