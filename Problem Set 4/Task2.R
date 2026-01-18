@@ -1,6 +1,16 @@
 
 
-## Define function for Successive Rejects algorithm
+
+
+
+
+
+
+## -------------------------------
+## Setup: SR bandit implementation 
+## -------------------------------
+
+# ---------- helpers ----------
 get_draws_per_phase <- function(K, n) {
   stopifnot(K >= 2, n >= K)
   
@@ -21,26 +31,6 @@ get_draws_per_phase <- function(K, n) {
   list(n_k = n_k, inc = inc, total_pulls = total_pulls)
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## -------------------------------
-## Setup: SR bandit implementation 
-## -------------------------------
-
-# ---------- helpers ----------
 append_pulls <- function(arms, pulls) {
   # only update arms that are still active
   for (nm in intersect(names(pulls), names(arms))) {
@@ -70,7 +60,7 @@ n_setup = 60 # number of possible draws
 SR_Setup_parameters <- get_draws_per_phase(K_setup,n_setup)
 
 cat(paste0("Pulls phase ", seq_along(SR_Setup_parameters$inc), ": ", SR_Setup_parameters$inc), sep = "\n")
-paste0("Total pulls: ", SR_Setup_parameters$total_pulls)
+cat("Total pulls: ", SR_Setup_parameters$total_pulls)
 
 
 # ------------------------------------------------------------------------------
@@ -108,8 +98,8 @@ phase_1 <- eliminate_worst(arms)
 history_setup[["phase1"]] <- phase_1
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_1$eliminated)
+# # eliminated arm
+# paste0("Eliminated arm: ", phase_1$eliminated)
 
 
 ## first pull - phase 2---------------------------------------------------------
@@ -130,8 +120,8 @@ phase_2 <- eliminate_worst(arms)
 history_setup[["phase2"]] <- phase_2
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_2$eliminated)
+# # eliminated arm
+# paste0("Eliminated arm: ", phase_2$eliminated)
 
 
 ## first pull - phase 3---------------------------------------------------------
@@ -150,8 +140,8 @@ phase_3 <- eliminate_worst(arms)
 history_setup[["phase3"]] <- phase_3
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_3$eliminated)
+# # eliminated arm
+# paste0("Eliminated arm: ", phase_3$eliminated)
 
 
 ## first pull - phase 4---------------------------------------------------------
@@ -170,8 +160,8 @@ phase_4 <- eliminate_worst(arms)
 history_setup[["phase4"]] <- phase_4
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_4$eliminated)
+# # eliminated arm
+# paste0("Eliminated arm: ", phase_4$eliminated)
 
 
 ## first pull - phase 5---------------------------------------------------------
@@ -189,8 +179,8 @@ phase_5 <- eliminate_worst(arms)
 history_setup[["phase5"]] <- phase_5
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_5$eliminated)
+# # eliminated arm
+# paste0("Eliminated arm: ", phase_5$eliminated)
 
 
 ## first pull - phase 6---------------------------------------------------------
@@ -207,22 +197,20 @@ phase_6 <- eliminate_worst(arms)
 history_setup[["phase6"]] <- phase_6
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_6$eliminated)
-
-# selected arm and lap time
-paste0("Selected arm: ", names(phase_6$arms[1]), " - Lap-time: ", phase_6$means[names(phase_6$arms[1])])
-
-
+# # eliminated arm
+# paste0("Eliminated arm: ", phase_6$eliminated)
+# 
+# # selected arm and lap time
+# paste0("Selected arm: ", names(phase_6$arms[1]), " - Lap-time: ", phase_6$means[names(phase_6$arms[1])])
 
 
 
-
-
-
-
-
-
+for (i in 1:6) {
+  cat("Phase ", i, " - eliminated arm: ", history_setup[[i]]$eliminated, "\n", sep = "")
+  if(i == 6){
+    cat("Selected arm: ", names(history_setup[[i]]$arms[1]), " - Lap-time: ", phase_6$means[names(history_setup[[i]]$arms[1])])
+  }
+}
 
 
 
@@ -259,7 +247,7 @@ split_laps <- function(b, n = 63) {
 }
 
 # get the partition of race laps for b pit stops
-max(split_laps(2))
+split_laps(2)
 split_laps(3)
 split_laps(4)
 
@@ -320,23 +308,7 @@ minimalFuelLoad(w_soft, 4) # => 42
 ## four stop strategy with extrasoft
 #minimalFuelLoad(w_extrasoft, 4) # => not possible
 
-
-
-
-
-
-
-##
-
-
-get_draws_per_phase(K_strategy,n_strategy)
-
-
-
-
-
-
-
+# function for estimating the lap time
 racetime_estimate <- function(Arm_pull, b){
   
   mean_laptime_per_stint <- mean(Arm_pull)
@@ -348,9 +320,7 @@ racetime_estimate <- function(Arm_pull, b){
 }
 
 
-
-
-
+## simulation
 A1_pull1 <- c(104.53867935,
         104.23007473332,
         104.50847011665,
