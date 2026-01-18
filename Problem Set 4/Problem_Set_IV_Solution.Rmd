@@ -200,7 +200,7 @@ The following findings from previous analyses, together with consideration of in
 "High engine output induces detrimental wheel spin in low-grip environments, while proving advantageous on high-traction tracks" (our analysis). Therefore, selecting higher engine output on high-traction tracks such as England might translate into improved acceleration. Nevertheless, "pushing the car at high altitude might be suboptimal" (Analytics GP). Accordingly, two substantially different engine settings are used here.
 
 ### Break Balance
-No insights have yet been obtained regarding brake balance, and the direction of the brake-balance effect remains unclear. Therefore, testing of different extreme values is taking place here.
+No insights have yet been obtained regarding brake balance, and the direction of the brake-balance effect remains unclear. Therefore, testing of different values is taking place here.
 
 ### Differential
 "High-cornering circuits require frequent shifting, thereby amplifying the utility of the differential. The adverse impact of larger differential settings mitigates—and eventually vanishes, as track cornering intensity increases" (our analysis). Accordingly, the differential for the England Grand Prix should be set rather conservatively. To simplify the search, it is kept constant at 100 for almost all tuples.
@@ -495,6 +495,12 @@ split_laps(4)
 The next step is to specify both the multi-armed bandit algorithm and the objective function by which the arms are evaluated. The main issue here is obtaining an estimator for the lap time of a stint that is as unbiased as possible. As no other models, such as regression, can be used, our approach is as follows:
 As in the search for the setup, this is a best-arm identification problem. However, here the SR algorithm is not used; instead, the extremely simple uniform allocation strategy is employed \parencite[p.~9\ and following]{bubeck}. Under this approach, the number of pulls is distributed equally across arms, independently of the observed rewards. Since obtaining the best possible estimate of the stint time (and thus the race time of the current strategy) is crucial, each arm (i.e. each of the four strategies) is pulled only once. Furthermore, it is important that the stint time estimates are as comparable as possible and that estimation induces as little bias as possible. For two stops, this implies 21 laps per stint, for three stops 16 laps, and so on. Since only 60 laps remain, the following stint length scheme is used when pulling the arms.
 
+| Arm | A1 | A2 | A3 | A4 |
+|---|---:|---:|---:|---:|
+| Compound | hard | medium | soft | soft |
+| Target stint length \(L(b)\) | 21 | 16 | 16 | 13 |
+| Simulated stint length | 19 | 15 | 15 | 11 |
+| Minimal fuel load \(F(z,b)\) | 68 | 52 | 52 | 42 |
 
 The minimal fuel load for the simulation is calculated as follows:
 Let \(b\) denote the number of pitstops and \(L(b)\) be the target stint length.
@@ -562,15 +568,6 @@ minimalFuelLoad(w_soft, 4) # => 42
 ## four stop strategy with extrasoft
 #minimalFuelLoad(w_extrasoft, 4) # => not possible
 ```
-
-For the different arms, the following values result:
-
-| Arm | A1 | A2 | A3 | A4 |
-|---|---:|---:|---:|---:|
-| Compound | hard | medium | soft | soft |
-| Target stint length \(L(b)\) | 21 | 16 | 16 | 13 |
-| Simulated stint length | 19 | 15 | 15 | 11 |
-| Minimal fuel load \(F(z,b)\) | 68 | 52 | 52 | 42 |
 
 As a side note, it is worth mentioning that an additional lap can be driven for each stint that is not the first, since the lap in which a stop is made does not affect the fuel load or tyre condition. Therefore, the resulting strategies for all pit stops can decrease the fuel load by 3.
 The average lap times from these stints are ultimately used as the basis for the bandit’s reward. The objective function is then an estimate of the total race time, to which 30 seconds per pit stop are added, as noted in Analytics GP.
