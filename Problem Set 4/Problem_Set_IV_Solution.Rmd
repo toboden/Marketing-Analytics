@@ -25,36 +25,35 @@ Since we do not have any previous data on the strategy relevant variables it is 
 The LASSO results of the previous problem set indicate that lap time is strongly influenced by several car setup parameters and their interactions with track and environmental conditions. Every retained variable involves at least one controllable car feature. In particular, brake balance, differential, engine, and front and rear wing settings appear repeatedly with sizable coefficients, suggesting that drivetrain and aerodynamic configuration are key performance drivers. 
 Therefore, we choose all setup variables as strong drivers of performance.
 
-From the previous problem set we know that the relationship between car setup variables and lap times is  non-linear. While a two-level design can only identify general trends, the inclusion of a medium value allows the model to capture curvature and diminishing returns, which are critical for identifying the "sweet spot" in a complex mechanical system. 
-However, a three-level design may oversimplify the complex physical interactions of racecar dynamics. A response surface with only three points assumes a symmetric curvature, which risks missing the true optimum if the performance curve is skewed or asymptotic. By extending the design to five levels, we gain the resolution necessary to capture higher-order non-linearities and subtle changes in vehicle behavior. This finer granularity is critical for distinguishing between a broad performance plateau and a narrow, sensitive peak, ensuring that the final optimal setting is precise rather than just an approximation between two extremes.
+From the previous problem set we know that the relationship between car setup variables and lap times is  non-linear. While a two-level design can only identify general trends, the inclusion of a medium value allows the model to capture curvature and diminishing returns, which are critical for identifying the "sweet spot" in a complex mechanical system. This third level provides the mathematical basis for a quadratic regression, enabling the detection of optimal settings that may lie between the extreme boundaries of the design space. By accounting for these non-linear effects, the design better reflects the physical trade-offs inherent in vehicle dynamics, such as the balance between front wing and rear wing.
 
 Regarding the tyres we expect that a softer compound results in faster lap times but higher degradation. For the qualifying the super-soft tyre therefore makes sense. It is still important to use the other three tyres to learn when it makes sense to use a softer tyre with an additional pit stop as opposed to a harder tyre.
 The resulting factors that we believe influence the lap time are:
-\begin{itemize} 
-\item Rear Wing: 10 / 130 / 250 / 370 / 500 
-\item Front Wing: 10 / 130 / 250 / 370 / 500 
-\item Engine: 10 / 130 / 250 / 370 / 500 
-\item Brake Balance: 10 / 130 / 250 / 370 / 500 
-\item Differential: 10 / 130 / 250 / 370 / 500 
-\item Suspension: 10 / 130 / 250 / 370 / 500 
-\item Tyre: super-soft / soft / medium / hard \end{itemize}
+\begin{itemize}
+\item Rear Wing: 10 / 250 / 500
+\item Front Wing: 10 / 250 / 500
+\item Engine: 10 / 250 / 500
+\item Brake Balance: 10 / 250 / 500
+\item Differential: 10 / 250 / 500
+\item Suspension: 10 / 250 / 500
+\item Tyre: super-soft / soft / medium / hard
+\end{itemize}
 
 From the Team Analytics Website we get the following information from Gunnar:
 "One thing we did was to debunk the myth that setup should be changed according to fuel load or the tyres."
 This implies that setup factors can be optimized independently of tyres and fuel load. And strategy factors can be evaluated holding setup fixed. This allows us to separate the experiment into two phases.
 
-In the first phase we estimate the main effects of the six setup variables, holding tyre compound and fuel strategy constant. As a full factorial design is not feasible we use D-optimality to come up with an experimental design, which maximizes the precision of the car setup coefficients given a limited amount of experimental runs (70=120- 50 laps for phase 2).
+In the first phase we estimate the main effects of the six setup variables, holding tyre compound and fuel strategy constant. As a full factorial design is not feasible (3^6=729) we use D-optimality to come up with an experimental design, which maximizes the precision of the car setup coefficients given a limited amount of experimental runs (104 = 120 - 16 laps for phase 2).
 ```{r, echo=FALSE}
 library(AlgDesign)
-levels_5 <- c(10, 130, 250, 370, 500)
 
 setup_candidates <- expand.grid(
-  RearWing     = levels_5,
-  FrontWing    = levels_5,
-  Engine       = levels_5,
-  BrakeBalance = levels_5,
-  Differential = levels_5,
-  Suspension   = levels_5
+  RearWing     = c(10, 250, 500),
+  FrontWing    = c(10, 250, 500),
+  Engine       = c(10, 250, 500),
+  BrakeBalance = c(10, 250, 500),
+  Differential = c(10, 250, 500),
+  Suspension   = c(10, 250, 500)
 )
 
 phase1_model <- ~ RearWing + I(RearWing^2) +
@@ -69,186 +68,48 @@ set.seed(123)
 phase1_design <- optFederov(
   frm       = phase1_model,
   data      = setup_candidates,
-  nTrials   = 70,      # reduced number of practice laps
+  nTrials   = 104,      # reduced number of practice laps
   criterion = "D"
 )
 
-#print(paste("D-efficiency:",phase1_design$Dea))
+# D-criterion and efficiency
+phase1_design$D
+phase1_design$Dea
 
 # The actual experimental plan
 phase1_plan <- phase1_design$design
-cor_matrix <- cor(phase1_plan)
-off_diag_elements <- cor_matrix[row(cor_matrix) != col(cor_matrix)]
-max_abs_corr <- max(abs(off_diag_elements))
-#print(paste("Maximum absolute off-diagonal correlation:", max_abs_corr))
-
-#print(phase1_plan)
+cor(phase1_plan)
+print(phase1_plan)
 
 
 ```
-
-The resulting design achieves a solid D-efficiency of 42,1% and maintains low correlations between the factors with the larges absolute correlation being 0,16. This ensures that the influence of each individual parameter can be statistically isolated during analysis. Consequently, this approach maximizes the information gathered about the vehicle's performance while significantly minimizing the total number of practice laps required for testing when compared to a full factorial design.
+The resulting design achieves a D-efficiency of 57.9% and maintains low correlations (maximum of 0.15) between the factors, ensuring that the influence of each individual parameter can be statistically isolated during analysis. Consequently, this approach maximizes the information gathered about the vehicle's performance while significantly minimizing the total number of practice laps required for testing when compared to a full factorial design.
 
 In the second phase the setup is fixed and we compare tyre compounds to understand lap time and degradation trade-offs as well as implicit pit stop costs.
-Because the number of strategy factors is small and the factor levels are few, a full factorial design is feasible and preferred, as it allows unbiased and transparent comparison of all tyre compounds without confounding. This full factorial design ensures that differences in lap time and degradation across tyre types can be directly attributed to the tyre choice, providing a clear basis for race strategy decisions. We assume that softer tyre compounds degrade faster but achieve shorter lap times than harder compounds. To efficiently learn about degradation behavior under a limited lap budget, we run longer stints on the extreme compounds (super-soft and hard), which are expected to bracket the degradation patterns of the intermediate compounds. Shorter stints on the soft and medium tyres are still included to directly observe their performance levels, while the longer stints on the extremes improve identification of degradation dynamics. Therefore we decide to run 15 laps on the super-soft, 25 laps on the hard tyre and 5 laps on the soft and medium tyre each.
+Because the number of strategy factors is small and the factor levels are few, a small full factorial design is feasible and preferred, as it allows unbiased and transparent comparison of all tyre compounds without confounding. This full factorial design ensures that differences in lap time and degradation across tyre types can be directly attributed to the tyre choice, providing a clear basis for race strategy decisions.
 
 ```{r, echo=FALSE}
-# Fixed setup from Phase 1 optimum
 fixed_setup <- data.frame(
-  RearW     = 500,
-  FrontW    = 500,
+  RearWing     = 500,
+  FrontWing    = 500,
   Engine       = 500,
   BrakeBalance = 500,
   Differential = 500,
   Suspension   = 10
 )
+laps_per_tyre <- 4
 
-# Define stint lengths per tyre compound
-laps_per_tyre <- data.frame(
-  Tyre = factor(c("super_soft", "soft", "medium", "hard"),
-                levels = c("super_soft", "soft", "medium", "hard")),
-  Laps = c(15, 5, 5, 25)
+strategy_factors <- expand.grid(
+  Tyre = factor(c("super_soft", "soft", "medium", "hard")),
+  Lap = 1:laps_per_tyre
 )
 
-# Create full factorial design within each tyre compound
-strategy_factors <- do.call(
-  rbind,
-  lapply(1:nrow(laps_per_tyre), function(i) {
-    data.frame(
-      Tyre = laps_per_tyre$Tyre[i],
-      Lap  = 1:laps_per_tyre$Laps[i]
-    )
-  })
-)
-
-# Combine fixed setup with strategy design
 phase2_design <- cbind(
   fixed_setup[rep(1, nrow(strategy_factors)), ],
   strategy_factors
 )
 
-# Inspect design
-table(phase2_design$Tyre)
-head(phase2_design)
+print(phase2_design)
 
 ```
-1. Experiment: 25 Laps, Hart, mit 120 Fuel
---> Reifen degradiert linear
---> Fuel level linear abnehmend
---> Einfluss von Fuel auf Laptime scheint größer zu sein von Reifen (da Rundenzeit sinkt)
-
-2. Experiment: 2 Laps, Soft, 5 Fuel
---> Fuel level linear abnehmend, egal welcher Reifen drauf ist
---> Reifen degration höher für weichen Reifen
-
-Idee: Wenn Fuel und Reifen unabhängig von einander degradieren, können wir mehrere Stints mit einer Runde fahren, um immer mit neuem Reifen zu starten (diesen also konstant halten). So können wir, wenn wir den Fuel ändern, den Einfluss von Fuel auf die Rundenzeit ermitteln.
-
-3. Experiment: 5 Stints a 1 Runde, Soft, Fuel 100/80/60/40/20, weil 120 haben wir ja schon.
-
-Um zu prüfen, ob das Fuel Level mit unterschiedlichen Reifen einen Einfluss auf die Rundenzeit hat, machen wir das dritte Experiment nochmal mit dem harten Reifen.
-
-
-4. Experiment: 5 Stints a 1 Runde, Hart, Fuel 100/80/60/40/20, weil 120 haben wir ja schon
-
-Dann müssen wir nur noch die unterschiedlichen Reifen testen.
-4. Experiment: 15 Runden, Soft, Fuel 120
-
-5. Experiment: 3 Runden, Medium, Fuel 120
-
-Frage: Müssen wir dieses Experiment für alle Reifen durchführen?
-Frage: Können wir den Fehler, der auf die Rundenzeit addiert wird abschätzen?
-
-
-Erkenntnisse:
-Reifen degradiert linear, aber unterschiedlich für Reifenmischung
-Fuel level linear abnehmend, egal welcher Reifen drauf ist
-Super soft lässt sich nicht fahren, wahrscheinlich weil es zu warm ist
-Pitstops können in der Practice nicht simuliert werden (es kann nicht mit zu wenig Sprit gestartet werden)
-
-
-
-
-
-
-
-
-
-
-# Task 2
-Für das Rennen in England soll ausschließlich mit der Multi-Armed-Bandit (MAB) Methode gearbeitet werden, die für das vorliegende Problem relativ ungeeignet ist. Es soll ein sehr großer Parameterraum ohne zusätzliche Anwendung von more involved modeln mit nur sehr wenigen Ziehungen aus den zugrundeliegenden Verteilungen erkundet werden, um ein optimales Setup und eine optimale Strategie für das Rennen zu finden. 
-
-Aus den verschiedenen Setup- und Strategieparametern gemeinsame Tupel zu bilden, ist dank der Unabhängigkeit des Setups von den Reifen nicht nötig (ein Setup das auf "soft" besser funktioniert ist auch konsistent auf "hard" besser. Demnach wird im Folgenden das Problem in zwei Teilprobleme unterteilt:
-1. Bestimmung des besten Setups aus einer vordefinierten Menge an möglichen Setups.
-2. Ableitung der bestmöglichen Strategie aus einer vordefinierten Menge an möglichen Strategien.
-
-Dass nur sehr wenige Übungsrunden zu Verfügung stehen hat nicht nur Auswirkung auf die Menge der möglichen Tupel, die verglichen werden, sondern auch auf die Wahl, welcher MAB Algorithmus verwendet wird.
-Hier jetzt über epsilon greedy, ucb und thompson sprechen. Thompson zitieren für den Fall dass nur wenige Pulls zur Verfügung stehen kann sich Thompson schnell auf eine option einschießen, die für das vorliegende problem suboptimal ist. Für das Setting wie es hier gegeben ist bieten sich algorithmen an, die einen starken Fokus auf exploration legen oder ausschließlich explorieren. 
-
-1. Bestimmung des Setup
-Aufgrund der limitierten Anzahl an Übungsrunden besteht ein Trade-off zwischen der Anzahl der Bandit-Arme (d. h. Setup-Parameter-Tupeln) und der Anzahl an Übungsrunden pro Arm. Wenn zu viele verschiedene Tupel erkundet werden, entfallen auf jeden Arm zu wenige Übungsrunden, sodass die Performance-Schätzungen stark verrauscht und damit wenig aussagekräftig sind. Die Setup-Tupel werden im Folgenden so gewählt, dass eine möglichst breite Abdeckung des Parameterraums unter Berücksichtigung der Streckencharakteristik erzielt wird.
-
-
-Die Track characterstics von England zeigen folgendes Bild auf: cornering ist gering (23/100), es herrscht ein sehr hohes level an grip (79/100) und die strecke ist  hoch gelegen (77/100) sowie nicht rough (1/100).
-
-Folgende findings aus den vorherigen analysen und berücksichigung von informationen aus dem online-tool "Analytics GP" lassen eine Tendenz der Auswahl an Setups für den Bandit algorithmus zu.
-
-### Aerodynamics
-"Another point that we found was the importance of aerodynamic balance, indicating that downforce components must be tuned in concert rather than in isolation to maximize speed" (our analysis). Das impliziert keine verschiedenen werte von rear und front wing zu verwenden. "Car wing angles should be set higher in tracks with more corners" (Analytics GP). Das entspricht der klassischen Empfehlung einer low donforce abstimmung für Strecken mit wenig kurven.
-
-### Enginge
-"High engine output induces detrimental wheel spin in low-grip environments, while proving advantageous on high-traction tracks" (our anaylsis). Therefore selecting higher engine output on high-traction tracks like England might translate into improved acceleration. Neverteless "pushing the car at high altitude might be suboptimal" (Analytics GP). Demach werden hier zwei sehr verschiedene Einstellungen von engine verwendet.
-
-### Break Balance
-Zu Break Balance wurden noch keine Erkenntnisse gesammelt, auch die Richtung der Break Balance ist nicht klar. Daher werden hier verschiedene extreme Werte ausprobiert.
-
-### Differential
-"High-cornering circuits require frequent shifting, thereby amplifying the utility of the differential. The adverse impact of larger differential settings mitigates—and eventually vanishes, as track cornering intensity increases" (our analysis). Demnach sollte das Differential für den England GP eher konservativ eingestellt werden und wird zur Vereinfachung der Suche für fast alle Tupel konstant auf 100 gelassen.
-
-### Suspension
-Für Frankreich war ein Trend hin zu sehr niedriger Suspension einstellung zu sehen. Dies könnte zu der Charakteristik der relativ roughen strecke passen. Nachdem England nur extrem nicht rough ist, werden bei den folgenden setup varianten der fokus stärker auf eine härtere Suspension einstellung gelegt, wobei ein Arm jedoch einen absichtlich niedrien wert als absicherung enthält.
-
-
-| Arm      | Rear Wing | Front Wing | Engine | Brake | Differential | Suspension |
-|---------:|----------:|-----------:|-------:|------:|-------------:|-----------:|
-| A1       | 250       | 250        | 300    | 250   | 250          | 250        |
-| A2       |  10       |  10        | 400    | 250   | 100          | 450        |
-| A3       |  10       |  10        | 100    | 250   | 100          | 450        |
-| A4       | 100       | 100        | 400    | 500   | 100          | 200        |
-| A5       | 100       | 100        | 100    |  50   | 100          | 200        |
-| A6       | 150       | 150        | 400    |  50   | 100          | 500        |
-| A7       | 300       | 300        | 350    | 500   | 100          |  50        |
-
-Die angegebenen sieben Setup Varianten beinhalten ein balanced baseline setup (A1), mehrere variierende low downforce varianten (A2-A6) mit orientierung der parameter an den findings oben und ein medium downforce setup (A7). Damit wird versucht den Parameterraum möglichst breit aufzuspannen und trotzdem einen Fokus auf low downforce zu legen.
-
-### Successive Rejects Algorithm
-
-hier zitat warum nicht espilon greedy oder thompson und dann paper successive reject algo mit verweis auf figure 3 algo.
-warum SR gewählt?
-
-
-each pull stint length 1, fuel load 120, tyre selection hard
-
-Anzahl der pulls je Runde
-
-4 1 1 1 2 4
-
-
-ergebnisse über pfeilchart? 7 -- eliminate A2 --> 6 -- eliminate A4 --> usw
-
-
-
-
-
-
-
-
-2. Bestimmung der Strategie
-
-Nachdem nun das Setup AX als bestes unter den 7 möglichen ausgewählt wurde, werden zunächst auf diesem Setup je Compound zwei Runde gefahren. Dies ermöglichst es die Konstanten für die lineare Abnahme der Reifen und Fuel je Runde zu bestimmen und damit ein geeignetes Set an Strategieen festzulegen. 
-
-Man erhält dabei für die fuelabnahme je Runde einen Wert von z=XX. Die compounds degradieren mit w_soft = xx, w_medium = xx und w_hard = xx. Der super softe Reifen wird für die Strategie ausgeschlossen, da er mit hoher Wahrscheinlichkeit auf die lange Renndistanu keinen entscheidenden Vorteil bringt.
-
-Mit dieser Information und der Annahme linear abnehmender Fuel und Compound Werte (Vergleich Frankreich GP), werden nun die Arme für den Strategie-Bandit festgelet. Die grundlegende Erkenntnis aus den vorherigen Rennen dabei ist, dass es von großem Vorteil ist mit niedrigen Fuel werten zu fahren.
-
-
 

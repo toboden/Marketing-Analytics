@@ -18,20 +18,18 @@ track_params <- list(
   'Lap Distance' = 4.9  # in km
 )
 
-# No weather data for Belgium Circuit available
-# (Definieren wir trotzdem, falls wir es später brauchen, wie im Python Skript)
+# weather data for Belgium Circuit 
 weather_params <- list(
-  'Temperature' = 31,
-  'Humidity' = 96,
-  'Wind (Avg. Speed)' = 10,
-  'Wind (Gusts)' = 20,
-  'Air Density' = 97,
-  'Air Pressure' = 45
+  'Temperature' = 7,
+  'Humidity' = 68,
+  'Wind (Avg. Speed)' = 54,
+  'Wind (Gusts)' = 6,
+  'Air Density' = 37,
+  'Air Pressure' = 64
 )
 
 # 3. Parameter kombinieren
-# Da wir keine Wetterdaten für Belgien haben, nehmen wir nur die Track Params
-fixed_params <- track_params
+fixed_params <- append(track_params, weather_params)
 
 # Falls du später beide kombinieren willst (wie {**x, **y} in Python):
 # fixed_params <- c(track_params, weather_params)
@@ -102,7 +100,7 @@ neighbors <- data[indices, cols_to_select]
 plot(1:k_max, distances, type = "l", col = "blue", lwd = 2,
      main = "KNN Distances to Neighbors",
      xlab = "Neighbor Index", ylab = "Distance to Query Point")
-grid()
+
 
 
 
@@ -148,14 +146,14 @@ for (k in 1:max_clusters) {
 plot(1:max_clusters, inertia, type = "b", pch = 19, col = "black",
      main = "Elbow Method for Optimal k",
      xlab = "Number of Clusters", ylab = "Inertia (Tot.WithinSS)")
-grid()
 
-# 4. Plot: Silhouette Scores
+
+# 4. Plot: Silhouette Scores (bug here, fix. Scores must be similar to sklearn.metrics)
 k_range <- 2:max_clusters
 plot(k_range, silhouette_scores[k_range], type = "b", pch = 19, col = "orange",
      main = "Silhouette Scores for Different k",
      xlab = "Number of Clusters", ylab = "Silhouette Score")
-grid()
+
 
 
 ##################################################
@@ -164,7 +162,7 @@ grid()
 
 
 # 1. K-Means mit k=5 fitten
-n_clusters <- 5
+n_clusters <- 4
 set.seed(0)
 kmeans_final <- kmeans(neighbors_scaled, centers = n_clusters, nstart = 25)
 
@@ -191,7 +189,7 @@ boxplot(lap_time_adjusted ~ KMeans_Cluster, data = neighbors,
         col = RColorBrewer::brewer.pal(n_clusters, "Set2"), # oder einfach col=1:n_clusters
         main = "K-Means: Which Strategy is Faster?",
         xlab = "K-Means Cluster", ylab = "Lap Time (Adjusted)")
-grid()
+
 
 # --- 4. EXTRACT RESULTS: Bounds for Best Cluster ---
 best_km_cluster <- as.numeric(names(which.min(mean_lap_times)))
@@ -228,7 +226,7 @@ rect.hclust(hc, k = 5, border = "red")
 abline(h = 10, col = "red", lty = 2)
 
 # --- DECISION ---
-k_selected <- 5
+k_selected <- 4
 neighbors$Strategy_Cluster <- cutree(hc, k = k_selected)
 
 cluster_means_df <- aggregate(. ~ Strategy_Cluster, 
@@ -245,7 +243,7 @@ boxplot(lap_time_adjusted ~ Strategy_Cluster, data = neighbors,
         col = RColorBrewer::brewer.pal(k_selected, "Set2"), # Falls RColorBrewer installiert
         main = "Which Strategy is Faster?",
         xlab = "Strategy Cluster", ylab = "Lap Time (Adjusted)")
-grid()
+
 
 
 # 1. Mittelwerte der Features berechnen
@@ -282,9 +280,53 @@ for (col in decision_features) {
 
 
 
+#######################################
+# Sample results to try out
+#######################################
+
+n=85
+K=10
+
+## Define function for Successive Rejects algorithm
+get_draws_per_phase <- function(K, n) {
+  stopifnot(K >= 2, n >= K)
+  
+  # \bar{log}(K) = 1/2 + sum_{i=2}^K 1/i
+  logK_bar <- 0.5 + sum(1 / (2:K))
+  
+  k <- seq_len(K - 1)  # 1,2,...,K-1
+  
+  # n_k (cumulative pulls per active arm up to phase k)
+  n_k <- ceiling((1 / logK_bar) * ((n - K) / (K + 1 - k)))
+  n_k <- c(0, n_k)
+  
+  # phase increments: n_k - n_{k-1}, with n_0 = 0
+  inc <- diff(n_k)
+  
+  total_pulls <- sum((K:2) * inc)
+  
+  list(n_k = n_k, inc = inc, total_pulls = total_pulls)
+}
+
+print(get_draws_per_phase(K,n))
 
 
 
+#install.packages("lhs")
+library(lhs)
+
+mins <- c(300, 300, 10, 1, 10, 50) 
+maxs <- c(500, 500, 250, 100, 200, 250) 
+# 1. Erzeuge LHS (Werte 0-1)
+raw_data <- randomLHS(n = 12, k = length(mins))
+
+# 2. Skaliere auf Bereiche (a-b)
+final_data <- raw_data # Kopie erstellen
+for(i in 1:ncol(final_data)) {
+  final_data[,i] <- qunif(raw_data[,i], min = mins[i], max = maxs[i])
+}
+
+print(final_data)
 
 
 
