@@ -1,6 +1,16 @@
 
 
-## Define function for Successive Rejects algorithm
+
+
+
+
+
+
+## -------------------------------
+## Setup: SR bandit implementation 
+## -------------------------------
+
+# ---------- helpers ----------
 get_draws_per_phase <- function(K, n) {
   stopifnot(K >= 2, n >= K)
   
@@ -21,26 +31,6 @@ get_draws_per_phase <- function(K, n) {
   list(n_k = n_k, inc = inc, total_pulls = total_pulls)
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## -------------------------------
-## Setup: SR bandit implementation 
-## -------------------------------
-
-# ---------- helpers ----------
 append_pulls <- function(arms, pulls) {
   # only update arms that are still active
   for (nm in intersect(names(pulls), names(arms))) {
@@ -70,7 +60,7 @@ n_setup = 60 # number of possible draws
 SR_Setup_parameters <- get_draws_per_phase(K_setup,n_setup)
 
 cat(paste0("Pulls phase ", seq_along(SR_Setup_parameters$inc), ": ", SR_Setup_parameters$inc), sep = "\n")
-paste0("Total pulls: ", SR_Setup_parameters$total_pulls)
+cat("Total pulls: ", SR_Setup_parameters$total_pulls)
 
 
 # ------------------------------------------------------------------------------
@@ -108,17 +98,17 @@ phase_1 <- eliminate_worst(arms)
 history_setup[["phase1"]] <- phase_1
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_1$eliminated)
+# # eliminated arm
+# paste0("Eliminated arm: ", phase_1$eliminated)
 
 
 ## first pull - phase 2---------------------------------------------------------
-a1 <- c(0)
-a2 <- c(0)
-a4 <- c(0)
-a5 <- c(0)
-a6 <- c(0)
-a7 <- c(0)
+a1 <- c(108.99364735)
+a2 <- c(112.30769925)
+a4 <- c(112.11569925)
+a5 <- c(110.16719925)
+a6 <- c(109.03556495)
+a7 <- c(111.71514735)
 
 
 pull2 <- list(A1 = a1, A2 = a2, A4 = a4, A5 = a5, A6 = a6, A7 = a7)
@@ -130,18 +120,18 @@ phase_2 <- eliminate_worst(arms)
 history_setup[["phase2"]] <- phase_2
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_2$eliminated)
+# # eliminated arm
+# paste0("Eliminated arm: ", phase_2$eliminated)
 
 
 ## first pull - phase 3---------------------------------------------------------
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
+a1 <- c(108.24064735)
+a4 <- c(111.07869925)
+a5 <- c(109.45319925)
+a6 <- c(109.94656495)
+a7 <- c(110.04114735)
 
-pull3 <- list(Ax = ax, Ax = ax, Ax = ax, Ax = ax, Ax = ax)
+pull3 <- list(A1 = a1, A4 = a4, A5 = a5, A6 = a6, A7 = a7)
 
 arms <- append_pulls(phase_2$arms, pull3)
 
@@ -150,18 +140,18 @@ phase_3 <- eliminate_worst(arms)
 history_setup[["phase3"]] <- phase_3
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_3$eliminated)
+# # eliminated arm
+# paste0("Eliminated arm: ", phase_3$eliminated)
 
 
 ## first pull - phase 4---------------------------------------------------------
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
+a1 <- c(109.97264735)
+a5 <- c(110.21219925)
+a6 <- c(110.01156495)
+a7 <- c(110.28614735)
 
 
-pull4 <- list(Ax = ax, Ax = ax, Ax = ax, Ax = ax)
+pull4 <- list(A1 = a1, A5 = a5, A6 = a6, A7 = a7)
 
 arms <- append_pulls(phase_3$arms, pull4)
 
@@ -170,17 +160,17 @@ phase_4 <- eliminate_worst(arms)
 history_setup[["phase4"]] <- phase_4
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_4$eliminated)
+# # eliminated arm
+# paste0("Eliminated arm: ", phase_4$eliminated)
 
 
 ## first pull - phase 5---------------------------------------------------------
-ax <- c(0, 0)
-ax <- c(0, 0)
-ax <- c(0, 0)
+a1 <- c(108.57064735, 108.90064735)
+a5 <- c(110.70919925, 110.92019925)
+a6 <- c(108.80356495, 110.11456495)
 
 
-pull5 <- list(Ax = ax, Ax = ax, Ax = ax)
+pull5 <- list(A1 = a1, A5 = a5, A6 = a6)
 
 arms <- append_pulls(phase_4$arms, pull5)
 
@@ -189,16 +179,16 @@ phase_5 <- eliminate_worst(arms)
 history_setup[["phase5"]] <- phase_5
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_5$eliminated)
+# # eliminated arm
+# paste0("Eliminated arm: ", phase_5$eliminated)
 
 
 ## first pull - phase 6---------------------------------------------------------
-ax <- c(0, 0, 0, 0)
-ax <- c(0, 0, 0, 0)
+a1 <- c(109.10764735, 108.14064735, 109.72064735, 109.83464735)
+a6 <- c(109.02056495, 109.01656495, 109.48856495, 110.60456495)
 
 
-pull6 <- list(Ax = ax, Ax = ax)
+pull6 <- list(A1 = a1, A6 = a6)
 
 arms <- append_pulls(phase_5$arms, pull6)
 
@@ -207,13 +197,20 @@ phase_6 <- eliminate_worst(arms)
 history_setup[["phase6"]] <- phase_6
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_6$eliminated)
+# # eliminated arm
+# paste0("Eliminated arm: ", phase_6$eliminated)
+# 
+# # selected arm and lap time
+# paste0("Selected arm: ", names(phase_6$arms[1]), " - Lap-time: ", phase_6$means[names(phase_6$arms[1])])
 
-# selected arm and lap time
-paste0("Selected arm: ", names(phase_6$arms[1]), " - Lap-time: ", phase_6$means[names(phase_6$arms[1])])
 
 
+for (i in 1:6) {
+  cat("Phase ", i, " - eliminated arm: ", history_setup[[i]]$eliminated, "\n", sep = "")
+  if(i == 6){
+    cat("Selected arm: ", names(history_setup[[i]]$arms[1]), " - Lap-time: ", phase_6$means[names(history_setup[[i]]$arms[1])])
+  }
+}
 
 
 
@@ -222,285 +219,280 @@ paste0("Selected arm: ", names(phase_6$arms[1]), " - Lap-time: ", phase_6$means[
 
 
 
+## -----------------------------------------------------------------------------
+## Strategy: Uniform allocation bandit implementation 
+## -----------------------------------------------------------------------------
 
+z = 120 - 116.77089672593
+w_extrasoft <- 100 - 87.329884303744
+w_soft <- 100 - 94.489656748349
+w_medium <- 100 - 95.542888870211
+w_hard <- 100 - 96.326579937969
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ------------------------------------------------------------------------------
-
-
-
-# lilst to store arms, means, eliminated arms
-history_setup <- setNames(vector("list", (K_setup-1)), paste0("phase", 1:(K_setup-1)))
-
-
-
-## first pull - phase 1---------------------------------------------------------
-a1 <- c(0, 0, 0, 0)
-a2 <- c(0, 0, 0, 0)
-a3 <- c(0, 0, 0, 0)
-a4 <- c(0, 0, 0, 0)
-a5 <- c(0, 0, 0, 0)
-a6 <- c(0, 0, 0, 0)
-a7 <- c(0, 0, 0, 0)
-
-
-# list for laptimes of each arm
-arms <- list(
-  A1 = a1,
-  A2 = a2,
-  A3 = a3,
-  A4 = a4,
-  A5 = a5,
-  A6 = a6,
-  A7 = a7
+
+split_laps <- function(b, n = 63) {
+  
+  S <- b + 1
+  
+  stopifnot(length(S) == 1, is.numeric(S), S >= 1, S == as.integer(S))
+  stopifnot(is.numeric(n), n >= 1, n == as.integer(n))
+  
+  q <- n %/% S
+  r <- n %% S
+  
+  sizes <- c(rep(q + 1, r), rep(q, S - r))
+  names(sizes) <- paste0("part", seq_len(S))
+  return(sizes)
+}
+
+# get the partition of race laps for b pit stops
+split_laps(2)
+split_laps(3)
+split_laps(4)
+
+# function for the minimal fuel load
+minimalFuelLoad <- function(w, b, z = 3.22910327407){
+  
+  # maximum number of laps per stint
+  laps <- max(split_laps(b))
+  
+  minimal_load <- c()
+  
+  if(laps*w > 100){
+    stop("Stint length not possible due to tire degradation!")
+  } else if (laps*z > 120){
+    stop("Stint length not possible due to fuel consumption!")
+  } else{
+    # minimal fuel load
+    minimal_load <- ceiling(laps * z)
+  }
+  
+  minimal_load
+}
+
+### 1 stop -------------------------------
+## one stop strategy with hard
+#minimalFuelLoad(w_hard, 1) # => not possible
+
+
+### 2 stop -------------------------------
+## two stop strategy with hard
+minimalFuelLoad(w_hard, 2) # => 68
+
+## two stop strategy with medium
+#minimalFuelLoad(w_medium, 2) # => 68
+
+## two stop strategy with soft
+#minimalFuelLoad(w_soft, 2) # => not possible
+
+
+### 3 stop ------------------------------
+## three stop strategy with medium
+minimalFuelLoad(w_medium, 3) # => 52
+
+## three stop strategy with soft
+minimalFuelLoad(w_soft, 3) # => 52
+
+## three stop strategy with extrasoft
+#minimalFuelLoad(w_extrasoft, 3) # => not possible
+
+
+### 4 stop ------------------------------
+## four stop strategy with medium
+#minimalFuelLoad(w_medium, 4) # => 42
+
+## four stop strategy with soft
+minimalFuelLoad(w_soft, 4) # => 42
+
+## four stop strategy with extrasoft
+#minimalFuelLoad(w_extrasoft, 4) # => not possible
+
+# function for estimating the lap time
+racetime_estimate <- function(Arm_pull, b){
+  
+  mean_laptime_per_stint <- mean(Arm_pull)
+  
+  approx_racetime <- 63 * mean_laptime_per_stint + 30*b
+  
+  return(approx_racetime)
+  
+}
+
+
+## simulation
+A1_pull1 <- c(104.53867935,
+        104.23007473332,
+        104.50847011665,
+        103.91286549997,
+        104.6492608833,
+        102.99565626662,
+        103.53205164995,
+        102.06944703327,
+        103.62484241659,
+        101.97723779992,
+        103.07463318324,
+        101.25302856657,
+        102.21642394989,
+        101.04781933322,
+        101.99221471654,
+        101.51261009986,
+        101.37100548319,
+        100.13340086651,
+        100.07579624984
 )
 
-phase_1 <- eliminate_worst(arms)
-
-history_setup[["phase1"]] <- phase_1
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_1$eliminated)
+A2_pull1 <- c(102.23264835,
+        102.98804373332,
+        101.92843911665,
+        101.74483449997,
+        101.4772298833,
+        101.64062526662,
+        101.95802064995,
+        101.19441603327,
+        100.39981141659,
+        100.67120679992,
+        100.26260218324,
+        101.03799756657,
+        100.99639294989,
+        99.827788333216,
+        98.58618371654
+)
 
 
-## first pull - phase 2---------------------------------------------------------
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
+A3_pull1 <- c(103.34569485,
+        102.82009023332,
+        102.21448561665,
+        102.87988099997,
+        101.4152763833,
+        100.63867176662,
+        100.62406714995,
+        100.51946253327,
+        100.91785791659,
+        99.616253299919,
+        99.852648683243,
+        99.139044066567,
+        99.479439449892,
+        98.853834833216,
+        98.20123021654
+)
 
 
-pull2 <- list(Ax = ax, Ax = ax, Ax = ax, Ax = ax, Ax = ax, Ax = ax)
-
-arms <- append_pulls(phase_1$arms, pull2)
-
-phase_2 <- eliminate_worst(arms)
-
-history_setup[["phase2"]] <- phase_2
-
-
-# eliminated arm
-paste0("Eliminated arm: ", phase_2$eliminated)
-
-
-## first pull - phase 3---------------------------------------------------------
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-
-pull3 <- list(Ax = ax, Ax = ax, Ax = ax, Ax = ax, Ax = ax)
-
-arms <- append_pulls(phase_2$arms, pull3)
-
-phase_3 <- eliminate_worst(arms)
-
-history_setup[["phase3"]] <- phase_3
+A4_pull1 <- c(101.3563549,
+        102.0097502,
+        102.1841456,
+        101.002541,
+        101.2419364,
+        99.93833177,
+        99.55772715,
+        100.3431225,
+        99.64451792,
+        99.6919133,
+        99.36530868
+)
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_3$eliminated)
+
+# compute race time estimates
+racetime_est <- c(
+  A1 = racetime_estimate(A1_pull1, 2),
+  A2 = racetime_estimate(A2_pull1, 3),
+  A3 = racetime_estimate(A3_pull1, 3),
+  A4 = racetime_estimate(A4_pull1, 4)
+)
+
+# Arm with the smallest racetime estimate
+best_arm <- names(which.min(racetime_est))
+paste0("Best Arm: ", best_arm,". Racetime: ", racetime_est[[best_arm]])
 
 
-## first pull - phase 4---------------------------------------------------------
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
-ax <- c(0)
 
 
-pull4 <- list(Ax = ax, Ax = ax, Ax = ax, Ax = ax)
-
-arms <- append_pulls(phase_3$arms, pull4)
-
-phase_4 <- eliminate_worst(arms)
-
-history_setup[["phase4"]] <- phase_4
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_4$eliminated)
 
 
-## first pull - phase 5---------------------------------------------------------
-ax <- c(0, 0)
-ax <- c(0, 0)
-ax <- c(0, 0)
 
 
-pull5 <- list(Ax = ax, Ax = ax, Ax = ax)
-
-arms <- append_pulls(phase_4$arms, pull5)
-
-phase_5 <- eliminate_worst(arms)
-
-history_setup[["phase5"]] <- phase_5
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_5$eliminated)
 
 
-## first pull - phase 6---------------------------------------------------------
-ax <- c(0, 0, 0, 0)
-ax <- c(0, 0, 0, 0)
 
 
-pull6 <- list(Ax = ax, Ax = ax)
-
-arms <- append_pulls(phase_5$arms, pull6)
-
-phase_6 <- eliminate_worst(arms)
-
-history_setup[["phase6"]] <- phase_6
 
 
-# eliminated arm
-paste0("Eliminated arm: ", phase_6$eliminated)
 
-# selected arm and lap time
-paste0("Selected arm: ", names(phase_6$arms[1]), " - Lap-time: ", phase_6$means[names(phase_6$arms[1])])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
