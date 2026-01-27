@@ -284,8 +284,8 @@ for (col in decision_features) {
 # Sample results to try out
 #######################################
 
-n=85
-K=10
+n=90
+K=12
 
 ## Define function for Successive Rejects algorithm
 get_draws_per_phase <- function(K, n) {
@@ -311,14 +311,33 @@ get_draws_per_phase <- function(K, n) {
 print(get_draws_per_phase(K,n))
 
 
+################################
+# Get final Samples
+##############################
 
-#install.packages("lhs")
+
 library(lhs)
+#install.packages("writexl")
+library(writexl) # Falls nicht installiert: install.packages("writexl")
 
-mins <- c(300, 300, 10, 1, 10, 50) 
-maxs <- c(500, 500, 250, 100, 200, 250) 
+set.seed(0)
+
+# Deine Bounds (aus der Cluster-Analyse)
+mins = c(170, 360, 40,  1,   1,   1)
+maxs = c(500, 500, 480, 80, 110, 300)
+
+decision_features <- c(
+  'Front Wing',
+  'Rear Wing',
+  'Brake Balance',
+  'Suspension',
+  'Engine',
+  'Differential'
+)
+
 # 1. Erzeuge LHS (Werte 0-1)
-raw_data <- randomLHS(n = 12, k = length(mins))
+n_samples <- 30
+raw_data <- randomLHS(n = n_samples, k = length(mins))
 
 # 2. Skaliere auf Bereiche (a-b)
 final_data <- raw_data # Kopie erstellen
@@ -326,7 +345,82 @@ for(i in 1:ncol(final_data)) {
   final_data[,i] <- qunif(raw_data[,i], min = mins[i], max = maxs[i])
 }
 
-print(final_data)
+# 3. Dataframe erstellen & Spaltennamen zuweisen
+setup_df <- as.data.frame(final_data)
+colnames(setup_df) <- decision_features
+
+# 4. Runden auf ganze Zahlen (Integers)
+setup_df <- round(setup_df, 0)
+
+# 5. Setup-ID hinzufügen (damit man den Überblick behält)
+setup_df$Setup_ID <- 1:n_samples
+
+# ID-Spalte nach vorne schieben
+setup_df <- setup_df[, c("Setup_ID", decision_features)]
+
+# 6. Kontrolle
+print(head(setup_df))
+
+# 7. Als Excel exportieren
+write_xlsx(setup_df, "Problem Set 4/Belgien_Setup_candidates.xlsx")
+
+############################################
+# after first 60
+###########################################
+
+first_60_df = read.csv('data/practice_data_belgium_first_60.csv', check.names = FALSE)
+head(first_60_df)
+first_60_df = first_60_df %>% filter(Track == "Belgium") %>% select(c(`Rear Wing`, `Front Wing`, 
+                                                        Engine ,Brake , Differential, Suspension, `Lap Time`))
+avg_times = first_60_df %>% group_by(`Rear Wing`, `Front Wing`, 
+                                       Engine ,Brake , Differential, Suspension) %>% 
+                        summarise(Mean_Lap_Time = mean(`Lap Time`, na.rm = TRUE)) %>%
+                        rename(`Brake Balance` = Brake) %>% arrange(Mean_Lap_Time)
+results = avg_times %>% left_join(setup_df, by = decision_features)
+head(results)
+top_15 = head(results, 15)
+print("--- TOP 15 SCHNELLSTE SETUPS ---")
+print(top_15 %>% select(Setup_ID, Mean_Lap_Time))
+
+############################################
+# after first 75
+###########################################
+
+first_75_df = read.csv('data/practice_data_belgium_first_75.csv', check.names = FALSE)
+first_75_df = first_75_df %>% filter(Track == "Belgium") %>% select(c(`Rear Wing`, `Front Wing`, 
+                                                                      Engine ,Brake , Differential, Suspension, `Lap Time`))
+avg_times = first_75_df %>% group_by(`Rear Wing`, `Front Wing`, 
+                                     Engine ,Brake , Differential, Suspension) %>% 
+  summarise(Mean_Lap_Time = mean(`Lap Time`, na.rm = TRUE)) %>%
+  rename(`Brake Balance` = Brake) %>% arrange(Mean_Lap_Time)
+results = avg_times %>% left_join(setup_df, by = decision_features)
+head(results)
+top_15 = head(results, 5)
+print("--- TOP 5 SCHNELLSTE SETUPS ---")
+print(top_15 %>% select(Setup_ID, Mean_Lap_Time))
+
+
+############################################
+# after first 80
+###########################################
+
+first_80_df = read.csv('data/practice_data_belgium_first_80.csv', check.names = FALSE)
+first_80_df = first_80_df %>% filter(Track == "Belgium") %>% select(c(`Rear Wing`, `Front Wing`, 
+                                                                      Engine ,Brake , Differential, Suspension, `Lap Time`))
+avg_times = first_80_df %>% group_by(`Rear Wing`, `Front Wing`, 
+                                     Engine ,Brake , Differential, Suspension) %>% 
+  summarise(Mean_Lap_Time = mean(`Lap Time`, na.rm = TRUE)) %>%
+  rename(`Brake Balance` = Brake) %>% arrange(Mean_Lap_Time)
+results = avg_times %>% left_join(setup_df, by = decision_features)
+head(results)
+top_15 = head(results, 5)
+print("--- TOP 5 SCHNELLSTE SETUPS ---")
+print(as.data.frame(top_15 %>% select(Setup_ID, Mean_Lap_Time)))
+
+print("--- FINAL CAR SETUP ---")
+print(head(as.data.frame(top_15 %>% select(Setup_ID, Mean_Lap_Time)),1))
+
+decision_features
 
 
 

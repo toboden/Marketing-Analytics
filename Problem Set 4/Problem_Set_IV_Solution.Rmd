@@ -20,18 +20,38 @@ editor_options:
 # Task 1
 
 In this task we design an reduced experimental design to study the impact of different car setup parameters and strategy-related factors.
-As seen in the last problem set we have several variables. Some of those variables are predetermined and track specific. Since they do not vary within the practice or the race and are fixed we cannot include them in the experimental design.
-The setup variables however can be influenced by the racing team. In this problem set we additionally have strategy relevant variables. We can now choose tire compound, fuel load and how many pitstops we do and when we do them. 
-Since we do not have any previous data on the strategy relevant variables it is important to learn about the influences of those on the lap time and overall race time. It is of significant importance to find out how durable the tires are and how they influence the lap time. The same applies to fuel load. It is also important to do some pit stops to estimate how much time is lost per pit stop. Since the pit stops are determined by tire changes we do not explicitly include them as a factor in the experimental design as we learn about them indirectly. The fuel load will decrease during the practice. Therefore we do not include it explicitly as a factor in the experimental design and just fuel up the car to the maximum after every tire change.
+As seen in the last problem set we have several variables.
+Some of those variables are predetermined and track specific.
+Since they do not vary within the practice or the race and are fixed we cannot include them in the experimental design.
+The setup variables however can be influenced by the racing team.
+In this problem set we additionally have strategy relevant variables.
+We can now choose tire compound, fuel load and how many pitstops we do and when we do them.
+Since we do not have any previous data on the strategy relevant variables it is important to learn about the influences of those on the lap time and overall race time.
+It is of significant importance to find out how durable the tires are and how they influence the lap time.
+The same applies to fuel load.
+It is also important to do some pit stops to estimate how much time is lost per pit stop.
+Since the pit stops are determined by tire changes we do not explicitly include them as a factor in the experimental design as we learn about them indirectly.
+The fuel load will decrease during the practice.
+Therefore we do not include it explicitly as a factor in the experimental design and just fuel up the car to the maximum after every tire change.
 
-The LASSO results of the previous problem set indicate that lap time is strongly influenced by several car setup parameters and their interactions with track and environmental conditions. Every retained variable involves at least one controllable car feature. In particular, brake balance, differential, engine, and front and rear wing settings appear repeatedly with sizable coefficients, suggesting that drivetrain and aerodynamic configuration are key performance drivers. 
+The LASSO results of the previous problem set indicate that lap time is strongly influenced by several car setup parameters and their interactions with track and environmental conditions.
+Every retained variable involves at least one controllable car feature.
+In particular, brake balance, differential, engine, and front and rear wing settings appear repeatedly with sizable coefficients, suggesting that drivetrain and aerodynamic configuration are key performance drivers.
 Therefore, we choose all setup variables as strong drivers of performance.
 
-From the previous problem set we know that the relationship between car setup variables and lap times is non-linear. While a two-level design can only identify general trends, the inclusion of a medium value allows the model to capture curvature and diminishing returns, which are critical for identifying the "sweet spot" in a complex mechanical system. 
-However, a three-level design may oversimplify the complex physical interactions of racecar dynamics. A response surface with only three points assumes a symmetric curvature, which risks missing the true optimum if the performance curve is skewed or asymptotic. By extending the design to five levels, we gain the resolution necessary to capture higher-order non-linearities and subtle changes in vehicle behavior. This finer granularity is critical for distinguishing between a broad performance plateau and a narrow, sensitive peak, ensuring that the final optimal setting is precise rather than just an approximation between two extremes.
+From the previous problem set we know that the relationship between car setup variables and lap times is non-linear.
+While a two-level design can only identify general trends, the inclusion of a medium value allows the model to capture curvature and diminishing returns, which are critical for identifying the "sweet spot" in a complex mechanical system.
+However, a three-level design may oversimplify the complex physical interactions of racecar dynamics.
+A response surface with only three points assumes a symmetric curvature, which risks missing the true optimum if the performance curve is skewed or asymptotic.
+By extending the design to five levels, we gain the resolution necessary to capture higher-order non-linearities and subtle changes in vehicle behavior.
+This finer granularity is critical for distinguishing between a broad performance plateau and a narrow, sensitive peak, ensuring that the final optimal setting is precise rather than just an approximation between two extremes.
 
-Regarding the tyres we expect that a softer compound results in faster lap times but higher degradation. For the qualifying the extra-soft compound therefore makes sense. It is still important to use the other three compounds to learn when it makes sense to use a softer tire with an additional pit stop as opposed to a harder tire.
+Regarding the tyres we expect that a softer compound results in faster lap times but higher degradation.
+For the qualifying the extra-soft compound therefore makes sense.
+It is still important to use the other three compounds to learn when it makes sense to use a softer tire with an additional pit stop as opposed to a harder tire.
 The resulting factors that we believe influence the lap time are:
+
+```{=tex}
 \begin{itemize} 
 \item Rear Wing: 10 / 130 / 250 / 370 / 500 
 \item Front Wing: 10 / 130 / 250 / 370 / 500 
@@ -40,12 +60,14 @@ The resulting factors that we believe influence the lap time are:
 \item Differential: 10 / 130 / 250 / 370 / 500 
 \item Suspension: 10 / 130 / 250 / 370 / 500 
 \item Tire: super-soft / soft / medium / hard \end{itemize}
+```
+From the Team Analytics Website we get the following information from Gunnar: "One thing we did was to debunk the myth that setup should be changed according to fuel load or the tyres." This implies that setup factors can be optimized independently of tires and fuel load.
+And strategy factors can be evaluated holding setup fixed.
+This allows us to separate the experiment into two phases.
 
-From the Team Analytics Website we get the following information from Gunnar:
-"One thing we did was to debunk the myth that setup should be changed according to fuel load or the tyres."
-This implies that setup factors can be optimized independently of tires and fuel load. And strategy factors can be evaluated holding setup fixed. This allows us to separate the experiment into two phases.
+In the first phase we estimate the main effects of the six setup variables, holding tire compound and fuel strategy constant.
+As a full factorial design is not feasible we use D-optimality to come up with an experimental design, which maximizes the precision of the car setup coefficients given a limited amount of experimental runs (70=120- 50 laps for phase 2).
 
-In the first phase we estimate the main effects of the six setup variables, holding tire compound and fuel strategy constant. As a full factorial design is not feasible we use D-optimality to come up with an experimental design, which maximizes the precision of the car setup coefficients given a limited amount of experimental runs (70=120- 50 laps for phase 2).
 ```{r, echo=FALSE}
 library(AlgDesign)
 levels_5 <- c(10, 130, 250, 370, 500)
@@ -89,10 +111,17 @@ max_abs_corr <- max(abs(off_diag_elements))
 
 ```
 
-The resulting design achieves a solid D-efficiency of 42,1% and maintains low correlations between the factors with the largest absolute correlation being 0,16. This ensures that the influence of each individual parameter can be statistically isolated during analysis. Consequently, this approach maximizes the information gathered about the vehicle's performance while significantly minimizing the total number of practice laps required for testing when compared to a full factorial design.
+The resulting design achieves a solid D-efficiency of 42,1% and maintains low correlations between the factors with the largest absolute correlation being 0,16.
+This ensures that the influence of each individual parameter can be statistically isolated during analysis.
+Consequently, this approach maximizes the information gathered about the vehicle's performance while significantly minimizing the total number of practice laps required for testing when compared to a full factorial design.
 
 In the second phase the setup is fixed and we compare tire compounds to understand lap time and degradation trade-offs as well as implicit pit stop costs.
-Because the number of strategy factors is small and the factor levels are few, a full factorial design is feasible and preferred, as it allows unbiased and transparent comparison of all tire compounds without confounding. This full factorial design ensures that differences in lap time and degradation across tire types can be directly attributed to the tire choice, providing a clear basis for race strategy decisions. We assume that softer tire compounds degrade faster but achieve shorter lap times than harder compounds. To efficiently learn about degradation behavior under a limited lap budget, we run longer stints on the extreme compounds (super-soft and hard), which are expected to bracket the degradation patterns of the intermediate compounds. Shorter stints on the soft and medium tires are still included to directly observe their performance levels, while the longer stints on the extremes improve identification of degradation dynamics. Therefore we decide to run 15 laps on the super-soft, 25 laps on the hard tire and 5 laps on the soft and medium tire each.
+Because the number of strategy factors is small and the factor levels are few, a full factorial design is feasible and preferred, as it allows unbiased and transparent comparison of all tire compounds without confounding.
+This full factorial design ensures that differences in lap time and degradation across tire types can be directly attributed to the tire choice, providing a clear basis for race strategy decisions.
+We assume that softer tire compounds degrade faster but achieve shorter lap times than harder compounds.
+To efficiently learn about degradation behavior under a limited lap budget, we run longer stints on the extreme compounds (super-soft and hard), which are expected to bracket the degradation patterns of the intermediate compounds.
+Shorter stints on the soft and medium tires are still included to directly observe their performance levels, while the longer stints on the extremes improve identification of degradation dynamics.
+Therefore we decide to run 15 laps on the super-soft, 25 laps on the hard tire and 5 laps on the soft and medium tire each.
 
 ```{r, echo=FALSE}
 # Fixed setup from Phase 1 optimum
@@ -135,88 +164,133 @@ table(phase2_design$Tyre)
 
 ```
 
-Initial testing with the 25-lap stint on Hard tires with a 120L fuel load revealed that both tire degradation and fuel consumption follow a linear trend. Interestingly, the data suggested that fuel weight has a more significant impact on lap times than tire wear, as lap times consistently decreased as the fuel load lightened and the tyres degraded.
+Initial testing with the 25-lap stint on Hard tires with a 120L fuel load revealed that both tire degradation and fuel consumption follow a linear trend.
+Interestingly, the data suggested that fuel weight has a more significant impact on lap times than tire wear, as lap times consistently decreased as the fuel load lightened and the tyres degraded.
 
 We discovered that the Super-Soft compound could not be utilized, probably due to high ambient temperatures.
 
-**Based on those findings, we have refined our approach** to focus more on the influence of fuel. 
+**Based on those findings, we have refined our approach** to focus more on the influence of fuel.
 
 Testing during a 2-lap stint on Soft tires confirmed that fuel consumption remains linear regardless of the compound, while the degradation rate is significantly higher for softer tires.
 
-Given that fuel and tire degradation operate independently, we adopted a "single-lap stint" strategy to isolate variables. By running multiple one-lap stints, we can hold the tire condition constant (fresh tires every time) to precisely measure the influence of fuel load on performance. Consequently, we conducted stints with fuel levels of 100, 80, 60, 40, and 20 liters. Repeating this process for both Soft and Hard tires allowed us to verify if the fuel-to-performance relationship remains consistent across different grip levels.
+Given that fuel and tire degradation operate independently, we adopted a "single-lap stint" strategy to isolate variables.
+By running multiple one-lap stints, we can hold the tire condition constant (fresh tires every time) to precisely measure the influence of fuel load on performance.
+Consequently, we conducted stints with fuel levels of 100, 80, 60, 40, and 20 liters.
+Repeating this process for both Soft and Hard tires allowed us to verify if the fuel-to-performance relationship remains consistent across different grip levels.
 
 To finalize the tire data, we dedicated a longer stint to the Soft (15 laps) and a short stint to Medium (3 laps) compounds to map their specific linear degradation coefficients.
 
 *Critical Evaluation of the Design*
 
-The experimental design was structured to balance statistical rigor with the practical constraints of a 120-lap simulation budget. While the approach successfully isolated key performance drivers, it involved risks regarding error variance and sample distribution.
+The experimental design was structured to balance statistical rigor with the practical constraints of a 120-lap simulation budget.
+While the approach successfully isolated key performance drivers, it involved risks regarding error variance and sample distribution.
 
-Decoupling based on Domain Expertise: By following Gunnar’s insight, we successfully decoupled the car setup from the strategy variables. This allowed for a two-phase approach that reduced the complexity of the design space, preventing the "curse of dimensionality" that would have occurred in a combined experiment.
+Decoupling based on Domain Expertise: By following Gunnar's insight, we successfully decoupled the car setup from the strategy variables.
+This allowed for a two-phase approach that reduced the complexity of the design space, preventing the "curse of dimensionality" that would have occurred in a combined experiment.
 
-D-Optimality Efficiency: Using a D-optimal design for 6 factors at 5 levels was a sophisticated choice. It allowed us to test a large "search space" (over 15,000 possible combinations) in just 70 laps while keeping the correlation between factors low (<0.16).
+D-Optimality Efficiency: Using a D-optimal design for 6 factors at 5 levels was a sophisticated choice.
+It allowed us to test a large "search space" (over 15,000 possible combinations) in just 70 laps while keeping the correlation between factors low (\<0.16).
 
-Variable Isolation: The decision to switch to 1-lap stints to isolate fuel effects was a good way to estimate the benefit of less fuel on lap times. 
+Variable Isolation: The decision to switch to 1-lap stints to isolate fuel effects was a good way to estimate the benefit of less fuel on lap times.
 
 Range Bracketing: Running longer stints on the Hard and Soft tires while keeping the Medium stint short was a quick way to learn about the degradation without wasting too much of the 120-lap budget.
 
-D-Optimality Design (Phase 1): Utilizing one lap per setup is statistically efficient but risky. This approach makes the results highly sensitive to "noise" or random errors in a single lap. While increasing the number of laps per setup would improve reliability, it would significantly degrade the D-Efficiency (Dea), requiring more practice time than available.
+D-Optimality Design (Phase 1): Utilizing one lap per setup is statistically efficient but risky.
+This approach makes the results highly sensitive to "noise" or random errors in a single lap.
+While increasing the number of laps per setup would improve reliability, it would significantly degrade the D-Efficiency (Dea), requiring more practice time than available.
 
-Full Factorial Design (Phase 2): This is highly effective for a small number of configurations (e.g., the three viable tire compounds). However, because of the fuel experiments the resolution for the Medium tire remains limited. The 3-lap stint was too short to provide a robust statistical baseline compared to the 15-lap and 25-lap stints used for other compounds. This creates an unbalanced model that might be very accurate for long stints on the hard tire but inaccurate for stints on the soft and medium tire.
-
+Full Factorial Design (Phase 2): This is highly effective for a small number of configurations (e.g., the three viable tire compounds).
+However, because of the fuel experiments the resolution for the Medium tire remains limited.
+The 3-lap stint was too short to provide a robust statistical baseline compared to the 15-lap and 25-lap stints used for other compounds.
+This creates an unbalanced model that might be very accurate for long stints on the hard tire but inaccurate for stints on the soft and medium tire.
 
 # Task 2
-For the race in England, the multi-armed bandit (MAB) method should be used exclusively. A very large parameter space must be explored using only a few draws from the underlying distributions and without applying more involved models, in order to find an optimal setup and strategy for the race. The limited number of practice laps (120) poses a significant challenge, as MAB problems usually involve many more pulls to identify the best-performing arm.
 
-Due to the independence of the setup from the tyres (a setup that performs better on “soft” also consistently performs better on “hard”), forming joint tuples from the different setup and strategy parameters is not necessary. Accordingly, the problem is divided into two subproblems as follows:
+For the race in England, the multi-armed bandit (MAB) method should be used exclusively.
+A very large parameter space must be explored using only a few draws from the underlying distributions and without applying more involved models, in order to find an optimal setup and strategy for the race.
+The limited number of practice laps (120) poses a significant challenge, as MAB problems usually involve many more pulls to identify the best-performing arm.
 
-1. Determining the best setup from a predefined set of possible setups.
-2. Derivation of the best possible strategy from a predefined set of strategies.
+Due to the independence of the setup from the tyres (a setup that performs better on "soft" also consistently performs better on "hard"), forming joint tuples from the different setup and strategy parameters is not necessary.
+Accordingly, the problem is divided into two subproblems as follows:
 
-MAB methods are typically used for problems in which exploration ('finding the best arm') and exploitation ('earning the rewards of the current best arm') must be balanced. However, the present problem is a classical 'ranking and selection' problem, as our sole aim is to find the best setup and strategy. While experimenting, there is no need to accrue high rewards. In the MAB community, this is referred to as a 'best arm identification' or 'pure exploration' problem \parencite[2]{audibert}. In this setting, simple algorithms can perform substantially better than classical MAB algorithms such as epsilon-greedy, UCB1 or Thompson sampling \parencite[81]{russo}. Accordingly, algorithms that place a strong emphasis on exploration, or that exclusively explore, are well suited to the setting considered here.
+1.  Determining the best setup from a predefined set of possible setups.
+2.  Derivation of the best possible strategy from a predefined set of strategies.
+
+MAB methods are typically used for problems in which exploration ('finding the best arm') and exploitation ('earning the rewards of the current best arm') must be balanced.
+However, the present problem is a classical 'ranking and selection' problem, as our sole aim is to find the best setup and strategy.
+While experimenting, there is no need to accrue high rewards.
+In the MAB community, this is referred to as a 'best arm identification' or 'pure exploration' problem \parencite[2]{audibert}.
+In this setting, simple algorithms can perform substantially better than classical MAB algorithms such as epsilon-greedy, UCB1 or Thompson sampling \parencite[81]{russo}.
+Accordingly, algorithms that place a strong emphasis on exploration, or that exclusively explore, are well suited to the setting considered here.
 
 ## 1. Determination of the Setup
-Due to the limited number of practice laps, a trade-off must be made between the number of bandit arms (i.e. setup-parameter tuples) and the number of practice laps allocated to each arm. If too many different tuples are explored, there will be too few practice laps allocated to each arm, resulting in highly noisy performance estimates that are not very informative. The setup tuples are selected in an attempt to achieve the broadest possible coverage of the parameter space, taking the track characteristics into account.
+
+Due to the limited number of practice laps, a trade-off must be made between the number of bandit arms (i.e. setup-parameter tuples) and the number of practice laps allocated to each arm.
+If too many different tuples are explored, there will be too few practice laps allocated to each arm, resulting in highly noisy performance estimates that are not very informative.
+The setup tuples are selected in an attempt to achieve the broadest possible coverage of the parameter space, taking the track characteristics into account.
 
 The track characteristics of England are as follows: cornering is low (23/100), grip is very high (79/100) and the track is high-altitude (77/100) and smooth (1/100).
 
-The following findings from previous analyses, together with consideration of information from the “Analytics GP” online tool, suggest a tendency in the selection of setups for the bandit algorithm.
+The following findings from previous analyses, together with consideration of information from the "Analytics GP" online tool, suggest a tendency in the selection of setups for the bandit algorithm.
 
 ### Aerodynamics
-"Another point that we found was the importance of aerodynamic balance, indicating that downforce components must be tuned in concert rather than in isolation to maximize speed" (our analysis). This implies not using different values for the rear and front wing. "Car wing angles should be set higher in tracks with more corners" (Analytics GP). This corresponds with the traditional recommendation of a low-downforce setup for tracks with few corners.
+
+"Another point that we found was the importance of aerodynamic balance, indicating that downforce components must be tuned in concert rather than in isolation to maximize speed" (our analysis).
+This implies not using different values for the rear and front wing.
+"Car wing angles should be set higher in tracks with more corners" (Analytics GP).
+This corresponds with the traditional recommendation of a low-downforce setup for tracks with few corners.
 
 ### Engine
-"High engine output induces detrimental wheel spin in low-grip environments, while proving advantageous on high-traction tracks" (our analysis). Therefore, selecting higher engine output on high-traction tracks such as England might translate into improved acceleration. Nevertheless, "pushing the car at high altitude might be suboptimal" (Analytics GP). Accordingly, two substantially different engine settings are used here.
+
+"High engine output induces detrimental wheel spin in low-grip environments, while proving advantageous on high-traction tracks" (our analysis).
+Therefore, selecting higher engine output on high-traction tracks such as England might translate into improved acceleration.
+Nevertheless, "pushing the car at high altitude might be suboptimal" (Analytics GP).
+Accordingly, two substantially different engine settings are used here.
 
 ### Break Balance
-No insights have yet been obtained regarding brake balance, and the direction of the brake-balance effect remains unclear. Therefore, testing of different values is taking place here.
+
+No insights have yet been obtained regarding brake balance, and the direction of the brake-balance effect remains unclear.
+Therefore, testing of different values is taking place here.
 
 ### Differential
-"High-cornering circuits require frequent shifting, thereby amplifying the utility of the differential. The adverse impact of larger differential settings mitigates—and eventually vanishes, as track cornering intensity increases" (our analysis). Accordingly, the differential for the England Grand Prix should be set rather conservatively. To simplify the search, it is kept constant at 100 for almost all tuples.
+
+"High-cornering circuits require frequent shifting, thereby amplifying the utility of the differential. The adverse impact of larger differential settings mitigates---and eventually vanishes, as track cornering intensity increases" (our analysis).
+Accordingly, the differential for the England Grand Prix should be set rather conservatively.
+To simplify the search, it is kept constant at 100 for almost all tuples.
 
 ### Suspension
-In France, a trend towards very low suspension settings was observed. This could be consistent with the characteristics of the relatively rough track. Since the track in England is not rough at all, the following setup variants place a stronger focus on stiffer suspension settings. However, one variant includes an intentionally low value as a safeguard.
+
+In France, a trend towards very low suspension settings was observed.
+This could be consistent with the characteristics of the relatively rough track.
+Since the track in England is not rough at all, the following setup variants place a stronger focus on stiffer suspension settings.
+However, one variant includes an intentionally low value as a safeguard.
 
 \newpage
-| Arm      | Rear Wing | Front Wing | Engine | Brake | Differential | Suspension |
-|---------:|----------:|-----------:|-------:|------:|-------------:|-----------:|
-| A1       | 250       | 250        | 300    | 250   | 250          | 250        |
-| A2       |  10       |  10        | 400    | 250   | 100          | 450        |
-| A3       |  10       |  10        | 100    | 250   | 100          | 450        |
-| A4       | 100       | 100        | 400    | 500   | 100          | 200        |
-| A5       | 100       | 100        | 100    |  50   | 100          | 200        |
-| A6       | 150       | 150        | 400    |  50   | 100          | 500        |
-| A7       | 300       | 300        | 350    | 500   | 100          |  50        |
 
+| Arm | Rear Wing | Front Wing | Engine | Brake | Differential | Suspension |
+|----:|----------:|-----------:|-------:|------:|-------------:|-----------:|
+|  A1 |       250 |        250 |    300 |   250 |          250 |        250 |
+|  A2 |        10 |         10 |    400 |   250 |          100 |        450 |
+|  A3 |        10 |         10 |    100 |   250 |          100 |        450 |
+|  A4 |       100 |        100 |    400 |   500 |          100 |        200 |
+|  A5 |       100 |        100 |    100 |    50 |          100 |        200 |
+|  A6 |       150 |        150 |    400 |    50 |          100 |        500 |
+|  A7 |       300 |        300 |    350 |   500 |          100 |         50 |
 
-The seven specified setup variants include a balanced baseline (A1), several low-downforce variants (A2–A6) with parameter choices guided by the above findings, and a medium-downforce setup (A7). These are intended to cover the parameter space as broadly as possible, while maintaining a focus on low downforce.
-
+The seven specified setup variants include a balanced baseline (A1), several low-downforce variants (A2--A6) with parameter choices guided by the above findings, and a medium-downforce setup (A7).
+These are intended to cover the parameter space as broadly as possible, while maintaining a focus on low downforce.
 
 ### Successive Rejects Algorithm
 
-The Successive Rejects (SR) algorithm is used to identify the best arm (i.e. the optimal setup) of the MAB problem, as described in \textcite{audibert}. It is easy to implement, parameter-free and achieves an essentially optimal exponential rate for identifying the best arm (equivalently, simple regret/error probability), up to a logarithmic factor \parencite[6]{audibert}. In summary, in each phase of the algorithm, the worst-performing arm is eliminated (in our case, the arm with the largest average lap time). The last remaining arm is considered the best according to the algorithm. The number of pulls per arm in each phase is chosen so that the optimal convergence rate is achieved \parencite[6]{audibert}. For a detailed description of the algorithm, see Figure 3 in \textcite[6]{audibert}.
+The Successive Rejects (SR) algorithm is used to identify the best arm (i.e. the optimal setup) of the MAB problem, as described in \textcite{audibert}.
+It is easy to implement, parameter-free and achieves an essentially optimal exponential rate for identifying the best arm (equivalently, simple regret/error probability), up to a logarithmic factor \parencite[6]{audibert}.
+In summary, in each phase of the algorithm, the worst-performing arm is eliminated (in our case, the arm with the largest average lap time).
+The last remaining arm is considered the best according to the algorithm.
+The number of pulls per arm in each phase is chosen so that the optimal convergence rate is achieved \parencite[6]{audibert}.
+For a detailed description of the algorithm, see Figure 3 in \textcite[6]{audibert}.
 
-
-In order for the number of pulls per arm to depend exclusively on the setup, the stint length is set to 1, the fuel load to 120 and the tyre selection to 'hard' for all arms. The number of pulls per arm across the six phases is as follows:
+In order for the number of pulls per arm to depend exclusively on the setup, the stint length is set to 1, the fuel load to 120 and the tyre selection to 'hard' for all arms.
+The number of pulls per arm across the six phases is as follows:
 
 ```{r, echo=FALSE}
 
@@ -432,11 +506,20 @@ for (i in 1:6) {
 
 ## 2. Determination of the Strategy
 
-After the A1 setup was selected as the best of the seven candidates, 63 practice laps remain available. Three additional laps are required to determine the linear constants for fuel decrease and tyre wear for each compound (extrasoft, soft and medium). Based on these constants, suitable strategies for the England Grand Prix can then be specified.
+After the A1 setup was selected as the best of the seven candidates, 63 practice laps remain available.
+Three additional laps are required to determine the linear constants for fuel decrease and tyre wear for each compound (extrasoft, soft and medium).
+Based on these constants, suitable strategies for the England Grand Prix can then be specified.
 
-The estimated per-lap fuel decrease is z = 3.23. The compounds degrade at the following rates per lap: w_extrasoft = 12.67, w_soft = 5.51, w_medium = 4.46 and w_hard = 3.67. As the maximum fuel load is 120 and z is smaller than all the compound degradation constants, fuel is never the limiting factor in determining the length of a stint.
+The estimated per-lap fuel decrease is z = 3.23.
+The compounds degrade at the following rates per lap: w_extrasoft = 12.67, w_soft = 5.51, w_medium = 4.46 and w_hard = 3.67.
+As the maximum fuel load is 120 and z is smaller than all the compound degradation constants, fuel is never the limiting factor in determining the length of a stint.
 
-Based on this information and the assumption of linearly decreasing fuel and compound values (cf. the French Grand Prix), the arms for the strategy bandit have been specified. A key insight from previous races is that driving with low fuel values is highly advantageous. To facilitate selection, only tyre compound and the number of stops are permitted as variables. Each strategy uses one compound and allocates laps as evenly as possible across the 63 laps of the race. Each stint starts with the minimum feasible refuelling amount. The following are selected from the set of feasible strategies implied by this:
+Based on this information and the assumption of linearly decreasing fuel and compound values (cf. the French Grand Prix), the arms for the strategy bandit have been specified.
+A key insight from previous races is that driving with low fuel values is highly advantageous.
+To facilitate selection, only tyre compound and the number of stops are permitted as variables.
+Each strategy uses one compound and allocates laps as evenly as possible across the 63 laps of the race.
+Each stint starts with the minimum feasible refuelling amount.
+The following are selected from the set of feasible strategies implied by this:
 
 ```{r, echo=FALSE, results="hide"}
 ## -----------------------------------------------------------------------------
@@ -472,31 +555,35 @@ split_laps(3)
 split_laps(4)
 ```
 
+| Arm | Compound | w_comp |   b |  L1 |  L2 |  L3 |  L4 |  L5 |
+|-----|----------|-------:|----:|----:|----:|----:|----:|----:|
+| A1  | hard     |   3.67 |   2 |  21 |  21 |  21 |  \- |  \- |
+| A2  | medium   |   4.46 |   3 |  16 |  16 |  16 |  15 |  \- |
+| A3  | soft     |   5.51 |   3 |  16 |  16 |  16 |  15 |  \- |
+| A4  | soft     |   5.51 |   4 |  13 |  13 |  13 |  12 |  12 |
 
-| Arm | Compound | w_comp | b | L1 | L2 | L3 | L4 | L5 |
-|---|---|---:|---:|---:|---:|---:|---:|---:|
-| A1 | hard   | 3.67 | 2 | 21 | 21 | 21 |  - |  - |
-| A2 | medium | 4.46 | 3 | 16 | 16 | 16 | 15 |  - |
-| A3 | soft   | 5.51 | 3 | 16 | 16 | 16 | 15 |  - |
-| A4 | soft   | 5.51 | 4 | 13 | 13 | 13 | 12 | 12 |
+The next step is to specify both the multi-armed bandit algorithm and the objective function by which the arms are evaluated.
+The main issue here is obtaining an estimator for the lap time of a stint that is as unbiased as possible.
+As no other models, such as regression, can be used, our approach is as follows: As in the search for the setup, this is a best-arm identification problem.
+However, here the SR algorithm is not used; instead, the extremely simple uniform allocation strategy is employed \parencite[p.~9\ and following]{bubeck}.
+Under this approach, the number of pulls is distributed equally across arms, independently of the observed rewards.
+Since obtaining the best possible estimate of the stint time (and thus the race time of the current strategy) is crucial, each arm (i.e. each of the four strategies) is pulled only once.
+Furthermore, it is important that the stint time estimates are as comparable as possible and that estimation induces as little bias as possible.
+For two stops, this implies 21 laps per stint, for three stops 16 laps, and so on.
+Since only 60 laps remain, the following stint length scheme is used when pulling the arms.
 
-The next step is to specify both the multi-armed bandit algorithm and the objective function by which the arms are evaluated. The main issue here is obtaining an estimator for the lap time of a stint that is as unbiased as possible. As no other models, such as regression, can be used, our approach is as follows:
-As in the search for the setup, this is a best-arm identification problem. However, here the SR algorithm is not used; instead, the extremely simple uniform allocation strategy is employed \parencite[p.~9\ and following]{bubeck}. Under this approach, the number of pulls is distributed equally across arms, independently of the observed rewards. Since obtaining the best possible estimate of the stint time (and thus the race time of the current strategy) is crucial, each arm (i.e. each of the four strategies) is pulled only once. Furthermore, it is important that the stint time estimates are as comparable as possible and that estimation induces as little bias as possible. For two stops, this implies 21 laps per stint, for three stops 16 laps, and so on. Since only 60 laps remain, the following stint length scheme is used when pulling the arms.
+| Arm                        |   A1 |     A2 |   A3 |   A4 |
+|----------------------------|-----:|-------:|-----:|-----:|
+| Compound                   | hard | medium | soft | soft |
+| Target stint length $L(b)$ |   21 |     16 |   16 |   13 |
+| Simulated stint length     |   19 |     15 |   15 |   11 |
+| Minimal fuel load $F(z,b)$ |   68 |     52 |   52 |   42 |
 
-| Arm | A1 | A2 | A3 | A4 |
-|---|---:|---:|---:|---:|
-| Compound | hard | medium | soft | soft |
-| Target stint length \(L(b)\) | 21 | 16 | 16 | 13 |
-| Simulated stint length | 19 | 15 | 15 | 11 |
-| Minimal fuel load \(F(z,b)\) | 68 | 52 | 52 | 42 |
-
-The minimal fuel load for the simulation is calculated as follows:
-Let \(b\) denote the number of pitstops and \(L(b)\) be the target stint length.
-For per-lap fuel consumption \(z=3.23\), the minimal fuel load is
-\[
+The minimal fuel load for the simulation is calculated as follows: Let $b$ denote the number of pitstops and $L(b)$ be the target stint length.
+For per-lap fuel consumption $z=3.23$, the minimal fuel load is $$
 F(z,b) \;=\; \left\lceil L(b)\,z \right\rceil
 \;=\; \left\lceil \left\lceil \frac{63}{b+1}\right\rceil \, z \right\rceil .
-\]
+$$
 
 ```{r, echo=FALSE, results="hide"}
 # function for the minimal fuel load
@@ -557,17 +644,20 @@ minimalFuelLoad(w_soft, 4) # => 42
 #minimalFuelLoad(w_extrasoft, 4) # => not possible
 ```
 
-As a side note, it is worth mentioning that an additional lap can be driven for each stint that is not the first, since the lap in which a stop is made does not affect the fuel load or tyre condition. Therefore, the resulting strategies for all pit stops can decrease the fuel load by 3.
-The average lap times from these stints are ultimately used as the basis for the bandit’s reward. The objective function is then an estimate of the total race time, to which 30 seconds per pit stop are added, as noted in Analytics GP.
+As a side note, it is worth mentioning that an additional lap can be driven for each stint that is not the first, since the lap in which a stop is made does not affect the fuel load or tyre condition.
+Therefore, the resulting strategies for all pit stops can decrease the fuel load by 3.
+The average lap times from these stints are ultimately used as the basis for the bandit's reward.
+The objective function is then an estimate of the total race time, to which 30 seconds per pit stop are added, as noted in Analytics GP.
 
-\[
+$$
 \widehat{\mathrm{RaceTime}}_{A_i}^{\mathrm{sim}}(b)
 \;=\;
 63\,\bar{y}_{\mathrm{sim}}
 \;+\; 30\,b \, .
-\]
+$$
 
-The recommendation for the output of the best arm remains the arithmetic mean. In this trivial case, where there is only one pull, this consists of one observed value.
+The recommendation for the output of the best arm remains the arithmetic mean.
+In this trivial case, where there is only one pull, this consists of one observed value.
 
 ```{r, echo=FALSE}
 # function for estimating the lap time
@@ -671,17 +761,519 @@ paste0("Best Arm: ", best_arm,". Racetime: ", racetime_est[[best_arm]])
 ```
 
 ## Conclusion
-The MAB algorithms clearly identified the best arm in both subtasks. However, in hindsight, the SR algorithm is not the best choice for finding the optimal setup since it uses a relatively large number of pulls per arm. The inherent variance in lap times for the same setup was not large enough to justify so many draws. Therefore, using a different MAB algorithm for identifying the best arm (e.g. uniform allocation or UCB1) would have enabled a substantially larger parameter space to be explored (i.e. more arms or setups). This conjecture was also confirmed by the race results of the England GP. Our car setup performance was clearly worse than that of the other teams. However, the approach to identifying the best strategy proved to be a good choice.
 
-In general, when the budget for the practice is limited and the parameter space is extensive, a bandit approach seems to be a better option than a reduced experimental design, as it allows a few strong candidates to be identified quickly. The algorithm can dedicate more laps to promising setups to average out the noise, while briefly sampling poor ones. Bandits are also useful when the main objective is to select a near-optimal setup by the end of the practice period rather than learning the precise effects of the parameters.
+The MAB algorithms clearly identified the best arm in both subtasks.
+However, in hindsight, the SR algorithm is not the best choice for finding the optimal setup since it uses a relatively large number of pulls per arm.
+The inherent variance in lap times for the same setup was not large enough to justify so many draws.
+Therefore, using a different MAB algorithm for identifying the best arm (e.g. uniform allocation or UCB1) would have enabled a substantially larger parameter space to be explored (i.e. more arms or setups).
+This conjecture was also confirmed by the race results of the England GP. Our car setup performance was clearly worse than that of the other teams.
+However, the approach to identifying the best strategy proved to be a good choice.
 
-A bandit approach is particularly appealing if there are significant performance differences between the options because it can exploit early evidence and focus on the most important setups. By contrast, I would opt for a fixed experimental design if the aim is to derive inferences, e.g. to estimate the impact of setup variables such as brake balance or engine tuning.
+In general, when the budget for the practice is limited and the parameter space is extensive, a bandit approach seems to be a better option than a reduced experimental design, as it allows a few strong candidates to be identified quickly.
+The algorithm can dedicate more laps to promising setups to average out the noise, while briefly sampling poor ones.
+Bandits are also useful when the main objective is to select a near-optimal setup by the end of the practice period rather than learning the precise effects of the parameters.
 
+A bandit approach is particularly appealing if there are significant performance differences between the options because it can exploit early evidence and focus on the most important setups.
+By contrast, I would opt for a fixed experimental design if the aim is to derive inferences, e.g. to estimate the impact of setup variables such as brake balance or engine tuning.
 
 # Task 3
 
+## 1. Setup
+
+### Data-Driven region search
+
+For the Belgium race, the car setup is optimized via a data-driven approach to identify a promising region and then sample the space using information from prior tasks.
+
+```{r, echo=FALSE}
+data <- read.csv('../data/simulator_data.csv', check.names = FALSE)
+
+## Belgium Circuit
+track_params <- list(
+  'Cornering' = 95,
+  'Inclines' = 98,
+  'Camber' = 38,
+  'Grip' = 9,
+  'Altitude' = 20,
+  'Roughness' = 78,
+  'Width' = 15,
+  'Lap Distance' = 4.9  # in km
+)
+
+# weather data for Belgium Circuit 
+weather_params <- list(
+  'Temperature' = 7,
+  'Humidity' = 68,
+  'Wind (Avg. Speed)' = 54,
+  'Wind (Gusts)' = 6,
+  'Air Density' = 37,
+  'Air Pressure' = 64
+)
+
+# 3. combine params
+fixed_params <- append(track_params, weather_params)
+
+decision_features <- c(
+  'Front Wing',
+  'Rear Wing',
+  'Brake Balance',
+  'Suspension',
+  'Engine',
+  'Differential'
+)
+
+
+# adjust 
+linear_model <- lm(`Lap Time` ~ `Lap Distance`, data = data)
+
+preds <- predict(linear_model, newdata = data)
+
+data$lap_time_adjusted <- data$`Lap Time` - preds
+
+data$`Lap Time` <- NULL
+```
+
+The data-driven methodology employs a K-Nearest Neighbors (KNN) algorithm to retrieve samples comparable to the Belgium circuit's conditions.
+These instances are subsequently clustered to identify optimal vehicle setups and define the boundaries of the search space. Initially, the parameter K is determined by analyzing the distance metric of the first 1000 points (10% of the dataset).
+K=200 is selected, as this value corresponds to the point where the curve flattens.
+
+```{r, echo=FALSE}
+library(FNN) 
+
+k_max <- 1000
+
+# 1. Features vorbereiten & Skalieren
+feat_cols <- names(fixed_params)
+
+# Trainingsdaten skalieren
+X <- data[, feat_cols]
+X_scaled <- scale(X)
+
+# Skalierungsparameter speichern (um den Query-Punkt gleich zu behandeln)
+X_center <- attr(X_scaled, "scaled:center")
+X_scale <- attr(X_scaled, "scaled:scale")
+
+# 2. Query-Punkt vorbereiten (Belgien Parameter)
+query_df <- as.data.frame(fixed_params, check.names = FALSE)
+
+# Query-Punkt mit den Parametern der Trainingsdaten skalieren
+query_df <- query_df[, feat_cols, drop=FALSE]
+query_scaled <- scale(query_df, center = X_center, scale = X_scale)
+
+# 3. Nächste Nachbarn finden
+knn_res <- get.knnx(data = X_scaled, query = query_scaled, k = k_max)
+
+# Ergebnisse extrahieren (Indizes und Distanzen)
+indices <- knn_res$nn.index[1, ]
+distances <- knn_res$nn.dist[1, ]
+
+# 4. Nachbarn aus den Originaldaten holen
+cols_to_select <- c(decision_features, "lap_time_adjusted")
+neighbors <- data[indices, cols_to_select]
+
+# 5. Plotten (Elbow Kurve)
+plot(1:k_max, distances, type = "l", col = "blue", lwd = 2,
+     main = "KNN Distances to Neighbors",
+     xlab = "Neighbor Index", ylab = "Distance to Query Point")
+
+
+```
+
+```{r, echo=FALSE}
+k <- 200
+knn_res_final <- get.knnx(data = X_scaled, query = query_scaled, k = k)
+indices_final <- knn_res_final$nn.index[1, ]
+
+# Nachbarn extrahieren
+neighbors <- data[indices_final, c(decision_features, "lap_time_adjusted")]
+
+
+neighbors_scaled <- scale(neighbors[, decision_features])
+```
+
+Following the identification of the 200 nearest data points, both K-Means and Agglomerative Clustering are used to identify a more comprehensive and robust data story.
+Promising clusters are subsequently determined by evaluating the mean adjusted lap time within each group.For K-Means, the optimal parameter $K$ is selected by iterating through a range of 1 to 10 and analyzing both the Elbow method and the Silhouette score.
+
+```{r,echo=FALSE}
+max_clusters <- 10
+inertia <- numeric(max_clusters)
+silhouette_scores <- numeric(max_clusters) # Wir füllen k=1 später mit NA oder 0
+
+# 2. Loop über Cluster-Anzahlen
+for (k in 1:max_clusters) {
+  set.seed(0) # Reproduzierbarkeit (wie random_state=0)
+  
+  # nstart=25 entspricht n_init in sklearn (verhindert lokale Minima)
+  km <- kmeans(neighbors_scaled, centers = k, nstart = 25)
+  
+  # Inertia speichern (Total within-cluster sum of squares)
+  inertia[k] <- km$tot.withinss
+  
+  # Silhouette Score berechnen (nur für k > 1 möglich)
+  if (k > 1) {
+    # dist() berechnet die euklidische Distanzmatrix
+    ss <- silhouette(km$cluster, dist(neighbors_scaled))
+    silhouette_scores[k] <- mean(ss[, 3])
+  }
+}
+
+# 3. Plot: Elbow Method (Inertia)
+plot(1:max_clusters, inertia, type = "b", pch = 19, col = "black",
+     main = "Elbow Method for Optimal k",
+     xlab = "Number of Clusters", ylab = "Inertia (Tot.WithinSS)")
+
+
+# 4. Plot: Silhouette Scores (bug here, fix. Scores must be similar to sklearn.metrics)
+k_range <- 2:max_clusters
+plot(k_range, silhouette_scores[k_range], type = "b", pch = 19, col = "orange",
+     main = "Silhouette Scores for Different k",
+     xlab = "Number of Clusters", ylab = "Silhouette Score")
+
+```
+
+The plots indicate that K=4 is a promising candidate, so the following k-Means is fitted with 4 clusters.
+
+```{r, echo=FALSE}
+n_clusters <- 4
+set.seed(0)
+kmeans_final <- kmeans(neighbors_scaled, centers = n_clusters, nstart = 25)
+
+# 2. Centroids zurücktransformieren (Inverse Scaling)
+scale_vec <- attr(neighbors_scaled, "scaled:scale")
+center_vec <- attr(neighbors_scaled, "scaled:center")
+centers_scaled <- kmeans_final$centers
+
+centroids_original <- t(t(centers_scaled) * scale_vec + center_vec)
+
+# 3. Summary DataFrame erstellen
+cluster_summary <- as.data.frame(centroids_original)
+cluster_summary$Cluster_Size <- kmeans_final$size
+
+mean_lap_times <- tapply(neighbors$lap_time_adjusted, kmeans_final$cluster, mean)
+cluster_summary$Mean_Adjusted_Lap_Time <- as.numeric(mean_lap_times)
+
+print(cluster_summary)
+
+#boxplot of results
+neighbors$KMeans_Cluster <- as.factor(kmeans_final$cluster)
+boxplot(lap_time_adjusted ~ KMeans_Cluster, data = neighbors,
+        col = RColorBrewer::brewer.pal(n_clusters, "Set2"), # oder einfach col=1:n_clusters
+        main = "K-Means: Which Strategy is Faster?",
+        xlab = "K-Means Cluster", ylab = "Lap Time (Adjusted)")
+
+
+# --- 4. EXTRACT RESULTS: Bounds for Best Cluster ---
+best_km_cluster <- as.numeric(names(which.min(mean_lap_times)))
+
+cat(sprintf("\nBest K-Means Cluster is #%d. Use this for further optimization.\n", best_km_cluster))
+
+best_km_data <- neighbors[neighbors$KMeans_Cluster == best_km_cluster, ]
+
+cat("\nBounds for optimization (based on best K-Means cluster):\n")
+for (col in decision_features) {
+  q5 <- quantile(best_km_data[[col]], 0.05)
+  q95 <- quantile(best_km_data[[col]], 0.95)
+  cat(sprintf("%s: %.2f - %.2f\n", col, q5, q95))
+}
+```
+
+The cluster summary, showing the mean of each car-feature parameter and the average adjusted lap time, identifies clusters 2 and 3 as the most promising candidates.
+Cluster 3 exhibits a slightly superior lap time and a larger sample size, suggesting a more robust estimate.
+Both clusters display very low values for Engine, Differential, and Suspension, while Brake Balance falls within the lower-to-middle range.
+However, the wing parameters present a contradiction: while cluster 3 indicates high values, particularly for the Rear Wing, cluster 2 suggests mid-range values.
+This discrepancy highlights the necessity for an additional clustering algorithm to extract a coherent story and identify the final region.
+
+```{r}
+print(cluster_summary)
+```
+
+To determine the number of clusters for Agglomerative Clustering, a dendrogram is utilized.
+Visual inspection suggests a range of 4 to 5 clusters; ultimately, 4 is selected to maintain consistency with the K-Means analysis.
+
+```{r, echo=FALSE}
+# --- 1. Datenvorbereitung ---
+X <- neighbors[, decision_features]
+X_scaled <- scale(X)
+
+# --- 2. Hierarchical Clustering ---
+d <- dist(X_scaled, method = "euclidean")
+hc <- hclust(d, method = "ward.D2")
+
+
+plot(hc, labels = FALSE, hang = -1, 
+     main = "Hierarchical Dendrogram (Strategy Separation)",
+     xlab = "Samples", ylab = "Distance (Ward)", sub = "")
+rect.hclust(hc, k = 5, border = "red")
+abline(h = 10, col = "red", lty = 2)
+
+# --- DECISION ---
+k_selected <- 4
+neighbors$Strategy_Cluster <- cutree(hc, k = k_selected)
+
+cluster_means_df <- aggregate(. ~ Strategy_Cluster, 
+                              data = neighbors[, c(decision_features, "Strategy_Cluster")], 
+                              FUN = mean)
+
+# Cluster-Spalte als Zeilennamen setzen für die Matrix
+rownames(cluster_means_df) <- cluster_means_df$Strategy_Cluster
+cluster_means_mat <- as.matrix(cluster_means_df[, -1]) # Erste Spalte (ID) entfernen
+
+
+# Boxplot erstellen
+boxplot(lap_time_adjusted ~ Strategy_Cluster, data = neighbors,
+        col = RColorBrewer::brewer.pal(k_selected, "Set2"), # Falls RColorBrewer installiert
+        main = "Which Strategy is Faster?",
+        xlab = "Strategy Cluster", ylab = "Lap Time (Adjusted)")
+
+
+
+# 1. Mittelwerte der Features berechnen
+hc_summary <- aggregate(neighbors[, decision_features], 
+                        by = list(Cluster = neighbors$Strategy_Cluster), 
+                        FUN = mean)
+
+# 2. Cluster-Größen hinzufügen
+hc_summary$Cluster_Size <- as.vector(table(neighbors$Strategy_Cluster))
+
+# 3. Performance (Rundenzeit) hinzufügen
+hc_summary$Mean_Adjusted_Lap_Time <- as.vector(tapply(neighbors$lap_time_adjusted, 
+                                                      neighbors$Strategy_Cluster, 
+                                                      mean))
+
+# 4. Output anzeigen
+print("Hierarchical Cluster Summary:")
+print(hc_summary)
+
+
+mean_times <- tapply(neighbors$lap_time_adjusted, neighbors$Strategy_Cluster, mean)
+best_cluster <- as.numeric(names(which.min(mean_times)))
+best_data <- neighbors[neighbors$Strategy_Cluster == best_cluster, ]
+
+
+cat(sprintf("Best cluster is #%d. Use this for further optimization.\n", best_cluster))
+
+cat("\nBounds for optimization (based on best cluster):\n")
+for (col in decision_features) {
+  q5 <- quantile(best_data[[col]], 0.05)
+  q95 <- quantile(best_data[[col]], 0.95)
+  cat(sprintf("%s: %.2f - %.2f\n", col, q5, q95))
+}
+```
+
+Clusters 2 and 4 emerge as the most promising candidates.
+They are consistent with the hypothesis regarding Differential, Suspension, Brake Balance, and Engine.
+However, the wing parameters again show the largest discrepancy between the two groups; notably, the larger and thus more robust cluster suggests higher values for these settings.
+
+```{r, echo=TRUE}
+print(hc_summary)
+```
+### Region Sampling
+
+Based on the prior cluster analysis, the sampling space is defined as follows:
+
+| Feature           | Min | Max |
+|:------------------|:----|:----|
+| **Front Wing**    | 170 | 500 |
+| **Rear Wing**     | 360 | 500 |
+| **Brake Balance** | 40  | 480 |
+| **Suspension**    | 1   | 80  |
+| **Engine**        | 1   | 110 |
+| **Differential**  | 1   | 300 |
+
+Notably, the Front Wing exhibited significant outliers in the lower range, while Brake Balance consistently appeared in the mid-range, implying considerable uncertainty.
+Furthermore, as the Differential displayed isolated higher values, an upper bound of 300 has been incorporated. Overall, these limits are established conservatively, as the subsequent sampling methodology facilitates the evaluation of a greater number of configurations compared to previous tasks.
+
+### Testing Confiurations
+
+Knowledge from prior tasks is utilized to evaluate different configurations.
+Previous analysis revealed large time discrepancies between setups, enabling the rapid elimination of unpromising candidates. Therefore, 30 configurations are sampled, with the optimal setup identified within a total budget of 80 single-lap stints.
+Strategy parameters remain fixed at 100l fuel and Soft tires throughout.
+
+Initially, the 30 configurations are simulated for two single-lap stints each. After that, the bottom 15 are eliminated, while the top half proceeds to a third lap. Finally, the best five candidates undergo a fourth lap, after which the optimal configuration is selected.
+
+To generate the 30 configurations, Latin Hypercube Sampling (LHS) is employed within the identified bounds.
+LHS is a Monte Carlo simulation technique designed to cover sample spaces more efficiently than independent uniform sampling.
+
+```{r, echo=FALSE}
+library(lhs)
+set.seed(0)
+
+# Deine Bounds (aus der Cluster-Analyse)
+mins = c(170, 360, 40,  1,   1,   1)
+maxs = c(500, 500, 480, 80, 110, 300)
+
+decision_features <- c(
+  'Front Wing',
+  'Rear Wing',
+  'Brake Balance',
+  'Suspension',
+  'Engine',
+  'Differential'
+)
+
+# 1. Erzeuge LHS (Werte 0-1)
+n_samples <- 30
+raw_data <- randomLHS(n = n_samples, k = length(mins))
+
+# 2. scale
+final_data <- raw_data # 
+for(i in 1:ncol(final_data)) {
+  final_data[,i] <- qunif(raw_data[,i], min = mins[i], max = maxs[i])
+}
+
+setup_df <- as.data.frame(final_data)
+colnames(setup_df) <- decision_features
+
+setup_df <- round(setup_df, 0)
+
+setup_df$Setup_ID <- 1:n_samples
+
+setup_df <- setup_df[, c("Setup_ID", decision_features)]
+
+```
+
+```{r}
+print(head(setup_df))
+```
+
+```{r, echo=FALSE}
+############################################
+# after first 60
+###########################################
+
+first_60_df = read.csv('../data/practice_data_belgium_first_60.csv', check.names = FALSE)
+head(first_60_df)
+first_60_df = first_60_df %>% filter(Track == "Belgium") %>% select(c(`Rear Wing`, `Front Wing`, 
+                                                        Engine ,Brake , Differential, Suspension, `Lap Time`))
+avg_times = first_60_df %>% group_by(`Rear Wing`, `Front Wing`, 
+                                       Engine ,Brake , Differential, Suspension) %>% 
+                        summarise(Mean_Lap_Time = mean(`Lap Time`, na.rm = TRUE)) %>%
+                        rename(`Brake Balance` = Brake) %>% arrange(Mean_Lap_Time)
+results = avg_times %>% left_join(setup_df, by = decision_features)
+top_15 = head(results, 15)
+print(top_15 %>% select(Setup_ID, Mean_Lap_Time))
+
+```
+The results from the two-stint simulations indicate that high-downforce setups perform best.
+For Engine and Suspension, very low values appear superior, while Differential settings also exhibit consistency, ranging from 145 to 204.
+However, the Brake Balance parameter demonstrates the necessity of retaining a broad search space, as indicated by the large interval observed.
+
+```{r}
+print(head(top_15))
+
+```
+
+```{r, echo=FALSE}
+first_75_df = read.csv('../data/practice_data_belgium_first_75.csv', check.names = FALSE)
+first_75_df = first_75_df %>% filter(Track == "Belgium") %>% select(c(`Rear Wing`, `Front Wing`, 
+                                                                      Engine ,Brake , Differential, Suspension, `Lap Time`))
+avg_times = first_75_df %>% group_by(`Rear Wing`, `Front Wing`, 
+                                     Engine ,Brake , Differential, Suspension) %>% 
+  summarise(Mean_Lap_Time = mean(`Lap Time`, na.rm = TRUE)) %>%
+  rename(`Brake Balance` = Brake) %>% arrange(Mean_Lap_Time)
+results = avg_times %>% left_join(setup_df, by = decision_features)
+top_5 = head(results, 5)
+```
+
+The subsequent round supports the findings from the first two.
+The top four setup IDs remain consistent, with only a minor change in ranking between setups 1 and 12.
+
+```{r}
+print(top_5 %>% select(Setup_ID, Mean_Lap_Time))
+
+```
+
+```{r, echo=FALSE}
+first_80_df = read.csv('../data/practice_data_belgium_first_80.csv', check.names = FALSE)
+first_80_df = first_80_df %>% filter(Track == "Belgium") %>% select(c(`Rear Wing`, `Front Wing`, 
+                                                                      Engine ,Brake , Differential, Suspension, `Lap Time`))
+avg_times = first_80_df %>% group_by(`Rear Wing`, `Front Wing`, 
+                                     Engine ,Brake , Differential, Suspension) %>% 
+  summarise(Mean_Lap_Time = mean(`Lap Time`, na.rm = TRUE)) %>%
+  rename(`Brake Balance` = Brake) %>% arrange(Mean_Lap_Time)
+results = avg_times %>% left_join(setup_df, by = decision_features)
+top_5 = head(results, 5)
+
+```
+
+The final round again supports the trends observed in the earlier stages.
+The ranking of the top five setups remains unchanged, establishing Setup 12 as the optimal configuration.
+
+```{r}
+print(as.data.frame(top_5 %>% select(Setup_ID, Mean_Lap_Time)))
+```
+
+## 2. Strategy 
+
+To optimize the strategy, the effects of tire degradation and fuel consumption are estimated to find an optimal tradeoff. Therefore we drive 5 stints with 8 laps each, using the remaining 40 laps of the 120 practice laps.
+Although decay rates are known to be fixed from prior tasks the actual impact on lap time is subject to noise.
+Consequently, this effect must be estimated in the forthcoming section.
+
+| Type           | Decay rates per lap | MAX Laps | MIN Stints |
+|:---------------|:--------------------|:---------|:-----------|
+| **Fuel**       | 3.3704              | 35.60    | 2          |
+| **Extra Soft** | 5.9822              | 16.72    | 4          |
+| **Soft**       | 3.9235              | 25.49    | 3          |
+| **Medium**     | 3.4209              | 29.23    | 3          |
+| **Hard**       | 3.1874              | 31.37    | 3          |
+
+Since the fuel content can be varied independently of the tire compound, the analysis begins by estimating the fuel effect.
+To achieve this, four single-lap stints are executed with a 120L load, and four with 4L, the minimum permissible starting amount.
+With the parameters fixed to Setup 12, the average times for the 120L and 4L runs are computed to derive the time penalty per liter and per lap.
+
+$P\_{liter} = \frac{\bar{T}_{120} - \bar{T}_{4}}{120 - 4}$
+$C\_{lap} = \frac{\bar{T}_{120} - \bar{T}_{4}}{35.6}$
+
+| Parameter                      | Value    |
+|:-------------------------------|:---------|
+| **AVG Max Fuel**               | 102.9800 |
+| **AVG Min Fuel**               | 93.5634  |
+| **Fuel Diff (s)**              | 9.4200   |
+| **Fuel Penalty per Lap (s)**   | 0.2646   |
+| **Fuel Penalty per Liter (s)** | 0.0812   |
+
+Subsequently, an 8-lap stint is performed with each of the four tire compounds to estimate the impact of tire degradation. By compensating for the known fuel effect, the specific influence of tire wear is isolated. However, given the noise within the data, no statistically significant time penalty was observed for tire degradation, a finding that drastically simplifies strategy optimization. Finally, a theoretical base pace is calculated for each compound, representing the estimated lap time at zero fuel load.
+
+$$
+\begin{aligned}
+\text{1. Fuel Adjustment:} \quad & T_{adj}^{(i)} = T_{raw}^{(i)} - \left( F_{rem}^{(i)} \cdot P_{liter} \right) \\
+\text{2. Tire Decay (Slope):} \quad & D_{tire} = \frac{\sum_{i=1}^{N} (i - \bar{i})(T_{adj}^{(i)} - \bar{T}_{adj})}{\sum_{i=1}^{N} (i - \bar{i})^2} \\
+\text{3. Base Pace:} \quad & P_{base} = \frac{1}{N} \sum_{i=1}^{N} T_{adj}^{(i)}
+\end{aligned}
+$$
+
+
+| Tire           | Seconds lost per lap | Basepace Estimation |
+|:---------------|:---------------------|:--------------------|
+| **Extra Soft** | -0.1044              | 92.59               |
+| **Soft**       | 0.0323               | 93.41               |
+| **Medium**     | -0.0755              | 93.43               |
+| **Hard**       | 0.1012               | 93.64               |
+
+The total race time $T_{total}$ is then calculated by summing the individual lap times across all stints.
+Since the fuel penalty increases linearly with each lap driven (or rather, the fuel load decreases linearly), the lap time for the $i$-th lap in a stint $k$ is defined as the base pace of the tire plus the fuel penalty accumulated up to that lap.
+
+**Iterative Formulation (Sum of Laps):**
+
+$$
+T_{total} = \sum_{k=1}^{N_{stints}} \sum_{i=0}^{L_k - 1} \left( P_{base}(\text{tire}_k) + i \cdot F_{penalty} \right) + N_{stints}*t
+$$
+
+**Where:**
+
+-   $N_{stints}$: Total number of stints in the strategy.
+-   $L_k$: Length of the $k$-th stint (number of laps).
+-   $P_{base}(\text{tire}_k)$: Theoretical base pace of the compound used in stint $k$ (at Lap 0 fuel load).
+-   $F_{penalty}$: Time cost per lap added due to fuel weight (or effectively, the time delta relative to the base pace).
+-   $i$: Lap index within the current stint ($0, 1, \dots, L_k-1$). \*$t$: stint penalyt (30s)
+
+Two distinct three-stint strategies were evaluated to determine the optimal approach. The first configuration, utilizing exclusively Soft tires (3x Soft), resulted in a total race time of 6118.22 seconds. In contrast, the mixed compound strategy (Medium, Soft, and Extra Soft) achieved a superior time of 6111.00 seconds.
+
+## Conclusion
+
+The qualifying results provide insight into the setup's relative competitiveness. While the configuration showed improved performance compared to the previous two races, it ultimately ranked last, highlighting significant residual potential for optimization. This suggests that future iterations would benefit from an expanded sampling size and a more aggressive selection process, particularly as the top four configurations remained static across evaluation rounds. Furthermore, given the established low complexity of the race strategy, computational resources could be reallocated to increase the number of evaluation rounds per setup.
+
+Finally, the data supports the hypothesis of boundary solutions. The preference for maximum values in Front and Rear Wing combined with minimal values for Suspension and Engine suggests that the global optimum likely lies at the parameter bounds (e.g., 500 and 1). Regarding race strategy, while the selected approach proved viable, retrospective analysis indicates it was suboptimal. Replacing a Medium stint with a Soft compound would likely have yielded superior lap times, representing a missed optimization opportunity in this instance.
+
 # Task 4
-
-
 
 # References
