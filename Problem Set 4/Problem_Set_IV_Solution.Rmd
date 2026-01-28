@@ -585,6 +585,7 @@ F(z,b) \;=\; \left\lceil L(b)\,z \right\rceil
 \;=\; \left\lceil \left\lceil \frac{63}{b+1}\right\rceil \, z \right\rceil .
 $$
 
+
 ```{r, echo=FALSE, results="hide"}
 # function for the minimal fuel load
 minimalFuelLoad <- function(w, b, z = 3.22910327407){
@@ -891,7 +892,7 @@ neighbors_scaled <- scale(neighbors[, decision_features])
 ```
 
 Following the identification of the 200 nearest data points, both K-Means and Agglomerative Clustering are used to identify a more comprehensive and robust data story.
-Promising clusters are subsequently determined by evaluating the mean adjusted lap time within each group.For K-Means, the optimal parameter $K$ is selected by iterating through a range of 1 to 10 and analyzing both the Elbow method and the Silhouette score.
+Promising clusters are subsequently determined by evaluating the mean adjusted lap time within each group.For K-Means, the optimal parameter $K$ is selected by iterating through a range of 1 to 10 and analyzing both the Elbow method and the Silhouette score. 
 
 ```{r,echo=FALSE}
 max_clusters <- 10
@@ -930,10 +931,10 @@ plot(k_range, silhouette_scores[k_range], type = "b", pch = 19, col = "orange",
 
 ```
 
-The plots indicate that K=4 is a promising candidate, so the following k-Means is fitted with 4 clusters.
+$K$ = 8 is choosen for the K-means as there the silhouette score starts to increase again and we do not overfit the number of clusters for a sample size of 200.
 
 ```{r, echo=FALSE}
-n_clusters <- 4
+n_clusters <- 8
 set.seed(0)
 kmeans_final <- kmeans(neighbors_scaled, centers = n_clusters, nstart = 25)
 
@@ -976,10 +977,10 @@ for (col in decision_features) {
 }
 ```
 
-The cluster summary, showing the mean of each car-feature parameter and the average adjusted lap time, identifies clusters 2 and 3 as the most promising candidates.
-Cluster 3 exhibits a slightly superior lap time and a larger sample size, suggesting a more robust estimate.
-Both clusters display very low values for Engine, Differential, and Suspension, while Brake Balance falls within the lower-to-middle range.
-However, the wing parameters present a contradiction: while cluster 3 indicates high values, particularly for the Rear Wing, cluster 2 suggests mid-range values.
+The cluster summary, showing the mean of each car-feature parameter and the average adjusted lap time, identifies clusters 2 and 6 as the most promising candidates.
+Cluster 6 exhibits a slightly superior lap time and a larger sample size, suggesting a more robust estimate.
+Both clusters display very low values for Engine  and Suspension, while Brake Balance and differential fall within the middle range.
+However, the wing parameters present a contradiction: while cluster 6 indicates high values, particularly for the Rear Wing, cluster 2 suggests mid-range values for the Front Wing.
 This discrepancy highlights the necessity for an additional clustering algorithm to extract a coherent story and identify the final region.
 
 ```{r}
@@ -987,7 +988,7 @@ print(cluster_summary)
 ```
 
 To determine the number of clusters for Agglomerative Clustering, a dendrogram is utilized.
-Visual inspection suggests a range of 4 to 5 clusters; ultimately, 4 is selected to maintain consistency with the K-Means analysis.
+Visual inspection suggests a range of 4 to 5 clusters; ultimately, 4 is selected to maintain more robust clusters compared to the K-means.
 
 ```{r, echo=FALSE}
 # --- 1. Datenvorbereitung ---
