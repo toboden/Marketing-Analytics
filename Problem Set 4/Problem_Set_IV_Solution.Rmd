@@ -1388,7 +1388,7 @@ However, it failed at "Fine Tuning." With a noise floor of ~0.6 seconds, the des
 
 
 ## Insight 2
-Ich habe für D-optimality noch, dass das so wie ich es gemacht habe, es zwar gut für eine grobe Richtung ist, aber nicht sinnvoll, um kleinere Unterschiede zu optimieren
+Fehlt
 
 ## Insight 3
 The observed variation in lap times was negligible in comparison to the substantial gain achieved from an optimized setup, suggesting that a small number of test runs per setup would have sufficed. Overall, we significantly underestimated the importance of finding the best possible setup at the start of the worksheet. Furthermore, the methods used in Tasks one and two were not well-suited to identifying the optimal strategy. This resulted in us using more practice laps than were actually necessary. With deterministic optimization instead, only a small number of laps are required to find the optimum.
