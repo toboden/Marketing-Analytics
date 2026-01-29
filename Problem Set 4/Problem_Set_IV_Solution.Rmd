@@ -17,6 +17,13 @@ editor_options:
     wrap: sentence
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE
+)
+```
+
 # Task 1
 
 In this task we design an reduced experimental design to study the impact of different car setup parameters and strategy-related factors.
@@ -837,7 +844,7 @@ The data-driven methodology employs a K-Nearest Neighbors (KNN) algorithm to ret
 These instances are subsequently clustered to identify optimal vehicle setups and define the boundaries of the search space. Initially, the parameter K is determined by analyzing the distance metric of the first 1000 points (10% of the dataset).
 K=200 is selected, as this value corresponds to the point where the curve flattens.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.align="center", fig.width=5, fig.height=3.5}
 library(FNN) 
 
 k_max <- 1000
@@ -874,7 +881,10 @@ neighbors <- data[indices, cols_to_select]
 # 5. Plotten (Elbow Kurve)
 plot(1:k_max, distances, type = "l", col = "blue", lwd = 2,
      main = "KNN Distances to Neighbors",
-     xlab = "Neighbor Index", ylab = "Distance to Query Point")
+     xlab = "Neighbor Index", ylab = "Distance to Query Point",
+    cex.main = 0.8,
+    cex.lab  = 0.7, 
+    cex.axis = 0.6 )
 
 
 ```
@@ -1375,6 +1385,19 @@ To maximize the search space within the 120-lap limit, we utilized a "Single-Sho
 The main lesson is that efficiency comes at the cost of resolution. The Single-Shot approach proved excellent for "Coarse Optimization"—effectively mapping the performance landscape and identifying the general "sweet spot" (e.g., determining that high Differential and low Brake Balance were superior).
 
 However, it failed at "Fine Tuning." With a noise floor of ~0.6 seconds, the design lacked the statistical power to distinguish between "good" and "optimal" setups, which often differ by only 0.1–0.2 seconds. In future reduced designs, we would adopt a funnel approach: using Single-Shot testing to discard the bottom 80% of configurations, followed by multi-lap confirmation runs (3-5 laps) on the top candidates to penetrate the 0.6s noise floor and pinpoint the true optimum.
+
+
+## Insight 2
+Ich habe für D-optimality noch, dass das so wie ich es gemacht habe, es zwar gut für eine grobe Richtung ist, aber nicht sinnvoll, um kleinere Unterschiede zu optimieren
+
+## Insight 3
+The observed variation in lap times was negligible in comparison to the substantial gain achieved from an optimized setup, suggesting that a small number of test runs per setup would have sufficed. Overall, we significantly underestimated the importance of the best possible setup at the start of the worksheet. Furthermore, the methods used in Tasks one and two were not well-suited to identifying the optimal strategy. This resulted in us using more practice laps than were actually necessary. With deterministic optimization instead, only a small number of laps are required to find the optimum.
+
+## Insight 4
+- Eigene Intuition und Interpretation der ergebnis hilft stark (alleine um die richtigen bounds zu setzen, hier haben wir ja keinen „harten“ algo verwendet)
+## Insight 5
+- ⁠Verständnis des datengenerierenden Prozess wichtiger als starke Modelle (Dinge wie deterministische decays und keine effect von dire deg.)
+
 
 # References
 
