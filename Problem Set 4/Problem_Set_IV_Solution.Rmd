@@ -1391,7 +1391,7 @@ However, it failed at "Fine Tuning." With a noise floor of ~0.6 seconds, the des
 Fehlt
 
 ## Insight 3
-The observed variation in lap times was negligible in comparison to the substantial gain achieved from an optimized setup, suggesting that a small number of test runs per setup would have sufficed. Overall, we significantly underestimated the importance of finding the best possible setup at the start of the worksheet. Furthermore, the methods used in Tasks one and two were not well-suited to identifying the optimal strategy. This resulted in us using more practice laps than were actually necessary. With deterministic optimization instead, only a small number of laps are required to find the optimum.
+The observed variation in lap times was negligible in comparison to the substantial gain achieved from an optimized setup, suggesting that a small number of test runs per setup would have sufficed. Overall, we significantly underestimated the importance of finding the best possible setup at the start of the worksheet. This resulted in significant gaps of up to two seconds to the best-performing team during qualifying.
 
 ## Insight 4
 The analysis demonstrated that algorithmic optimization alone is insufficient when operating under a limited budget of qualifying laps. Interpreting intermediate results to construct a coherent narrative was crucial for determining the next strategic steps. Relying solely on algorithmic optima initially led to the dismissal of boundary solutions; only through the application of domain intuition did the potential of pushing parameters to their absolute limits become apparent. 
