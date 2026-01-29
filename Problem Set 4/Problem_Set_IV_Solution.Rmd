@@ -879,7 +879,7 @@ plot(1:k_max, distances, type = "l", col = "blue", lwd = 2,
 
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.show='hide'}
 k <- 200
 knn_res_final <- get.knnx(data = X_scaled, query = query_scaled, k = k)
 indices_final <- knn_res_final$nn.index[1, ]
@@ -894,7 +894,7 @@ neighbors_scaled <- scale(neighbors[, decision_features])
 Following the identification of the 200 nearest data points, both K-Means and Agglomerative Clustering are used to identify a more comprehensive and robust data story.
 Promising clusters are subsequently determined by evaluating the mean adjusted lap time within each group.For K-Means, the optimal parameter $K$ is selected by iterating through a range of 1 to 10 and analyzing both the Elbow method and the Silhouette score. 
 
-```{r,echo=FALSE}
+```{r,echo=FALSE, fig.show='hide'}
 library(cluster)
 max_clusters <- 10
 inertia <- numeric(max_clusters)
@@ -929,12 +929,12 @@ k_range <- 2:max_clusters
 plot(k_range, silhouette_scores[k_range], type = "b", pch = 19, col = "orange",
      main = "Silhouette Scores for Different k",
      xlab = "Number of Clusters", ylab = "Silhouette Score")
-
 ```
+
 
 $K$ = 8 is choosen for the K-means as there the silhouette score starts to increase again and we do not overfit the number of clusters for a sample size of 200.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.show='hide'}
 n_clusters <- 8
 set.seed(0)
 kmeans_final <- kmeans(neighbors_scaled, centers = n_clusters, nstart = 25)
@@ -991,7 +991,7 @@ print(cluster_summary)
 To determine the number of clusters for Agglomerative Clustering, a dendrogram is utilized.
 Visual inspection suggests a range of 4 to 5 clusters; ultimately, 4 is selected to maintain more robust clusters compared to the K-means.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.show='hide'}
 # --- 1. Datenvorbereitung ---
 X <- neighbors[, decision_features]
 X_scaled <- scale(X)
