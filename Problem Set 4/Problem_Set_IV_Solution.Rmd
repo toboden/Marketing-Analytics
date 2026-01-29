@@ -895,6 +895,7 @@ Following the identification of the 200 nearest data points, both K-Means and Ag
 Promising clusters are subsequently determined by evaluating the mean adjusted lap time within each group.For K-Means, the optimal parameter $K$ is selected by iterating through a range of 1 to 10 and analyzing both the Elbow method and the Silhouette score. 
 
 ```{r,echo=FALSE}
+library(cluster)
 max_clusters <- 10
 inertia <- numeric(max_clusters)
 silhouette_scores <- numeric(max_clusters) # Wir füllen k=1 später mit NA oder 0
@@ -1140,7 +1141,7 @@ print(head(setup_df))
 ############################################
 # after first 60
 ###########################################
-
+library(dplyr)
 first_60_df = read.csv('../data/practice_data_belgium_first_60.csv', check.names = FALSE)
 head(first_60_df)
 first_60_df = first_60_df %>% filter(Track == "Belgium") %>% select(c(`Rear Wing`, `Front Wing`, 
@@ -1276,5 +1277,106 @@ The qualifying results provide insight into the setup's relative competitiveness
 Finally, the data supports the hypothesis of boundary solutions. The preference for maximum values in Front and Rear Wing combined with minimal values for Suspension and Engine suggests that the global optimum likely lies at the parameter bounds (e.g., 500 and 1). Regarding race strategy, while the selected approach proved viable, retrospective analysis indicates it was suboptimal. Replacing a Medium stint with a Soft compound would likely have yielded superior lap times, representing a missed optimization opportunity in this instance.
 
 # Task 4
+## Insight 1
+```{r, echo=FALSE, include=FALSE}
+# Pakete laden
+library(readr)
+library(dplyr)
+library(ggplot2)
+
+# Daten laden
+file_path <- "../data/practice_data.csv"
+df <- read_csv(file_path)
+df <- df %>%
+  rename(
+    RearWing = `Rear Wing`,
+    FrontWing = `Front Wing`,
+    BrakeBalance = Brake,
+    LapTime = `Lap Time`,
+  )
+df <- df %>% slice(2:71)
+df$LapTime <- as.numeric(df$LapTime)
+
+# Modellformel (quadratische Terme)
+formula <- as.formula(
+  LapTime ~ RearWing + I(RearWing^2) +
+    FrontWing + I(FrontWing^2) +
+    Engine + I(Engine^2) +
+    BrakeBalance + I(BrakeBalance^2) +
+    Differential + I(Differential^2) +
+    Suspension + I(Suspension^2)
+)
+
+# OLS-Modell fitten
+model <- lm(formula, data = df)
+summary(model)
+
+# Vorhersagen & Residuen
+df <- df %>%
+  mutate(
+    Predicted_Lap_Time = predict(model, df),
+    Residuals = LapTime - Predicted_Lap_Time
+  )
+
+# RMSE berechnen
+rmse <- sqrt(mean(df$Residuals^2))
+
+
+# Signal-to-Noise Ratio
+signal_var <- var(df$Predicted_Lap_Time)
+noise_var <- var(df$Residuals)
+snr <- signal_var / noise_var
+
+# Plot 1: Actual vs Predicted
+p1 <- ggplot(df, aes(x = Predicted_Lap_Time, y = LapTime)) +
+  geom_point(alpha = 0.7) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(
+    title = "Actual vs. Predicted Lap Time",
+    x = "Predicted Lap Time",
+    y = "Actual Lap Time"
+  ) +
+  theme_minimal()
+
+# Plot 2: Residuals vs Predicted
+p2 <- ggplot(df, aes(x = Predicted_Lap_Time, y = Residuals)) +
+  geom_point(alpha = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(
+    title = "Residuals vs. Predicted Values",
+    x = "Predicted Lap Time",
+    y = "Residuals"
+  ) +
+  theme_minimal()
+
+```
+
+
+```{r, echo=FALSE, fig.width=3.2, fig.height=2}
+p1
+```
+```{r,echo=FALSE, fig.width=3.2, fig.height=2}
+p2
+```
+```{r, echo=FALSE}
+# Modellzusammenfassung
+cat("R2 =", summary(model)$r.squared,
+  "adj_R2 =", summary(model)$adj.r.squared)
+cat("RMSE:", rmse, "\n")
+cat("(Informal) Signal-to-Noise Ratio (Model Var / Residual Var):", snr, "\n")
+
+```
+
+
+Efficiency vs. Resolution in Single-Shot Experimental Design
+
+To maximize the search space within the 120-lap limit, we utilized a "Single-Shot" D-optimal design, testing 70 unique configurations for only one lap each. Analysis of the Phase 1 data reveals a Signal-to-Noise Ratio of 10.89 and an R-squared of 0.916. The design successfully identified the dominant main effects and curvature where it exists. However, despite high R², the RMSE of 0.57 seconds indicates limited precision for ranking near-optimal setups.
+
+The main lesson is that efficiency comes at the cost of resolution. The Single-Shot approach proved excellent for "Coarse Optimization"—effectively mapping the performance landscape and identifying the general "sweet spot" (e.g., determining that high Differential and low Brake Balance were superior).
+
+However, it failed at "Fine Tuning." With a noise floor of ~0.6 seconds, the design lacked the statistical power to distinguish between "good" and "optimal" setups, which often differ by only 0.1–0.2 seconds. In future reduced designs, we would adopt a funnel approach: using Single-Shot testing to discard the bottom 80% of configurations, followed by multi-lap confirmation runs (3-5 laps) on the top candidates to penetrate the 0.6s noise floor and pinpoint the true optimum.
 
 # References
+
+
+
