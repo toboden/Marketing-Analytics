@@ -1376,16 +1376,8 @@ cat("RMSE:", rmse, "\n")
 cat("(Informal) Signal-to-Noise Ratio (Model Var / Residual Var):", snr, "\n")
 
 ```
-
-
-Efficiency vs. Resolution in Single-Shot Experimental Design
-
-To maximize the search space within the 120-lap limit, we utilized a "Single-Shot" D-optimal design, testing 70 unique configurations for only one lap each. Analysis of the Phase 1 data reveals a Signal-to-Noise Ratio of 10.89 and an R-squared of 0.916. The design successfully identified the dominant main effects and curvature where it exists. However, despite high R², the RMSE of 0.57 seconds indicates limited precision for ranking near-optimal setups.
-
-The main lesson is that efficiency comes at the cost of resolution. The Single-Shot approach proved excellent for "Coarse Optimization"—effectively mapping the performance landscape and identifying the general "sweet spot" (e.g., determining that high Differential and low Brake Balance were superior).
-
-However, it failed at "Fine Tuning." With a noise floor of ~0.6 seconds, the design lacked the statistical power to distinguish between "good" and "optimal" setups, which often differ by only 0.1–0.2 seconds. In future reduced designs, we would adopt a funnel approach: using Single-Shot testing to discard the bottom 80% of configurations, followed by multi-lap confirmation runs (3-5 laps) on the top candidates to penetrate the 0.6s noise floor and pinpoint the true optimum.
-
+To maximize the search space within the 120-lap limit, we utilized a "Single-Shot" D-optimal design, testing 70 unique configurations for only one lap each. Analysis of the Phase 1 data reveals a Signal-to-Noise Ratio of 10.89 and an R-squared of 0.916. However, despite high R², the RMSE of 0.57 seconds indicates bad precision for ranking near-optimal setups.
+With a noise floor of ~0.6 seconds and a big difference between the top performing team, the design not only lacked the statistical power to distinguish between "good" and "very good" setups, which often differ by only 0.1–0.2 seconds. But it also was not able to find a good solution. In future reduced designs, a funnel approach could be better: using Single-Shot testing to discard the bottom 80% of configurations, followed by multi-lap confirmation runs (5-8 laps) on the top candidates to penetrate the 0.6s noise floor and get a better solution.
 
 ## Insight 2
 Fehlt
