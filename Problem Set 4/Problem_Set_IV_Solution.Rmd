@@ -1394,9 +1394,10 @@ Ich habe für D-optimality noch, dass das so wie ich es gemacht habe, es zwar gu
 The observed variation in lap times was negligible in comparison to the substantial gain achieved from an optimized setup, suggesting that a small number of test runs per setup would have sufficed. Overall, we significantly underestimated the importance of finding the best possible setup at the start of the worksheet. Furthermore, the methods used in Tasks one and two were not well-suited to identifying the optimal strategy. This resulted in us using more practice laps than were actually necessary. With deterministic optimization instead, only a small number of laps are required to find the optimum.
 
 ## Insight 4
-- Eigene Intuition und Interpretation der ergebnis hilft stark (alleine um die richtigen bounds zu setzen, hier haben wir ja keinen „harten“ algo verwendet)
+The analysis demonstrated that algorithmic optimization alone is insufficient when operating under a limited budget of qualifying laps. Interpreting intermediate results to construct a coherent narrative was crucial for determining the next strategic steps. Relying solely on algorithmic optima initially led to the dismissal of boundary solutions; only through the application of domain intuition did the potential of pushing parameters to their absolute limits become apparent. 
+
 ## Insight 5
-- ⁠Verständnis des datengenerierenden Prozess wichtiger als starke Modelle (Dinge wie deterministische decays und keine effect von dire deg.)
+A thorough examination of the underlying Data Generating Process (DGP) enabled an immediate focus on the most critical variables. Identifying that decay rates were deterministic and independent of setup and strategy significantly reduced the dimensionality of the optimization problem. Furthermore, the finding that tire degradation had no significant impact on lap times allowed for a strategic reallocation of the simulation budget towards the more complex task of vehicle setup optimization.
 
 
 # References
