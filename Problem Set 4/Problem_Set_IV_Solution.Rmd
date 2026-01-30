@@ -963,7 +963,7 @@ cluster_summary$Cluster_Size <- kmeans_final$size
 mean_lap_times <- tapply(neighbors$lap_time_adjusted, kmeans_final$cluster, mean)
 cluster_summary$Mean_Adjusted_Lap_Time <- as.numeric(mean_lap_times)
 
-print(cluster_summary)
+#print(cluster_summary)
 
 #boxplot of results
 neighbors$KMeans_Cluster <- as.factor(kmeans_final$cluster)
@@ -994,8 +994,8 @@ Both clusters display very low values for Engine  and Suspension, while Brake Ba
 However, the wing parameters present a contradiction: while cluster 6 indicates high values, particularly for the Rear Wing, cluster 2 suggests mid-range values for the Front Wing.
 This discrepancy highlights the necessity for an additional clustering algorithm to extract a coherent story and identify the final region.
 
-```{r}
-print(cluster_summary)
+```{r, echo=FALSE}
+#print(cluster_summary)
 ```
 
 To determine the number of clusters for Agglomerative Clustering, a dendrogram is utilized.
@@ -1052,8 +1052,8 @@ hc_summary$Mean_Adjusted_Lap_Time <- as.vector(tapply(neighbors$lap_time_adjuste
                                                       mean))
 
 # 4. Output anzeigen
-print("Hierarchical Cluster Summary:")
-print(hc_summary)
+#print("Hierarchical Cluster Summary:")
+#print(hc_summary)
 
 
 mean_times <- tapply(neighbors$lap_time_adjusted, neighbors$Strategy_Cluster, mean)
@@ -1075,8 +1075,8 @@ Clusters 2 and 4 emerge as the most promising candidates.
 They are consistent with the hypothesis regarding Differential, Suspension, Brake Balance, and Engine.
 However, the wing parameters again show the largest discrepancy between the two groups; notably, the larger and thus more robust cluster suggests higher values for these settings.
 
-```{r, echo=TRUE}
-print(hc_summary)
+```{r, echo=FALSE}
+#print(hc_summary)
 ```
 ### Region Sampling
 
@@ -1143,8 +1143,8 @@ setup_df <- setup_df[, c("Setup_ID", decision_features)]
 
 ```
 
-```{r}
-print(head(setup_df))
+```{r, echo=FALSE}
+#print(head(setup_df))
 ```
 
 ```{r, echo=FALSE}
@@ -1153,7 +1153,7 @@ print(head(setup_df))
 ###########################################
 library(dplyr)
 first_60_df = read.csv('../data/practice_data_belgium_first_60.csv', check.names = FALSE)
-head(first_60_df)
+#head(first_60_df)
 first_60_df = first_60_df %>% filter(Track == "Belgium") %>% select(c(`Rear Wing`, `Front Wing`, 
                                                         Engine ,Brake , Differential, Suspension, `Lap Time`))
 avg_times = first_60_df %>% group_by(`Rear Wing`, `Front Wing`, 
@@ -1162,7 +1162,7 @@ avg_times = first_60_df %>% group_by(`Rear Wing`, `Front Wing`,
                         rename(`Brake Balance` = Brake) %>% arrange(Mean_Lap_Time)
 results = avg_times %>% left_join(setup_df, by = decision_features)
 top_15 = head(results, 15)
-print(top_15 %>% select(Setup_ID, Mean_Lap_Time))
+#print(top_15 %>% select(Setup_ID, Mean_Lap_Time))
 
 ```
 The results from the two-stint simulations indicate that high-downforce setups perform best.
@@ -1624,10 +1624,10 @@ cat("(Informal) Signal-to-Noise Ratio (Model Var / Residual Var):", snr, "\n")
 
 ```
 To maximize the search space within the 120-lap limit, we utilized a "Single-Shot" D-optimal design, testing 70 unique configurations for only one lap each. Analysis of the Phase 1 data reveals a Signal-to-Noise Ratio of 10.89 and an R-squared of 0.916. However, despite high R², the RMSE of 0.57 seconds indicates bad precision for ranking near-optimal setups.
-With a noise floor of ~0.6 seconds and a big difference between the top performing team, the design not only lacked the statistical power to distinguish between "good" and "very good" setups, which often differ by only 0.1–0.2 seconds. But it also was not able to find a good solution. In future reduced designs, a funnel approach could be better: using Single-Shot testing to discard the bottom 80% of configurations, followed by multi-lap confirmation runs (5-8 laps) on the top candidates to penetrate the 0.6s noise floor and get a better solution.
+With a noise floor of ~0.6 seconds and a big difference between the top performing team, the design not only lacked the statistical power to distinguish between "good" and "very good" setups, which often differ by only 0.1–0.2 seconds.
 
 ## Insight 2
-Fehlt
+We were not able to find a good solution with our 'single-shot' D-optimal design because we considered too few different configurations. For future reduced designs, a funnel approach could work better: first, use Single-Shot testing to discard the bottom 80% of configurations. Then, conduct multi-lap confirmation runs (5–8 laps) on the top candidates to penetrate the 0.6 s noise floor and find a better solution.
 
 ## Insight 3
 The observed variation in lap times was negligible in comparison to the substantial gain achieved from an optimized setup, suggesting that a small number of test runs per setup would have sufficed. Overall, we significantly underestimated the importance of finding the best possible setup at the start of the worksheet. This resulted in significant gaps of up to two seconds to the best-performing team during qualifying.
