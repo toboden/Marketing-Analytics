@@ -994,8 +994,8 @@ Both clusters display very low values for Engine and Suspension, while Brake Bal
 However, the wing parameters present a contradiction: while cluster 6 indicates high values, particularly for the Rear Wing, cluster 2 suggests mid-range values for the Front Wing.
 This discrepancy highlights the necessity for an additional clustering algorithm to extract a coherent story and identify the final region.
 
-```{r, echo=FALSE}
-#print(cluster_summary)
+```{r, echo=TRUE}
+print(cluster_summary)
 ```
 
 To determine the number of clusters for Agglomerative Clustering, a dendrogram is utilized.
@@ -1075,8 +1075,8 @@ Clusters 2 and 4 emerge as the most promising candidates.
 They are consistent with the hypothesis regarding Differential, Suspension, Brake Balance, and Engine.
 However, the wing parameters again show the largest discrepancy between the two groups; notably, the larger and thus more robust cluster suggests higher values for these settings.
 
-```{r, echo=FALSE}
-#print(hc_summary)
+```{r, echo=TRUE}
+print(hc_summary)
 ```
 
 ### Region Sampling
@@ -1239,7 +1239,10 @@ Since the fuel content can be varied independently of the tire compound, the ana
 To achieve this, four single-lap stints are executed with a 120L load, and four with 4L, the minimum permissible starting amount.
 With the parameters fixed to Setup 12, the average times for the 120L and 4L runs are computed to derive the time penalty per liter and per lap.
 
-$P\_{liter} = \frac{\bar{T}_{120} - \bar{T}_{4}}{120 - 4}$ $C\_{lap} = \frac{\bar{T}_{120} - \bar{T}_{4}}{35.6}$
+$$\begin{aligned}
+P_{liter} = \frac{\bar{T}_{120} - \bar{T}_{4}}{120 - 4} \\
+P_{lap} = \frac{\bar{T}_{120} - \bar{T}_{4}}{35.6}
+\end{aligned}$$
 
 | Parameter                      | Value    |
 |:-------------------------------|:---------|
