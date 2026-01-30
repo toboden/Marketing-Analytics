@@ -592,7 +592,6 @@ F(z,b) \;=\; \left\lceil L(b)\,z \right\rceil
 \;=\; \left\lceil \left\lceil \frac{63}{b+1}\right\rceil \, z \right\rceil .
 $$
 
-
 ```{r, echo=FALSE, results="hide"}
 # function for the minimal fuel load
 minimalFuelLoad <- function(w, b, z = 3.22910327407){
@@ -841,7 +840,8 @@ data$`Lap Time` <- NULL
 ```
 
 The data-driven methodology employs a K-Nearest Neighbors (KNN) algorithm to retrieve samples comparable to the Belgium circuit's conditions.
-These instances are subsequently clustered to identify optimal vehicle setups and define the boundaries of the search space. Initially, the parameter K is determined by analyzing the distance metric of the first 1000 points (10% of the dataset).
+These instances are subsequently clustered to identify optimal vehicle setups and define the boundaries of the search space.
+Initially, the parameter K is determined by analyzing the distance metric of the first 1000 points (10% of the dataset).
 K=200 is selected, as this value corresponds to the point where the curve flattens.
 
 ```{r, echo=FALSE, fig.align="center", fig.width=5, fig.height=3.5}
@@ -885,6 +885,7 @@ plot(1:k_max, distances, type = "l", col = "blue", lwd = 2,
     cex.main = 0.8,
     cex.lab  = 0.7, 
     cex.axis = 0.6 )
+grid()
 
 
 ```
@@ -902,7 +903,7 @@ neighbors_scaled <- scale(neighbors[, decision_features])
 ```
 
 Following the identification of the 200 nearest data points, both K-Means and Agglomerative Clustering are used to identify a more comprehensive and robust data story.
-Promising clusters are subsequently determined by evaluating the mean adjusted lap time within each group.For K-Means, the optimal parameter $K$ is selected by iterating through a range of 1 to 10 and analyzing both the Elbow method and the Silhouette score. 
+Promising clusters are subsequently determined by evaluating the mean adjusted lap time within each group.For K-Means, the optimal parameter $K$ is selected by iterating through a range of 1 to 10 and analyzing both the Elbow method and the Silhouette score.
 
 ```{r,echo=FALSE, fig.show='hide'}
 library(cluster)
@@ -941,7 +942,6 @@ plot(k_range, silhouette_scores[k_range], type = "b", pch = 19, col = "orange",
      xlab = "Number of Clusters", ylab = "Silhouette Score")
 ```
 
-
 $K$ = 8 is choosen for the K-means as there the silhouette score starts to increase again and we do not overfit the number of clusters for a sample size of 200.
 
 ```{r, echo=FALSE, fig.show='hide'}
@@ -963,12 +963,12 @@ cluster_summary$Cluster_Size <- kmeans_final$size
 mean_lap_times <- tapply(neighbors$lap_time_adjusted, kmeans_final$cluster, mean)
 cluster_summary$Mean_Adjusted_Lap_Time <- as.numeric(mean_lap_times)
 
-print(cluster_summary)
+#print(cluster_summary)
 
 #boxplot of results
 neighbors$KMeans_Cluster <- as.factor(kmeans_final$cluster)
 boxplot(lap_time_adjusted ~ KMeans_Cluster, data = neighbors,
-        col = RColorBrewer::brewer.pal(n_clusters, "Set2"), # oder einfach col=1:n_clusters
+        col = RColorBrewer::brewer.pal(n_clusters, "Set2"), 
         main = "K-Means: Which Strategy is Faster?",
         xlab = "K-Means Cluster", ylab = "Lap Time (Adjusted)")
 
@@ -976,21 +976,21 @@ boxplot(lap_time_adjusted ~ KMeans_Cluster, data = neighbors,
 # --- 4. EXTRACT RESULTS: Bounds for Best Cluster ---
 best_km_cluster <- as.numeric(names(which.min(mean_lap_times)))
 
-cat(sprintf("\nBest K-Means Cluster is #%d. Use this for further optimization.\n", best_km_cluster))
+#cat(sprintf("\nBest K-Means Cluster is #%d. Use this for further optimization.\n", best_km_cluster))
 
 best_km_data <- neighbors[neighbors$KMeans_Cluster == best_km_cluster, ]
 
-cat("\nBounds for optimization (based on best K-Means cluster):\n")
-for (col in decision_features) {
-  q5 <- quantile(best_km_data[[col]], 0.05)
-  q95 <- quantile(best_km_data[[col]], 0.95)
-  cat(sprintf("%s: %.2f - %.2f\n", col, q5, q95))
-}
+#cat("\nBounds for optimization (based on best K-Means cluster):\n")
+#for (col in decision_features) {
+#  q5 <- quantile(best_km_data[[col]], 0.05)
+#  q95 <- quantile(best_km_data[[col]], 0.95)
+#  cat(sprintf("%s: %.2f - %.2f\n", col, q5, q95))
+#}
 ```
 
 The cluster summary, showing the mean of each car-feature parameter and the average adjusted lap time, identifies clusters 2 and 6 as the most promising candidates.
 Cluster 6 exhibits a slightly superior lap time and a larger sample size, suggesting a more robust estimate.
-Both clusters display very low values for Engine  and Suspension, while Brake Balance and differential fall within the middle range.
+Both clusters display very low values for Engine and Suspension, while Brake Balance and differential fall within the middle range.
 However, the wing parameters present a contradiction: while cluster 6 indicates high values, particularly for the Rear Wing, cluster 2 suggests mid-range values for the Front Wing.
 This discrepancy highlights the necessity for an additional clustering algorithm to extract a coherent story and identify the final region.
 
@@ -1052,8 +1052,8 @@ hc_summary$Mean_Adjusted_Lap_Time <- as.vector(tapply(neighbors$lap_time_adjuste
                                                       mean))
 
 # 4. Output anzeigen
-print("Hierarchical Cluster Summary:")
-print(hc_summary)
+#print("Hierarchical Cluster Summary:")
+#print(hc_summary)
 
 
 mean_times <- tapply(neighbors$lap_time_adjusted, neighbors$Strategy_Cluster, mean)
@@ -1061,14 +1061,14 @@ best_cluster <- as.numeric(names(which.min(mean_times)))
 best_data <- neighbors[neighbors$Strategy_Cluster == best_cluster, ]
 
 
-cat(sprintf("Best cluster is #%d. Use this for further optimization.\n", best_cluster))
+#cat(sprintf("Best cluster is #%d. Use this for further optimization.\n", #best_cluster))
 
-cat("\nBounds for optimization (based on best cluster):\n")
-for (col in decision_features) {
-  q5 <- quantile(best_data[[col]], 0.05)
-  q95 <- quantile(best_data[[col]], 0.95)
-  cat(sprintf("%s: %.2f - %.2f\n", col, q5, q95))
-}
+#cat("\nBounds for optimization (based on best cluster):\n")
+#for (col in decision_features) {
+#  q5 <- quantile(best_data[[col]], 0.05)
+#  q95 <- quantile(best_data[[col]], 0.95)
+#  cat(sprintf("%s: %.2f - %.2f\n", col, q5, q95))
+#}
 ```
 
 Clusters 2 and 4 emerge as the most promising candidates.
@@ -1078,6 +1078,7 @@ However, the wing parameters again show the largest discrepancy between the two 
 ```{r, echo=TRUE}
 print(hc_summary)
 ```
+
 ### Region Sampling
 
 Based on the prior cluster analysis, the sampling space is defined as follows:
@@ -1092,15 +1093,19 @@ Based on the prior cluster analysis, the sampling space is defined as follows:
 | **Differential**  | 1   | 300 |
 
 Notably, the Front Wing exhibited significant outliers in the lower range, while Brake Balance consistently appeared in the mid-range, implying considerable uncertainty.
-Furthermore, as the Differential displayed isolated higher values, an upper bound of 300 has been incorporated. Overall, these limits are established conservatively, as the subsequent sampling methodology facilitates the evaluation of a greater number of configurations compared to previous tasks.
+Furthermore, as the Differential displayed isolated higher values, an upper bound of 300 has been incorporated.
+Overall, these limits are established conservatively, as the subsequent sampling methodology facilitates the evaluation of a greater number of configurations compared to previous tasks.
 
 ### Testing Confiurations
 
 Knowledge from prior tasks is utilized to evaluate different configurations.
-Previous analysis revealed large time discrepancies between setups, enabling the rapid elimination of unpromising candidates. Therefore, 30 configurations are sampled, with the optimal setup identified within a total budget of 80 single-lap stints.
+Previous analysis revealed large time discrepancies between setups, enabling the rapid elimination of unpromising candidates.
+Therefore, 30 configurations are sampled, with the optimal setup identified within a total budget of 80 single-lap stints.
 Strategy parameters remain fixed at 100l fuel and Soft tires throughout.
 
-Initially, the 30 configurations are simulated for two single-lap stints each. After that, the bottom 15 are eliminated, while the top half proceeds to a third lap. Finally, the best five candidates undergo a fourth lap, after which the optimal configuration is selected.
+Initially, the 30 configurations are simulated for two single-lap stints each.
+After that, the bottom 15 are eliminated, while the top half proceeds to a third lap.
+Finally, the best five candidates undergo a fourth lap, after which the optimal configuration is selected.
 
 To generate the 30 configurations, Latin Hypercube Sampling (LHS) is employed within the identified bounds.
 LHS is a Monte Carlo simulation technique designed to cover sample spaces more efficiently than independent uniform sampling.
@@ -1165,6 +1170,7 @@ top_15 = head(results, 15)
 print(top_15 %>% select(Setup_ID, Mean_Lap_Time))
 
 ```
+
 The results from the two-stint simulations indicate that high-downforce setups perform best.
 For Engine and Suspension, very low values appear superior, while Differential settings also exhibit consistency, ranging from 145 to 204.
 However, the Brake Balance parameter demonstrates the necessity of retaining a broad search space, as indicated by the large interval observed.
@@ -1214,9 +1220,10 @@ The ranking of the top five setups remains unchanged, establishing Setup 12 as t
 print(as.data.frame(top_5 %>% select(Setup_ID, Mean_Lap_Time)))
 ```
 
-## 2. Strategy 
+## 2. Strategy
 
-To optimize the strategy, the effects of tire degradation and fuel consumption are estimated to find an optimal tradeoff. Therefore we drive 5 stints with 8 laps each, using the remaining 40 laps of the 120 practice laps.
+To optimize the strategy, the effects of tire degradation and fuel consumption are estimated to find an optimal tradeoff.
+Therefore we drive 5 stints with 8 laps each, using the remaining 40 laps of the 120 practice laps.
 Although decay rates are known to be fixed from prior tasks the actual impact on lap time is subject to noise.
 Consequently, this effect must be estimated in the forthcoming section.
 
@@ -1232,8 +1239,7 @@ Since the fuel content can be varied independently of the tire compound, the ana
 To achieve this, four single-lap stints are executed with a 120L load, and four with 4L, the minimum permissible starting amount.
 With the parameters fixed to Setup 12, the average times for the 120L and 4L runs are computed to derive the time penalty per liter and per lap.
 
-$P\_{liter} = \frac{\bar{T}_{120} - \bar{T}_{4}}{120 - 4}$
-$C\_{lap} = \frac{\bar{T}_{120} - \bar{T}_{4}}{35.6}$
+$P\_{liter} = \frac{\bar{T}_{120} - \bar{T}_{4}}{120 - 4}$ $C\_{lap} = \frac{\bar{T}_{120} - \bar{T}_{4}}{35.6}$
 
 | Parameter                      | Value    |
 |:-------------------------------|:---------|
@@ -1243,7 +1249,10 @@ $C\_{lap} = \frac{\bar{T}_{120} - \bar{T}_{4}}{35.6}$
 | **Fuel Penalty per Lap (s)**   | 0.2646   |
 | **Fuel Penalty per Liter (s)** | 0.0812   |
 
-Subsequently, an 8-lap stint is performed with each of the four tire compounds to estimate the impact of tire degradation. By compensating for the known fuel effect, the specific influence of tire wear is isolated. However, given the noise within the data, no statistically significant time penalty was observed for tire degradation, a finding that drastically simplifies strategy optimization. Finally, a theoretical base pace is calculated for each compound, representing the estimated lap time at zero fuel load.
+Subsequently, an 8-lap stint is performed with each of the four tire compounds to estimate the impact of tire degradation.
+By compensating for the known fuel effect, the specific influence of tire wear is isolated.
+However, given the noise within the data, no statistically significant time penalty was observed for tire degradation, a finding that drastically simplifies strategy optimization.
+Finally, a theoretical base pace is calculated for each compound, representing the estimated lap time at zero fuel load.
 
 $$
 \begin{aligned}
@@ -1252,7 +1261,6 @@ $$
 \text{3. Base Pace:} \quad & P_{base} = \frac{1}{N} \sum_{i=1}^{N} T_{adj}^{(i)}
 \end{aligned}
 $$
-
 
 | Tire           | Seconds lost per lap | Basepace Estimation |
 |:---------------|:---------------------|:--------------------|
@@ -1267,7 +1275,7 @@ Since the fuel penalty increases linearly with each lap driven (or rather, the f
 **Iterative Formulation (Sum of Laps):**
 
 $$
-T_{total} = \sum_{k=1}^{N_{stints}} \sum_{i=0}^{L_k - 1} \left( P_{base}(\text{tire}_k) + i \cdot F_{penalty} \right) + N_{stints}*t
+T_{total} = \sum_{k=1}^{N_{stints}} \sum_{i=0}^{L_k - 1} \left( P_{base}(\text{tire}_k) + i \cdot F_{penalty} \right) + (N_{stints}-1)*B
 $$
 
 **Where:**
@@ -1276,15 +1284,24 @@ $$
 -   $L_k$: Length of the $k$-th stint (number of laps).
 -   $P_{base}(\text{tire}_k)$: Theoretical base pace of the compound used in stint $k$ (at Lap 0 fuel load).
 -   $F_{penalty}$: Time cost per lap added due to fuel weight (or effectively, the time delta relative to the base pace).
--   $i$: Lap index within the current stint ($0, 1, \dots, L_k-1$). \*$t$: stint penalyt (30s)
+-   $i$: Lap index within the current stint ($0, 1, \dots, L_k-1$). \*
+-   $B$: stint penalty (30s)
 
-Two distinct three-stint strategies were evaluated to determine the optimal approach. The first configuration, utilizing exclusively Soft tires (3x Soft), resulted in a total race time of 6118.22 seconds. In contrast, the mixed compound strategy (Medium, Soft, and Extra Soft) achieved a superior time of 6111.00 seconds.
+Two distinct three-stint strategies were evaluated to determine the optimal approach.
+The first configuration, utilizing exclusively Soft tires (3x Soft), resulted in a total race time of 6118.22 seconds.
+In contrast, the mixed compound strategy (Medium, Soft, and Extra Soft) achieved a superior time of 6111.00 seconds.
 
 ## Conclusion
 
-The qualifying results provide insight into the setup's relative competitiveness. While the configuration showed improved performance compared to the previous two races, it ultimately ranked last, highlighting significant residual potential for optimization. This suggests that future iterations would benefit from an expanded sampling size and a more aggressive selection process, particularly as the top four configurations remained static across evaluation rounds. Furthermore, given the established low complexity of the race strategy, computational resources could be reallocated to increase the number of evaluation rounds per setup.
+The qualifying results provide insight into the setup's relative competitiveness.
+While the configuration showed improved performance compared to the previous two races, it ultimately ranked last, highlighting significant residual potential for optimization.
+This suggests that future iterations would benefit from an expanded sampling size and a more aggressive selection process, particularly as the top four configurations remained static across evaluation rounds.
+Furthermore, given the established low complexity of the race strategy, computational resources could be reallocated to increase the number of evaluation rounds per setup.
 
-Finally, the data supports the hypothesis of boundary solutions. The preference for maximum values in Front and Rear Wing combined with minimal values for Suspension and Engine suggests that the global optimum likely lies at the parameter bounds (e.g., 500 and 1). Regarding race strategy, while the selected approach proved viable, retrospective analysis indicates it was suboptimal. Replacing a Medium stint with a Soft compound would likely have yielded superior lap times, representing a missed optimization opportunity in this instance.
+Finally, the data supports the hypothesis of boundary solutions.
+The preference for maximum values in Front and Rear Wing combined with minimal values for Suspension and Engine suggests that the global optimum likely lies at the parameter bounds (e.g., 500 and 1).
+Regarding race strategy, while the selected approach proved viable, retrospective analysis indicates it was suboptimal.
+Replacing a Medium stint with a Soft compound would likely have yielded superior lap times, representing a missed optimization opportunity in this instance.
 
 ```{r, echo=FALSE}
 
@@ -1510,31 +1527,57 @@ writexl::write_xlsx(list(
 
 ```
 
-# Task 3 – (Italy / Monza)
+# Task 3 -- (Italy / Monza)
 
 ## 1. Setup
 
-For the Italy race we started with the same “data-driven region search” concept as in Belgium, but replaced the query with the Italy/Monza track and weather values. As in Belgium, we first removed the lap-distance baseline by using a linear adjustment of lap time on lap distance, so that comparisons across simulator rows reflect setup differences rather than track length effects.
+For the Italy race we started with the same "data-driven region search" concept as in Belgium, but replaced the query with the Italy/Monza track and weather values.
+As in Belgium, we first removed the lap-distance baseline by using a linear adjustment of lap time on lap distance, so that comparisons across simulator rows reflect setup differences rather than track length effects.
 
-To identify a promising region in the 6D setup space (Front Wing, Rear Wing, Brake Balance, Suspension, Engine, Differential), we retrieved simulator rows most similar to Italy conditions via KNN on the fixed track+weather features. We implemented the neighbor selection deterministically (distance ordering with a stable row-id tie-breaker) to ensure reproducibility. The retrieved neighbor setups were then clustered (KMeans, and additionally hierarchical clustering as a robustness check) to detect coherent “strategies” in the neighborhood. We selected the cluster with the lowest mean adjusted lap time and derived conservative search bounds using the 5th and 95th percentiles (q05–q95) of each decision variable within that best-performing cluster. Inside those bounds we generated 30 candidate configurations using Latin Hypercube Sampling (LHS) and transferred them into the practice interface for evaluation.
+To identify a promising region in the 6D setup space (Front Wing, Rear Wing, Brake Balance, Suspension, Engine, Differential), we retrieved simulator rows most similar to Italy conditions via KNN on the fixed track+weather features.
+We implemented the neighbor selection deterministically (distance ordering with a stable row-id tie-breaker) to ensure reproducibility.
+The retrieved neighbor setups were then clustered (KMeans, and additionally hierarchical clustering as a robustness check) to detect coherent "strategies" in the neighborhood.
+We selected the cluster with the lowest mean adjusted lap time and derived conservative search bounds using the 5th and 95th percentiles (q05--q95) of each decision variable within that best-performing cluster.
+Inside those bounds we generated 30 candidate configurations using Latin Hypercube Sampling (LHS) and transferred them into the practice interface for evaluation.
 
-After testing the first 30 model-suggested setups in practice, we deliberately adapted our decision-making based on observed performance. In particular, we applied the key empirical lesson from Belgium: the optimum often lies near the boundary of the allowed parameter range. Instead of continuing to sample uniformly inside the model-derived region, we performed a systematic boundary-focused local search around the best observed candidates, i.e., we explored extreme “edge” configurations in the direction suggested by the practice results. This deviation from the model proposal was highly effective: compared to the initial region suggested by clustering and LHS, the boundary-driven exploration improved lap times by roughly two seconds. Empirically, the fastest Italy setups concentrated near a boundary-solution pattern with very high Front/Rear Wing values combined with low values for the remaining knobs, especially Engine and Suspension; Brake Balance and Differential remained in a relatively stable low-to-mid range and were then fine-tuned around the best candidate.
+After testing the first 30 model-suggested setups in practice, we deliberately adapted our decision-making based on observed performance.
+In particular, we applied the key empirical lesson from Belgium: the optimum often lies near the boundary of the allowed parameter range.
+Instead of continuing to sample uniformly inside the model-derived region, we performed a systematic boundary-focused local search around the best observed candidates, i.e., we explored extreme "edge" configurations in the direction suggested by the practice results.
+This deviation from the model proposal was highly effective: compared to the initial region suggested by clustering and LHS, the boundary-driven exploration improved lap times by roughly two seconds.
+Empirically, the fastest Italy setups concentrated near a boundary-solution pattern with very high Front/Rear Wing values combined with low values for the remaining knobs, especially Engine and Suspension; Brake Balance and Differential remained in a relatively stable low-to-mid range and were then fine-tuned around the best candidate.
 
-We chose this two-stage approach because it balances exploration and exploitation under a tight practice-lap budget. KNN + clustering provides a cheap global prior from the simulator dataset, quickly narrowing the search to a plausible high-performance region without brute-forcing the full space. LHS then covers that region efficiently in the first practice round. Once practice data revealed a clear direction of improvement, boundary/local search became the most resource-efficient way to exploit the signal. In terms of adaptation, decisions were explicitly performance-driven: slow configurations were eliminated after the first round (e.g., lap times clearly above the competitive range), remaining attempts were allocated to replicate the best candidates for robustness and to probe boundary points that extend the best observed pattern. This led to an increasingly structured exploitation strategy instead of continued random sampling.
+We chose this two-stage approach because it balances exploration and exploitation under a tight practice-lap budget.
+KNN + clustering provides a cheap global prior from the simulator dataset, quickly narrowing the search to a plausible high-performance region without brute-forcing the full space.
+LHS then covers that region efficiently in the first practice round.
+Once practice data revealed a clear direction of improvement, boundary/local search became the most resource-efficient way to exploit the signal.
+In terms of adaptation, decisions were explicitly performance-driven: slow configurations were eliminated after the first round (e.g., lap times clearly above the competitive range), remaining attempts were allocated to replicate the best candidates for robustness and to probe boundary points that extend the best observed pattern.
+This led to an increasingly structured exploitation strategy instead of continued random sampling.
 
-Regarding optimality, we are moderately confident that the final Italy setup is close to optimal within the explored neighborhood. The main evidence is the consistency of the top candidates across repeated evaluations (small dispersion), the observed convergence trend (moving toward extreme wing values and low Engine/Suspension produced monotonic improvements that eventually plateaued), and the fact that the best setup sits at or near the parameter bounds, which is a common signature of constrained optima in tuning problems. At the same time, we do not claim a formal global optimum: the search is limited by the practice budget and by the fact that only a subset of the full space can be evaluated. Our confidence therefore rests on convergence behavior and repeatability rather than an exhaustive proof.
+Regarding optimality, we are moderately confident that the final Italy setup is close to optimal within the explored neighborhood.
+The main evidence is the consistency of the top candidates across repeated evaluations (small dispersion), the observed convergence trend (moving toward extreme wing values and low Engine/Suspension produced monotonic improvements that eventually plateaued), and the fact that the best setup sits at or near the parameter bounds, which is a common signature of constrained optima in tuning problems.
+At the same time, we do not claim a formal global optimum: the search is limited by the practice budget and by the fact that only a subset of the full space can be evaluated.
+Our confidence therefore rests on convergence behavior and repeatability rather than an exhaustive proof.
 
 ## 2. Strategy (Italy)
 
-Race strategy was optimized independently of setup, which turns the problem into a deterministic optimization task once the relevant parameters are identified. The key quantities were: a constant fuel burn per lap (independent of tyre compound), a fuel time penalty capturing that lap time increases linearly with fuel load (“less fuel → faster”), compound-specific base pace offsets because tyre degradation does not affect lap time but tyre choice does, a hard tyre-life feasibility constraint (tyres cannot be driven to 0% condition) enforced via given wear rates with a 10% safety buffer, and the pit stop loss of approximately 30 seconds with a maximum refuel level of 120 liters. With these ingredients, total race time can be expressed as the sum over all laps of (tyre base pace + fuel penalty depending on fuel remaining) plus pit stop losses at the end of planned laps.
+Race strategy was optimized independently of setup, which turns the problem into a deterministic optimization task once the relevant parameters are identified.
+The key quantities were: a constant fuel burn per lap (independent of tyre compound), a fuel time penalty capturing that lap time increases linearly with fuel load ("less fuel → faster"), compound-specific base pace offsets because tyre degradation does not affect lap time but tyre choice does, a hard tyre-life feasibility constraint (tyres cannot be driven to 0% condition) enforced via given wear rates with a 10% safety buffer, and the pit stop loss of approximately 30 seconds with a maximum refuel level of 120 liters.
+With these ingredients, total race time can be expressed as the sum over all laps of (tyre base pace + fuel penalty depending on fuel remaining) plus pit stop losses at the end of planned laps.
 
-We optimized the strategy by enumerating feasible plans under the submission-interface constraints (bounded number of planned stops), computing the total predicted race time for each candidate, and selecting the Top-3 strategies with minimal objective value. Feasibility was checked against the platform’s forced-pit logic: if fuel or tyre condition would not allow completing another lap, the car pits automatically and applies the next unused planned stop instruction; if none remain, the last planned stop is repeated as often as needed. This makes the optimization transparent and reproducible: given the estimated fuel penalty, tyre base paces, tyre-life limits with buffer, and pit loss, the best strategy follows directly from minimizing a deterministic objective under explicit constraints.
+We optimized the strategy by enumerating feasible plans under the submission-interface constraints (bounded number of planned stops), computing the total predicted race time for each candidate, and selecting the Top-3 strategies with minimal objective value.
+Feasibility was checked against the platform's forced-pit logic: if fuel or tyre condition would not allow completing another lap, the car pits automatically and applies the next unused planned stop instruction; if none remain, the last planned stop is repeated as often as needed.
+This makes the optimization transparent and reproducible: given the estimated fuel penalty, tyre base paces, tyre-life limits with buffer, and pit loss, the best strategy follows directly from minimizing a deterministic objective under explicit constraints.
 
-We chose this method because tyre degradation has no lap-time effect in this environment; strategy therefore reduces to choosing compound sequences and stint lengths under tyre-life and fuel constraints, while balancing pit loss against the benefit of lighter fuel loads. This structure is well-suited to an explicit optimizer rather than manual heuristics. Adaptation is straightforward: if additional practice evidence changes the estimated fuel sensitivity or tyre offsets, the optimizer is rerun with updated inputs and the recommended Top-3 strategies update automatically. Finally, we are highly confident in the optimizer’s output given the modeling assumptions, because the search is exhaustive within the defined constraints, all hard constraints (fuel capacity, tyre-life with buffer, pit loss, forced-pit rules) are enforced explicitly, and the resulting strategies are validated by simulation of the platform rule set. The remaining uncertainty primarily stems from estimation noise in the fuel penalty and tyre base pace offsets, not from the optimization procedure itself.
-
+We chose this method because tyre degradation has no lap-time effect in this environment; strategy therefore reduces to choosing compound sequences and stint lengths under tyre-life and fuel constraints, while balancing pit loss against the benefit of lighter fuel loads.
+This structure is well-suited to an explicit optimizer rather than manual heuristics.
+Adaptation is straightforward: if additional practice evidence changes the estimated fuel sensitivity or tyre offsets, the optimizer is rerun with updated inputs and the recommended Top-3 strategies update automatically.
+Finally, we are highly confident in the optimizer's output given the modeling assumptions, because the search is exhaustive within the defined constraints, all hard constraints (fuel capacity, tyre-life with buffer, pit loss, forced-pit rules) are enforced explicitly, and the resulting strategies are validated by simulation of the platform rule set.
+The remaining uncertainty primarily stems from estimation noise in the fuel penalty and tyre base pace offsets, not from the optimization procedure itself.
 
 # Task 4
+
 ## Insight 1
+
 ```{r, echo=FALSE, include=FALSE}
 # Pakete laden
 library(readr)
@@ -1608,13 +1651,14 @@ p2 <- ggplot(df, aes(x = Predicted_Lap_Time, y = Residuals)) +
 
 ```
 
-
 ```{r, echo=FALSE, fig.width=3.2, fig.height=2}
 p1
 ```
+
 ```{r,echo=FALSE, fig.width=3.2, fig.height=2}
 p2
 ```
+
 ```{r, echo=FALSE}
 # Modellzusammenfassung
 cat("R2 =", summary(model)$r.squared,
@@ -1623,23 +1667,34 @@ cat("RMSE:", rmse, "\n")
 cat("(Informal) Signal-to-Noise Ratio (Model Var / Residual Var):", snr, "\n")
 
 ```
-To maximize the search space within the 120-lap limit, we utilized a "Single-Shot" D-optimal design, testing 70 unique configurations for only one lap each. Analysis of the Phase 1 data reveals a Signal-to-Noise Ratio of 10.89 and an R-squared of 0.916. However, despite high R², the RMSE of 0.57 seconds indicates bad precision for ranking near-optimal setups.
-With a noise floor of ~0.6 seconds and a big difference between the top performing team, the design not only lacked the statistical power to distinguish between "good" and "very good" setups, which often differ by only 0.1–0.2 seconds. But it also was not able to find a good solution. In future reduced designs, a funnel approach could be better: using Single-Shot testing to discard the bottom 80% of configurations, followed by multi-lap confirmation runs (5-8 laps) on the top candidates to penetrate the 0.6s noise floor and get a better solution.
+
+To maximize the search space within the 120-lap limit, we utilized a "Single-Shot" D-optimal design, testing 70 unique configurations for only one lap each.
+Analysis of the Phase 1 data reveals a Signal-to-Noise Ratio of 10.89 and an R-squared of 0.916.
+However, despite high R², the RMSE of 0.57 seconds indicates bad precision for ranking near-optimal setups.
+With a noise floor of \~0.6 seconds and a big difference between the top performing team, the design not only lacked the statistical power to distinguish between "good" and "very good" setups, which often differ by only 0.1--0.2 seconds.
+But it also was not able to find a good solution.
+In future reduced designs, a funnel approach could be better: using Single-Shot testing to discard the bottom 80% of configurations, followed by multi-lap confirmation runs (5-8 laps) on the top candidates to penetrate the 0.6s noise floor and get a better solution.
 
 ## Insight 2
+
 Fehlt
 
 ## Insight 3
-The observed variation in lap times was negligible in comparison to the substantial gain achieved from an optimized setup, suggesting that a small number of test runs per setup would have sufficed. Overall, we significantly underestimated the importance of finding the best possible setup at the start of the worksheet. This resulted in significant gaps of up to two seconds to the best-performing team during qualifying.
+
+The observed variation in lap times was negligible in comparison to the substantial gain achieved from an optimized setup, suggesting that a small number of test runs per setup would have sufficed.
+Overall, we significantly underestimated the importance of finding the best possible setup at the start of the worksheet.
+This resulted in significant gaps of up to two seconds to the best-performing team during qualifying.
 
 ## Insight 4
-The analysis demonstrated that algorithmic optimization alone is insufficient when operating under a limited budget of qualifying laps. Interpreting intermediate results to construct a coherent narrative was crucial for determining the next strategic steps. Relying solely on algorithmic optima initially led to the dismissal of boundary solutions; only through the application of domain intuition did the potential of pushing parameters to their absolute limits become apparent. 
+
+The analysis demonstrated that algorithmic optimization alone is insufficient when operating under a limited budget of qualifying laps.
+Interpreting intermediate results to construct a coherent narrative was crucial for determining the next strategic steps.
+Relying solely on algorithmic optima initially led to the dismissal of boundary solutions; only through the application of domain intuition did the potential of pushing parameters to their absolute limits become apparent.
 
 ## Insight 5
-A thorough examination of the underlying Data Generating Process (DGP) enabled an immediate focus on the most critical variables. Identifying that decay rates were deterministic and independent of setup and strategy significantly reduced the dimensionality of the optimization problem. Furthermore, the finding that tire degradation had no significant impact on lap times allowed for a strategic reallocation of the simulation budget towards the more complex task of vehicle setup optimization.
 
+A thorough examination of the underlying Data Generating Process (DGP) enabled an immediate focus on the most critical variables.
+Identifying that decay rates were deterministic and independent of setup and strategy significantly reduced the dimensionality of the optimization problem.
+Furthermore, the finding that tire degradation had no significant impact on lap times allowed for a strategic reallocation of the simulation budget towards the more complex task of vehicle setup optimization.
 
 # References
-
-
-
