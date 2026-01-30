@@ -1286,6 +1286,253 @@ The qualifying results provide insight into the setup's relative competitiveness
 
 Finally, the data supports the hypothesis of boundary solutions. The preference for maximum values in Front and Rear Wing combined with minimal values for Suspension and Engine suggests that the global optimum likely lies at the parameter bounds (e.g., 500 and 1). Regarding race strategy, while the selected approach proved viable, retrospective analysis indicates it was suboptimal. Replacing a Medium stint with a Soft compound would likely have yielded superior lap times, representing a missed optimization opportunity in this instance.
 
+```{r, echo=FALSE}
+
+############################################################
+# Problem Set 4 – Task 3
+# ITALY (Monza) setup candidate generation from existing `data`
+#
+# NOTE:
+# - `data` is already loaded in the Rmd (Belgium section).
+# - We do NOT read simulator_data again here.
+# - We assume `data` contains Lap Distance and (ideally) lap_time_adjusted.
+############################################################
+
+## -----------------------------
+## 0) Safety: ensure adjusted lap time exists
+## -----------------------------
+if (!("lap_time_adjusted" %in% names(data))) {
+  if (!("Lap Time" %in% names(data))) stop("Need 'Lap Time' to build lap_time_adjusted, but it's missing.")
+  if (!("Lap Distance" %in% names(data))) stop("Need 'Lap Distance' for adjustment, but it's missing.")
+  
+  linear_model <- lm(`Lap Time` ~ `Lap Distance`, data = data)
+  preds <- predict(linear_model, newdata = data)
+  data$lap_time_adjusted <- data$`Lap Time` - preds
+}
+
+## -----------------------------
+## 1) ITALY fixed params (Monza) (from UI screenshot)
+## -----------------------------
+track_params_italy <- list(
+  'Lap Distance' = 4.5,
+  'Cornering'    = 40,
+  'Inclines'     = 57,
+  'Camber'       = 12,
+  'Grip'         = 40,
+  'Altitude'     = 95,
+  'Roughness'    = 22,
+  'Width'        = 6
+)
+
+weather_params_italy <- list(
+  'Wind (Avg. Speed)' = 74,
+  'Temperature'       = 21,
+  'Humidity'          = 96,
+  'Air Density'       = 52,
+  'Air Pressure'      = 23,
+  'Wind (Gusts)'      = 14
+)
+
+fixed_params_italy <- append(track_params_italy, weather_params_italy)
+
+feat_cols_italy <- c(
+  'Lap Distance', 'Cornering', 'Inclines', 'Camber', 'Grip',
+  'Wind (Avg. Speed)', 'Temperature', 'Humidity', 'Air Density',
+  'Air Pressure', 'Wind (Gusts)', 'Altitude', 'Roughness', 'Width'
+)
+
+decision_features <- c(
+  'Front Wing',
+  'Rear Wing',
+  'Brake Balance',
+  'Suspension',
+  'Engine',
+  'Differential'
+)
+
+## -----------------------------
+## 2) Safety checks (columns exist)
+## -----------------------------
+missing_cols <- setdiff(c(feat_cols_italy, decision_features, "lap_time_adjusted"), names(data))
+if (length(missing_cols) > 0) {
+  stop(paste("Missing columns in `data` for Italy pipeline:", paste(missing_cols, collapse = ", ")))
+}
+
+## -----------------------------
+## 3) KNN on fixed params (track+weather) – deterministic distances
+## -----------------------------
+k_max <- 1000
+k_neighbors <- 150
+
+k_max <- min(k_max, nrow(data))
+k_neighbors <- min(k_neighbors, k_max)
+
+if (!("row_id" %in% names(data))) data$row_id <- seq_len(nrow(data))
+
+X <- data[, feat_cols_italy]
+X_scaled <- scale(X)
+X_center <- attr(X_scaled, "scaled:center")
+X_scale  <- attr(X_scaled, "scaled:scale")
+
+query_df <- as.data.frame(fixed_params_italy, check.names = FALSE)
+query_df <- query_df[, feat_cols_italy, drop = FALSE]
+query_scaled <- scale(query_df, center = X_center, scale = X_scale)
+
+q <- as.numeric(query_scaled[1, ])
+dist_all <- sqrt(rowSums((X_scaled - matrix(q, nrow = nrow(X_scaled), ncol = length(q), byrow = TRUE))^2))
+
+ord <- order(dist_all, data$row_id)
+
+# (Optional diagnostic plot, same idea as Belgium)
+# distances_sorted <- dist_all[ord][1:k_max]
+# plot(1:k_max, distances_sorted, type="l", col="blue", lwd=2,
+#      main="KNN Distances to Neighbors (Italy query) [deterministic]",
+#      xlab="Neighbor index", ylab="Distance")
+
+indices_final <- ord[1:k_neighbors]
+
+neighbors <- data[indices_final, c(decision_features, "lap_time_adjusted")]
+neighbors_scaled <- scale(neighbors[, decision_features])
+
+## -----------------------------
+## 4) KMeans clustering -> best cluster bounds
+## -----------------------------
+n_clusters_italy <- 4
+set.seed(0)
+km_italy <- kmeans(neighbors_scaled, centers = n_clusters_italy, nstart = 25)
+
+neighbors$KMeans_Cluster <- as.factor(km_italy$cluster)
+
+mean_lap_times <- tapply(neighbors$lap_time_adjusted, km_italy$cluster, mean)
+best_km_cluster <- as.numeric(names(which.min(mean_lap_times)))
+best_km_data <- neighbors[neighbors$KMeans_Cluster == best_km_cluster, ]
+
+bounds_km <- lapply(decision_features, function(col) {
+  c(
+    q05 = as.numeric(quantile(best_km_data[[col]], 0.05, na.rm = TRUE)),
+    q95 = as.numeric(quantile(best_km_data[[col]], 0.95, na.rm = TRUE))
+  )
+})
+names(bounds_km) <- decision_features
+mins_km <- sapply(bounds_km, `[[`, "q05")
+maxs_km <- sapply(bounds_km, `[[`, "q95")
+
+## -----------------------------
+## 5) (Optional) Hierarchical clustering bounds (diagnostic second region)
+## -----------------------------
+X_hc <- neighbors[, decision_features]
+X_hc_scaled <- scale(X_hc)
+
+d <- dist(X_hc_scaled, method = "euclidean")
+hc <- hclust(d, method = "ward.D2")
+
+k_hc <- 4
+neighbors$HC_Cluster <- cutree(hc, k = k_hc)
+
+hc_means <- tapply(neighbors$lap_time_adjusted, neighbors$HC_Cluster, mean)
+best_hc_cluster <- as.numeric(names(which.min(hc_means)))
+best_hc_data <- neighbors[neighbors$HC_Cluster == best_hc_cluster, ]
+
+bounds_hc <- lapply(decision_features, function(col) {
+  c(
+    q05 = as.numeric(quantile(best_hc_data[[col]], 0.05, na.rm = TRUE)),
+    q95 = as.numeric(quantile(best_hc_data[[col]], 0.95, na.rm = TRUE))
+  )
+})
+names(bounds_hc) <- decision_features
+mins_hc <- sapply(bounds_hc, `[[`, "q05")
+maxs_hc <- sapply(bounds_hc, `[[`, "q95")
+
+## -----------------------------
+## 6) LHS sampling within bounds -> candidate setups for practice
+## -----------------------------
+lhs_sample_bounds <- function(mins_vec, maxs_vec, n_samples, decision_features, seed = 0) {
+  mins_vec <- mins_vec[decision_features]
+  maxs_vec <- maxs_vec[decision_features]
+  
+  same <- which(maxs_vec <= mins_vec)
+  if (length(same) > 0) maxs_vec[same] <- mins_vec[same] + 1e-6
+  
+  set.seed(seed)
+  raw <- lhs::randomLHS(n = n_samples, k = length(decision_features))
+  scaled <- raw
+  for (i in seq_along(decision_features)) {
+    col <- decision_features[i]
+    scaled[, i] <- qunif(raw[, i], min = mins_vec[col], max = maxs_vec[col])
+  }
+  df <- as.data.frame(round(scaled, 0))
+  colnames(df) <- decision_features
+  df
+}
+
+n_samples_total <- 30
+frac_km <- 0.67
+n_km <- max(1, floor(n_samples_total * frac_km))
+n_hc <- n_samples_total - n_km
+
+km_df <- lhs_sample_bounds(mins_km, maxs_km, n_km, decision_features, seed = 0)
+hc_df <- lhs_sample_bounds(mins_hc, maxs_hc, n_hc, decision_features, seed = 1)
+
+km_df$Source <- "KMeans_best"
+hc_df$Source <- "HC_best"
+
+setup_df_italy <- rbind(km_df, hc_df)
+setup_df_italy$Setup_ID <- seq_len(nrow(setup_df_italy))
+setup_df_italy <- setup_df_italy[, c("Setup_ID", "Source", decision_features)]
+
+# Remove duplicates after rounding
+setup_df_italy <- setup_df_italy %>%
+  dplyr::distinct(Source, dplyr::across(dplyr::all_of(decision_features)), .keep_all = TRUE)
+setup_df_italy$Setup_ID <- seq_len(nrow(setup_df_italy))
+
+## -----------------------------
+## 7) Export to Excel (optional; keep consistent with Belgium workflow)
+## -----------------------------
+out_dir <- "Problem Set 4"
+if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
+out_xlsx <- file.path(out_dir, "Italy_Setup_candidates_run06.xlsx")
+
+bounds_sheet_italy <- rbind(
+  data.frame(Source="KMeans_best", Feature=decision_features,
+             q05=as.numeric(mins_km[decision_features]), q95=as.numeric(maxs_km[decision_features])),
+  data.frame(Source="HC_best", Feature=decision_features,
+             q05=as.numeric(mins_hc[decision_features]), q95=as.numeric(maxs_hc[decision_features]))
+)
+
+writexl::write_xlsx(list(
+  Candidates = setup_df_italy,
+  Bounds     = bounds_sheet_italy
+), out_xlsx)
+
+#cat(sprintf("\n[Italy] Wrote candidate setups to: %s\n", out_xlsx))
+#cat(sprintf("[Italy] Best KMeans cluster: #%d\n", best_km_cluster))
+
+
+```
+
+# Task 3 – (Italy / Monza)
+
+## 1. Setup
+
+For the Italy race we started with the same “data-driven region search” concept as in Belgium, but replaced the query with the Italy/Monza track and weather values. As in Belgium, we first removed the lap-distance baseline by using a linear adjustment of lap time on lap distance, so that comparisons across simulator rows reflect setup differences rather than track length effects.
+
+To identify a promising region in the 6D setup space (Front Wing, Rear Wing, Brake Balance, Suspension, Engine, Differential), we retrieved simulator rows most similar to Italy conditions via KNN on the fixed track+weather features. We implemented the neighbor selection deterministically (distance ordering with a stable row-id tie-breaker) to ensure reproducibility. The retrieved neighbor setups were then clustered (KMeans, and additionally hierarchical clustering as a robustness check) to detect coherent “strategies” in the neighborhood. We selected the cluster with the lowest mean adjusted lap time and derived conservative search bounds using the 5th and 95th percentiles (q05–q95) of each decision variable within that best-performing cluster. Inside those bounds we generated 30 candidate configurations using Latin Hypercube Sampling (LHS) and transferred them into the practice interface for evaluation.
+
+After testing the first 30 model-suggested setups in practice, we deliberately adapted our decision-making based on observed performance. In particular, we applied the key empirical lesson from Belgium: the optimum often lies near the boundary of the allowed parameter range. Instead of continuing to sample uniformly inside the model-derived region, we performed a systematic boundary-focused local search around the best observed candidates, i.e., we explored extreme “edge” configurations in the direction suggested by the practice results. This deviation from the model proposal was highly effective: compared to the initial region suggested by clustering and LHS, the boundary-driven exploration improved lap times by roughly two seconds. Empirically, the fastest Italy setups concentrated near a boundary-solution pattern with very high Front/Rear Wing values combined with low values for the remaining knobs, especially Engine and Suspension; Brake Balance and Differential remained in a relatively stable low-to-mid range and were then fine-tuned around the best candidate.
+
+We chose this two-stage approach because it balances exploration and exploitation under a tight practice-lap budget. KNN + clustering provides a cheap global prior from the simulator dataset, quickly narrowing the search to a plausible high-performance region without brute-forcing the full space. LHS then covers that region efficiently in the first practice round. Once practice data revealed a clear direction of improvement, boundary/local search became the most resource-efficient way to exploit the signal. In terms of adaptation, decisions were explicitly performance-driven: slow configurations were eliminated after the first round (e.g., lap times clearly above the competitive range), remaining attempts were allocated to replicate the best candidates for robustness and to probe boundary points that extend the best observed pattern. This led to an increasingly structured exploitation strategy instead of continued random sampling.
+
+Regarding optimality, we are moderately confident that the final Italy setup is close to optimal within the explored neighborhood. The main evidence is the consistency of the top candidates across repeated evaluations (small dispersion), the observed convergence trend (moving toward extreme wing values and low Engine/Suspension produced monotonic improvements that eventually plateaued), and the fact that the best setup sits at or near the parameter bounds, which is a common signature of constrained optima in tuning problems. At the same time, we do not claim a formal global optimum: the search is limited by the practice budget and by the fact that only a subset of the full space can be evaluated. Our confidence therefore rests on convergence behavior and repeatability rather than an exhaustive proof.
+
+## 2. Strategy (Italy)
+
+Race strategy was optimized independently of setup, which turns the problem into a deterministic optimization task once the relevant parameters are identified. The key quantities were: a constant fuel burn per lap (independent of tyre compound), a fuel time penalty capturing that lap time increases linearly with fuel load (“less fuel → faster”), compound-specific base pace offsets because tyre degradation does not affect lap time but tyre choice does, a hard tyre-life feasibility constraint (tyres cannot be driven to 0% condition) enforced via given wear rates with a 10% safety buffer, and the pit stop loss of approximately 30 seconds with a maximum refuel level of 120 liters. With these ingredients, total race time can be expressed as the sum over all laps of (tyre base pace + fuel penalty depending on fuel remaining) plus pit stop losses at the end of planned laps.
+
+We optimized the strategy by enumerating feasible plans under the submission-interface constraints (bounded number of planned stops), computing the total predicted race time for each candidate, and selecting the Top-3 strategies with minimal objective value. Feasibility was checked against the platform’s forced-pit logic: if fuel or tyre condition would not allow completing another lap, the car pits automatically and applies the next unused planned stop instruction; if none remain, the last planned stop is repeated as often as needed. This makes the optimization transparent and reproducible: given the estimated fuel penalty, tyre base paces, tyre-life limits with buffer, and pit loss, the best strategy follows directly from minimizing a deterministic objective under explicit constraints.
+
+We chose this method because tyre degradation has no lap-time effect in this environment; strategy therefore reduces to choosing compound sequences and stint lengths under tyre-life and fuel constraints, while balancing pit loss against the benefit of lighter fuel loads. This structure is well-suited to an explicit optimizer rather than manual heuristics. Adaptation is straightforward: if additional practice evidence changes the estimated fuel sensitivity or tyre offsets, the optimizer is rerun with updated inputs and the recommended Top-3 strategies update automatically. Finally, we are highly confident in the optimizer’s output given the modeling assumptions, because the search is exhaustive within the defined constraints, all hard constraints (fuel capacity, tyre-life with buffer, pit loss, forced-pit rules) are enforced explicitly, and the resulting strategies are validated by simulation of the platform rule set. The remaining uncertainty primarily stems from estimation noise in the fuel penalty and tyre base pace offsets, not from the optimization procedure itself.
+
+
 # Task 4
 ## Insight 1
 ```{r, echo=FALSE, include=FALSE}
